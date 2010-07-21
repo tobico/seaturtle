@@ -3,7 +3,7 @@
     $('.status').fn({
       display: function() {
         $(this).text(
-          $('.passed').length + $('.failed').length + ' test(s), ' + $('.failed').length + ' failure(s)'
+          $('.it.passed').length + $('.it.failed').length + ' test(s), ' + $('.it.failed').length + ' failure(s)'
         );
       }
     });
