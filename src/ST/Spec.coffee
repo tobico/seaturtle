@@ -8,12 +8,12 @@ ST.class 'Spec', ->
     $('.results').append($('<li>' + title + '</li>').append(ul))
 
     @testStack = [{
-      title:    title,
+      title:    title
       ul:       ul
+      before:   []
     }]
     
-    @case = {}
-    definition.call @case
+    definition()
     
   @classMethod 'initializeEnvironment', ->
     @EnvironmentInitialized = true
@@ -30,8 +30,15 @@ ST.class 'Spec', ->
         fn
       fn
       #TODO: Something
+      
+    window.expect = (object) ->
+      {to: (matcher) -> matcher(object) }
+      
+    window.beforeEach = (action) ->
+      test = ST.Spec.testStack[ST.Spec.testStack.length - 1]
+      test.before.push action
     
-    window.describe = (title, definition) ->
+    window.describe = window.context = (title, definition) ->
       parent = ST.Spec.testStack[ST.Spec.testStack.length - 1]
     
       ul = $('<ul></ul>')
@@ -40,15 +47,24 @@ ST.class 'Spec', ->
       ST.Spec.testStack.push {
         title:    title
         ul:       ul
+        before:   []
       }
-      definition.call ST.Spec.case
+      definition()
       ST.Spec.testStack.pop()
 
     window.it = (title, definition) ->
+      env = {}
+      for test in ST.Spec.testStack
+        for action in test.before
+          action.call env
+    
       test = ST.Spec.testStack[ST.Spec.testStack.length - 1]
       
       ST.Spec.passed = true
-      definition.call ST.Spec.case
+      try
+        definition.call env
+      catch e
+        ST.Spec.fail 'Error: ' + e
       li = $('<li>' + title + '</li>')
       if ST.Spec.passed
         li.addClass 'passed'
@@ -65,9 +81,28 @@ ST.class 'Spec', ->
       (object) ->
         unless object is expected
           ST.Spec.fail 'expected: ' + expected + ', actual: ' + object
-        
+          
+    window.beTrue = (object) ->
+      unless String(object) == 'true'
+        ST.Spec.fail 'expected true, got: ' + object
+
+    window.beFalse = (object) ->
+      unless String(object) == 'false'
+        ST.Spec.fail 'expected false, got: ' + object
+          
+    window.beAnInstanceOf = (klass) ->
+      (object) ->
+        unless object instanceof klass
+          ST.Spec.fail 'expected an instance of ' + klass
+          
+    window.equal = (expected) ->
+      (object) ->
+        unless String(object) == String(expected)
+          ST.Spec.fail 'expected to equal: ' + expected + ', actual: ' + object
+    
   @classMethod 'fail', (message) ->
     @passed = false
+    console.log message
     @error = message
     
   @classMethod 'uninitializeEnvironment', ->
@@ -79,3 +114,7 @@ ST.class 'Spec', ->
     delete window.it
     delete window.beAFunction
     delete window.be
+    delete window.beTrue
+    delete window.beFalse
+    delete window.beAnInstanceOf
+    delete window.equal

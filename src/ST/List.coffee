@@ -1,34 +1,33 @@
 ST.class 'List', ->
   @include 'Enumerable'
 
-  @constructor ->
-    @_super()
+  @initializer ->
+    @super()
     @array = []
-    
-  @destructor ->
-    @empty()
-    @_super()
     
   @method 'each', (fn) ->
     fn = ST.toProc fn
-    for item in array
+    for item in @array
       break if fn.call(item, item) == 'break'
       
   @triggerMethod 'itemChanged'
     
-  @method 'getAt', (index) -> @array[Number(index)]
-  
-  @method 'setAt', (index, value) -> @array[Number(index)] = value
-  
-  @method 'findByProperty', (property, value) ->
-    @find (object) -> object[property] && object[property] == value
-  
+  @method 'getAt', (index) ->
+    if index > 0 && index < @array.length
+      @array[Number(index)]
+    else
+      null
+    
   @delegate 'indexOf', 'array'
   @delegate 'length', 'array', 'count'
   
   @method 'isEmpty', -> !@array.length
     
-  @method 'last', -> @array.length && @array[@array.length - 1]
+  @method 'last', ->
+    if @array.length
+      @array[@array.length - 1]
+    else
+      null
   
   @method 'add', (object) ->
     object.retain() if object.retain

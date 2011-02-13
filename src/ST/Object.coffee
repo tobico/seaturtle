@@ -19,7 +19,7 @@ ST.class 'Object', null, ->
     @prototype[name].displayName = @_name + '#' + name
   
   # Create matching init (instance) and create (class) constructor methods
-  @classMethod 'constructor', (name, fn) ->
+  @classMethod 'initializer', (name, fn) ->
     if fn
       name = ST.ucFirst(name)
     else
@@ -28,8 +28,8 @@ ST.class 'Object', null, ->
     
     @method 'init' + name, fn
     @classMethod 'create' + name, ->
-      object = new this
-      object[init].apply object, arguments
+      object = new this()
+      object['init' + name].apply object, arguments
       object
   
   # Create 'destroy' destructor method
@@ -79,14 +79,12 @@ ST.class 'Object', null, ->
   # given member object.
 
   @classMethod 'delegate', (name, toObject, as) ->
-    @method as || name, ->
-      if this[toObject]
-        o = this[toObject]
-        o = o.call this  if x.call
-        if o[name]
-          x = o[name]
-          x = x.call o, arguments
-          x
+    @method (as || name), ->
+      through = @[toObject]
+      through = through.call this if through.call
+      result = through[name]
+      result = result.call through if result.call
+      result
 
   # Generates a "trigger" method that triggers the given event when caled.
   @classMethod 'triggerMethod', (name, args...) ->
@@ -104,9 +102,9 @@ ST.class 'Object', null, ->
   @AutoReleaseObject = (object) ->
     if @AutoReleasePool.length
       setTimeout ->
-        for object in STObject.AutoReleasePool
+        for object in ST.Object.AutoReleasePool
           object.release() if object && object.release
-        STObject.AutoReleasePool.length = 0
+        ST.Object.AutoReleasePool.length = 0
       , 1
       @AutoReleasePool.push object
     
@@ -117,17 +115,17 @@ ST.class 'Object', null, ->
             ':' + trigger + ' to ' + target.receiver + '.' +
             target.selector
   
-  @constructor ->
+  @initializer ->
     ST.error 'Object initialized twice: ' + this if @retainCount
     @retainCount = 1
-    @_uid = STObject.UID++
+    @_uid = ST.Object.UID++
   
   @destructor ->
     @__proto__ = Object if @__proto__
     for name of this
       delete this[name] unless name == '$' || name == '_uid'
     @_destroyed = true
-    @toString = STObject.destroyedToString
+    @toString = ST.Object.destroyedToString
   
   @method 'conformsToProtocol', (protocol) ->
     self = this
@@ -140,7 +138,7 @@ ST.class 'Object', null, ->
     this[key] oldValue, newValue if this[key] && this[key].call
   
   @method 'set', (hash) ->
-    setKey = @setKey || STObject.prototype.setKey
+    setKey = @setKey || ST.Object.prototype.setKey
     if arguments.length == 2
       setKey.apply this, arguments
     else
@@ -210,7 +208,7 @@ ST.class 'Object', null, ->
         if target.receiver[target.selector]
           target.receiver[target.selector].apply target.receiver, passArgs
         else
-          STObject.BindingError this, trigger, target
+          ST.Object.BindingError this, trigger, target
   @method 'triggerFn', (args...) ->
     self = this
     -> self.trigger.apply self, args

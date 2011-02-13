@@ -52,7 +52,9 @@ window.ST = {
       definition = superClass
       superClass = 'Object'
     
-    newClass = -> @$ = newClass
+    newClass = ->
+      @$ = newClass
+      this
     
     newClass._classMethods = []
     
