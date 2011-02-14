@@ -68,3 +68,9 @@ $ ->
       @list.add 'one'
       @list.add 'two'
       @list.last().should equal('two')
+      
+  describe "add", ->
+    it "should retain object", ->
+      object = ST.Object.create()
+      object.shouldReceive 'retain'
+      @list.add object

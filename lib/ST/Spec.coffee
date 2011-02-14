@@ -25,8 +25,32 @@ ST.class 'Spec', ->
     
     definition()
     
+  @classMethod 'finalize', ->
+    switch @Format
+      when 'terminal'
+        $('.results').append "<br>"
+        for error in @errors
+          $('.results').append "&#x1b;[31m#{error.message}&#x1b;[0m #{error.title}<br>"
+        $('.results').append "#{@counts.passed} passed, #{@counts.failed} failed, #{@counts.total} total"
+    
+  @classMethod 'expectation', (message) ->
+    expectation = {
+      met:      false
+      message:  message
+      meet:     -> @met = true
+    }
+    @expectations.push expectation
+    expectation
+    
   @classMethod 'initializeEnvironment', ->
     @EnvironmentInitialized = true
+    
+    @errors = []
+    @counts = {
+      passed: 0
+      failed: 0
+      total: 0
+    }
     
     @Format = 'ul'
     @Format = 'terminal' if location.hash == '#terminal'
@@ -40,13 +64,33 @@ ST.class 'Spec', ->
     Object.prototype.should = (matcher) -> matcher(this)
     
     Object.prototype.shouldReceive = (name) ->
-      fn = ->
-      fn.with = ->
-        fn
-      fn.andReturn = ->
-        fn
-      fn
-      #TODO: Something
+      object = this
+      
+      expectation = ST.Spec.expectation "object should receive &ldquo;#{name}&rdquo;"
+      
+      object[name] = -> expectation.meet()
+      
+      more = {
+        with: (expectArgs...) ->
+          object[name] = (args...) ->
+            correct = true
+            correct = false if expectArgs.length != args.length
+            if correct
+              for i in [0..args.length]
+                correct = false unless expectArgs[i] == args[i]
+            if correct
+              expectation.meet()
+            else
+              expectation.message = "Expected &ldquo;#{name}&rdquo; to be called with arguments &ldquo;#{expectArgs.join ', '}&rdquo;, actual: &ldquo;#{args.join ', '}&rdquo;"
+          more
+        
+        andReturn: (returnValue) ->
+          fn = object[name]
+          object[name] = ->
+            fn.apply this, arguments
+            returnValue
+          more
+      }
       
     window.expect = (object) ->
       {to: (matcher) -> matcher(object) }
@@ -82,11 +126,25 @@ ST.class 'Spec', ->
     
       test = ST.Spec.testStack[ST.Spec.testStack.length - 1]
       
+      ST.Spec.expectations = []
+      ST.Spec.testTitle = title
+      
+      window.onerror = (message) ->
+        ST.Spec.fail "Error: #{message}"
+      
       ST.Spec.passed = true
       try
         definition.call env
       catch e
         ST.Spec.fail 'Error: ' + e
+        
+      for expectation in ST.Spec.expectations
+        unless expectation.met
+          ST.Spec.fail expectation.message
+      
+      delete ST.Spec.expectations
+      delete ST.Spec.testTitle
+      delete window.onerror
 
       switch ST.Spec.Format
         when 'ul'
@@ -104,6 +162,12 @@ ST.class 'Spec', ->
           else
             s = "&#x1b;[31m#{s}&#x1b;[0m<br>"
           $('.results').append ST.Spec.Pad(s, test.ul.depth)
+    
+      if ST.Spec.passed
+        ST.Spec.counts.passed++
+      else
+        ST.Spec.counts.failed++
+      ST.Spec.counts.total++
       
     window.beAFunction = (object) ->
       unless typeof object is 'function'
@@ -134,8 +198,15 @@ ST.class 'Spec', ->
     
   @classMethod 'fail', (message) ->
     @passed = false
-    console.log message
     @error = message
+    titles = []
+    for item in @testStack
+      titles.push item.title
+    titles.push @testTitle
+    @errors.push {
+      title:    titles.join ' '
+      message:  message
+    }
     
   @classMethod 'uninitializeEnvironment', ->
     @EnvironmentInitialized = false
