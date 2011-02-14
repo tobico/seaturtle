@@ -1,11 +1,21 @@
 ST.class 'Spec', ->
   @EnvironmentInitialized = false
   
+  @Pad = (string, times) ->
+    for i in [1..times]
+      string = '&nbsp;' + string
+    string
+  
   @classMethod 'describe', (title, definition) ->
     @initializeEnvironment() unless @EnvironmentInitialized
 
     ul = $('<ul></ul>')
-    $('.results').append($('<li>' + title + '</li>').append(ul))
+    switch @Format
+      when 'ul'
+        $('.results').append($('<li>' + title + '</li>').append(ul))
+      when 'terminal'
+        $('.results').append "#{title}<br>"
+        ul.depth = 2
 
     @testStack = [{
       title:    title
@@ -18,7 +28,14 @@ ST.class 'Spec', ->
   @classMethod 'initializeEnvironment', ->
     @EnvironmentInitialized = true
     
-    $('body').append('<ul class="results"></ul>')
+    @Format = 'ul'
+    @Format = 'terminal' if location.hash == '#terminal'
+    
+    switch @Format
+      when 'ul'
+        $('body').append('<ul class="results"></ul>')
+      when 'terminal'
+        $('body').append('<div class="results"></div>')
     
     Object.prototype.should = (matcher) -> matcher(this)
     
@@ -42,7 +59,12 @@ ST.class 'Spec', ->
       parent = ST.Spec.testStack[ST.Spec.testStack.length - 1]
     
       ul = $('<ul></ul>')
-      parent.ul.append($('<li>' + title + '</li>').append(ul))
+      switch ST.Spec.Format
+        when 'ul'
+          parent.ul.append($('<li>' + title + '</li>').append(ul))
+        when 'terminal'
+          $('.results').append(ST.Spec.Pad(title, parent.ul.depth) + "<br>")
+          ul.depth = parent.ul.depth + 2
     
       ST.Spec.testStack.push {
         title:    title
@@ -65,13 +87,23 @@ ST.class 'Spec', ->
         definition.call env
       catch e
         ST.Spec.fail 'Error: ' + e
-      li = $('<li>' + title + '</li>')
-      if ST.Spec.passed
-        li.addClass 'passed'
-      else
-        li.addClass 'failed'
-      
-      test.ul.append li
+
+      switch ST.Spec.Format
+        when 'ul'
+          li = $('<li>' + title + '</li>')
+          if ST.Spec.passed
+            li.addClass 'passed'
+          else
+            li.addClass 'failed'
+
+          test.ul.append li
+        when 'terminal'
+          s = title
+          if ST.Spec.passed
+            s = "&#x1b;[32m#{s}&#x1b;[0m<br>"
+          else
+            s = "&#x1b;[31m#{s}&#x1b;[0m<br>"
+          $('.results').append ST.Spec.Pad(s, test.ul.depth)
       
     window.beAFunction = (object) ->
       unless typeof object is 'function'
