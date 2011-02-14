@@ -1,0 +1,14 @@
+GEM
+  remote: http://rubygems.org/
+  specs:
+    coffee-script (2.1.2)
+      coffee-script-source
+    coffee-script-source (1.0.1)
+    json (1.4.6)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  coffee-script
+  json
