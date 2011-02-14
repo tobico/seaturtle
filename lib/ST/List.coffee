@@ -30,10 +30,7 @@ ST.class 'List', ->
       null
   
   @method 'add', (object) ->
-    object.retain() if object.retain
-    @array.push object
-    object.bind 'changed', this, 'itemChanged' if object.bind
-    @trigger 'itemAdded', object
+    @insertAt @array.length, object
   
   @method 'insertAt', (index, object) ->
     object.retain() if object.retain
@@ -46,7 +43,7 @@ ST.class 'List', ->
     object.release() if object.release
   
   @method 'removeAt', (index) ->
-    return false if @array[index] is undefined
+    return false unless @array.length > index
     object = @array.splice(index, 1)[0]
     object.unbind 'changed', this if object.unbind
     @trigger 'itemRemoved', object
@@ -54,21 +51,19 @@ ST.class 'List', ->
     true
     
   @method 'removeLast', ->
-    return false unless @array.length
-    object = @array.pop
-    object.unbind 'changed', this if object.unbind
-    @trigger 'itemRemoved', object
-    object.release() if object.release
-    true
-
+    if @array.length > 0
+      @removeAt @array.length - 1
+    else
+      false
+  
   @method 'remove', (object) ->
-    index = @indexOf object
+    index = @array.indexOf object
     index >= 0 && @removeAt index
     
-  # Add all items in another array to this one
+  # Add all items in another list to this one
   @method 'append', (list) ->
     self = this
-    @list.each (item) ->
+    list.each (item) ->
       self.add item
 
   @method 'copy', ->

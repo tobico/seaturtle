@@ -61,7 +61,13 @@ ST.class 'Spec', ->
       when 'terminal'
         $('body').append('<div class="results"></div>')
     
-    Object.prototype.should = (matcher) -> matcher(this)
+    Object.prototype.should = (matcher) ->
+      result = matcher(this)
+      ST.Spec.fail "expected #{result[1]}" unless result[0]
+
+    Object.prototype.shouldNot = (matcher) ->
+      result = matcher(this)
+      ST.Spec.fail "expected not #{result[1]}" if result[0]
     
     Object.prototype.shouldReceive = (name) ->
       object = this
@@ -93,7 +99,14 @@ ST.class 'Spec', ->
       }
       
     window.expect = (object) ->
-      {to: (matcher) -> matcher(object) }
+      {
+        to: (matcher) ->
+          result = matcher(object)
+          ST.Spec.fail "expected #{result[1]}" unless result[0]
+        notTo: (matcher) ->
+          result = matcher(object)
+          ST.Spec.fail "expected not #{result[1]}" if result[0]
+      }
       
     window.beforeEach = (action) ->
       test = ST.Spec.testStack[ST.Spec.testStack.length - 1]
@@ -170,31 +183,25 @@ ST.class 'Spec', ->
       ST.Spec.counts.total++
       
     window.beAFunction = (object) ->
-      unless typeof object is 'function'
-        ST.Spec.fail 'expected type function, actual ' + typeof object
+      [typeof object is 'function', "to have type &ldquo;function&rdquo;, actual &ldquo;#{typeof object}&rdquo;"]
     
     window.be = (expected) ->
       (object) ->
-        unless object is expected
-          ST.Spec.fail 'expected: ' + expected + ', actual: ' + object
+        [object is expected, "to be &ldquo;#{expected}&rdquo;, actual &ldquo;#{object}&rdquo;"]
           
     window.beTrue = (object) ->
-      unless String(object) == 'true'
-        ST.Spec.fail 'expected true, got: ' + object
+      [String(object) == 'true', "to be true, got &ldquo;#{object}&rdquo;"]
 
     window.beFalse = (object) ->
-      unless String(object) == 'false'
-        ST.Spec.fail 'expected false, got: ' + object
+      [String(object) == 'false', "to be false, got &ldquo;#{object}&rdquo;"]
           
     window.beAnInstanceOf = (klass) ->
       (object) ->
-        unless object instanceof klass
-          ST.Spec.fail 'expected an instance of ' + klass
+        [object instanceof klass, "to be an instance of &ldquo;#{klass}&rdquo;"]
           
     window.equal = (expected) ->
       (object) ->
-        unless String(object) == String(expected)
-          ST.Spec.fail 'expected to equal: ' + expected + ', actual: ' + object
+        [String(object) == String(expected), "to equal &ldquo;#{expected}&rdquo;, actual &ldquo;#{object}&rdquo;"]
     
   @classMethod 'fail', (message) ->
     @passed = false

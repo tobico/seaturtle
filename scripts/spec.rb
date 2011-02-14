@@ -1,3 +1,4 @@
+#!/usr/bin/env jruby
 require "rubygems"
 require "bundler/setup"
 require "coffee-script"
