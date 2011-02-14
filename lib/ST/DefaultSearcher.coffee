@@ -1,5 +1,5 @@
-ST.class 'DefaultSearcher', 'Searcher' ->
-  @constructor 'withCallback', (callback) ->
+ST.class 'DefaultSearcher', 'Searcher', ->
+  @initializer 'withCallback', (callback) ->
     @init()
     @callback = callback
   

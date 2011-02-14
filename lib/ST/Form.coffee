@@ -1,102 +1,78 @@
 ST.class 'Form', 'View', ->
-  @constructor 'withRecord', (record) ->
-    this.init();
-    this.record = record;
-    if (record.retain) record.retain();
-    this.fields = STIndexedList.create()
-        .bind('itemAdded', this, 'fieldAdded')
-        .bind('itemRemove', this, 'fieldRemoved');
-    this.element.addClass('STForm')
+  @initializer 'withRecord', (record) ->
+    @super()
+    @record = record
+    @fields = List.create()
+    @fields.bind 'itemAdded', this, 'fieldAdded'
+    @fields.bind 'itemRemove', this, 'fieldRemoved'
+    @element.addClass 'STForm'
   
   @property 'record', null, 'readonly'
   
   @destructor ->
-    var self = this;
-    this.releaseMembers('fields', 'record');
-    this._super();
+    self = this;
+    @releaseMembers 'fields', 'record'
+    @super()
   
   @method 'addField', (field) ->
-    this.fields.add(field);
-    if (field.member) {
-        field.setValue(
-            (this.record.get || STObject.prototype.get)
-                .call(this.record, field.member)
-        );
-    }
+    @fields.add field
+    field.setValue (@record.get || STObject.prototype.get).call(@record, field.member) if field.member
   
   @method 'fieldAdded', (list, field) ->
-    field.bind('submit', this, 'fieldSubmitted');
+    field.bind 'submit', this, 'fieldSubmitted'
 
   @method 'fieldRemoved', (list, field) ->
-    field.unbind('submit', this);
+    field.unbind 'submit', this
   
   @method 'fieldSubmitted', (field) ->
-    this.save();
+    @save()
   
   @method 'addAndReleaseField', (field) ->
-    this.addField(field);
-    field.release();
+    @addField field
+    field.release()
   
   @method 'render', (element) ->
-    this._super(element);
-    var self = this;
+    @super element
+    self = this
     
-    var table = ST.tableTag().css('width', '100%');
-    this.fields.each(function(field) {
-        table.append(ST.trTag(
-            ST.tdTag(field.label || ''),
-            ST.tdTag(
-                field.load().getElement()
-            )
-        ));
-    });
-    element.append(table);
+    table = @helper.tag 'table'
+    table.css 'width', '100%'
+    @fields.each (field) ->
+      tr = self.helper.tag 'tr'
+      tr.append self.helper.tag('td').html(field.label || '')
+      tr.append self.helper.tag('td').append(field.load().getElement())
+    element.append table
     
-    element.append(ST.customTag('buttonbar').append(
-        ST.aTag('&nbsp;&nbsp;OK&nbsp;&nbsp;')
-          .click(this.methodFn('save'))
-          .addClass('button'),
-        ' ',
-        ST.aTag('Cancel')
-          .click(Dialog.hide)
-          .addClass('button')
-    ));
+    buttonbar = @helper.tag 'buttonbar'
+    buttonbar.append @helper.linkTag('&nbsp;&nbsp;OK&nbsp;&nbsp;', @methodFn('save')).addClass('button')
+    buttonbar.append ' '
+    buttonbar.append @helper.linkTag('Cancel', Dialog.hide).addClass('button')
+    element.append buttonbar
   
   @method 'save', ->
-    var self = this;
+    self = this
     
-    if (this.saved) return;
+    return if @saved
     
-    // Check if all fields are valid
-    if (this.fields.all('isValid')) {
-        // Save values in fields to record
-        this.fields.each(function(field) {
-            if (field.member) {
-                (self.record.set || STObject.prototype.set).call(
-                    self.record, field.member, field.getValue()
-                );
-            }
-        });
-        
-        this.saved = true;
-        
-        // Trigger saved event
-        this.trigger('saved');
-        Dialog.hide();
-    } else {
-        // Hilight invalid fields
-        this.fields.each('validate');
-        
-        // Focus on first invalid field
-        var invalid = $('input.invalid, select.invalid', this.getElement());
-        if (invalid.length) invalid[0].focus();
-    }
+    # Check if all fields are valid
+    if @fields.all 'isValid'
+      # Save values in fields to record
+      @fields.each (field) ->
+        (self.record.set || STObject.prototype.set).call self.record, field.member, field.getValue() if field.member
+      @saved = true
+      
+      # Trigger saved event
+      @trigger 'saved'
+      Dialog.hide()
+    else
+      # Hilight invalid fields
+      @fields.each 'validate'
+      
+      # Focus on first invalid field
+      invalid = $('input.invalid, select.invalid', @getElement())
+      invalid[0].focus() if invalid.length
   
   @method 'showDialog', (events) ->
-    if (!events) {
-        events = {};
-    }
-    if (!events.onCancel) {
-        events.onCancel = Dialog.hide;
-    }
-    this._super(events);
+    events ||= {}
+    events.onCancel ||= Dialog.hide
+    @super events

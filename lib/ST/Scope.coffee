@@ -12,7 +12,7 @@ ST.class 'Scope', ->
     }
 
   @method 'enableBindings', ->
-    for attribute, value of @conditions ->
+    for attribute, value of @conditions
       index = @model.getValueIndex attribute, value
       if index
         index.bind 'itemAdded', this, 'indexItemAdded'
@@ -37,7 +37,7 @@ ST.class 'Scope', ->
     @model.createWithData data
   
   @method 'indexItemAdded', (index, item) ->
-    if item.matches(@condition) ->
+    if item.matches @condition
       @trigger 'itemAdded', item
 
   @method 'indexItemRemoved', (index, item) ->  
@@ -45,5 +45,5 @@ ST.class 'Scope', ->
       @trigger 'itemRemoved', item
   
   @method 'indexItemChanged', (index, item) ->
-    if item.matches(@conditions)
+    if item.matches @conditions
       @trigger 'itemChanged', item

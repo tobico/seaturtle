@@ -1,6 +1,6 @@
 ST.subClass 'FormRadioField', 'FormField', ->
-  @constructor (options, otherOption) ->
-    @_super()
+  @initializer (options, otherOption) ->
+    @super()
     @setOptions options
     @otherOption = otherOption || false
   
@@ -28,72 +28,86 @@ ST.subClass 'FormRadioField', 'FormField', ->
     self = this
     
     @element.empty()
-    var ul = ST.ulTag().appendTo(this.element);
-    var name = 'stformradiofield_' + self._uid;
-    var foundValue = false;
-    this.values.each(function(value, i) {
-        var id = name + '_' + i;
-        
-        var action = function() {
-            self.optionClicked(value);
-        };
-        
-        var input = ST.inputTag().addClass('radio').attr({
-            type:   'radio',
-            name:   name,
-            id:     id
-        }).click(action);
-        if (self.value == value) {
-            foundValue = true;
-            input.attr('checked', true);
-        }
-        
-        var label = ST.labelTag(self.labels[i]).attr('for', id);
-        ul.append(ST.liTag(input, label));
-    });
-    if (this.otherOption) {
-        var id = name + '_other';
-        this.otherInput = ST.inputTag().addClass('radio').attr({
-            type:   'radio',
-            name:   name,
-            id: id
-        }).click(self.methodFn('otherClicked'));
-        var label = ST.labelTag('Other &mdash;').attr('for', id);
-        this.otherTextInput = ST.inputTag().attr({
-            name:       name + '_text',
-            disabled:   true
-        }).change(this.methodFn('otherChanged'));
-        
-        this.otherTextOverlay = ST.divTag()
-            .click(function() {
-                self.otherInput.attr('checked', true).click();
-            });
-            
-        if (!foundValue) {
-            this.otherInput.attr('checked', true);
-            this.otherTextInput.removeAttr('disabled').val(this.value);
-            this.otherTextOverlay.hide();
-        }
-            
-        ul.append(ST.liTag(
-            this.otherInput, label, ST.divTag(
-                this.otherTextInput, this.otherTextOverlay
-            )
-        ).addClass('otherOption'));
+    ul = @helper.tag 'ul'
+    ul.appendTo @element
+    name = 'stformradiofield_' + @_uid;
+    foundValue = false
+    for i, value in values
+      id = name + '_' + i
+      
+      action = null
+      do (value) ->
+        action = ->
+          self.optionClicked value
+      
+      input = @helper.tag 'input'
+      input.addClass 'radio'
+      input.attr {
+          type:   'radio',
+          name:   name,
+          id:     id
+      }
+      input.click action
+      if @value == value
+        foundValue = true
+        input.attr 'checked', true
+      
+      label = @helper.tag 'label'
+      label.html @labels[i]
+      label.attr 'for', id
+      ul.append @helper.tag('li').append(input).append(label)
+    
+    if @otherOption
+      id = name + '_other'
+      @otherInput = @helper.tag 'input'
+      @otherInput.addClass 'radio'
+      @otherInput.attr {
+          type:   'radio'
+          name:   name
+          id:     id
+      }
+      @otherInput.click @methodFn('otherClicked')
+      
+      label = @helper.tag 'label'
+      label.html 'Other &mdash;'
+      label.attr 'for', id
+      
+      @otherTextInput = @helper.tag 'input'
+      @otherTextInput.attr {
+          name:       name + '_text'
+          disabled:   true
+      }
+      @otherTextInput.change @methodFn('otherChanged')
+      
+      @otherTextOverlay = @helper.tag 'div'
+      @otherTextOverlay.click ->
+        self.otherInput.attr 'checked', true
+        self.otherInput.click()
+          
+      if !foundValue
+        @otherInput.attr 'checked', true
+        @otherTextInput.removeAttr('disabled').val(@value)
+        @otherTextOverlay.hide()
+          
+      li = @helper.tag 'li'
+      li.append @otherInput
+      li.append label
+      li.append @helper.tag('div').append(@otherTextInput).append(@otherTextOverlay)
+      ul.append li
+      ul.addClass 'otherOption'
   
   @method 'optionClicked', (value) ->
-    if (this.otherTextInput) {
-        this.otherTextInput.attr('disabled', true);
-        this.otherTextOverlay.show();
-    }
-    this.value = value;
+    if @otherTextInput
+      @otherTextInput.attr 'disabled', true
+      @otherTextOverlay.show()
+    @value = value
   
   @method 'otherClicked', ->
-    this.otherTextInput.removeAttr('disabled').focus();
-    this.otherTextOverlay.hide();
-    this.value = this.otherTextInput.val();
+    @otherTextInput.removeAttr('disabled').focus()
+    @otherTextOverlay.hide()
+    @value = @otherTextInput.val()
   
   @method 'otherChanged', ->
-    this.value = this.otherTextInput.val();
+    @value = @otherTextInput.val()
   
   @method 'isValid', -> true
