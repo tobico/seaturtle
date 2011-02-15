@@ -1,5 +1,21 @@
-ST.module 'Destructable', ->
-  @method 'retain', -> @retainCount++
+ST.class 'Destructable', 'Object', ->
+  @initializer ->
+    @super()
+    ST.error 'Object initialized twice: ' + this if @retainCount
+    @retainCount = 1
+
+  @classMethod 'destructor', (fn) ->
+    @method 'destroy', fn
+    
+  @destructor ->
+    @__proto__ = Object if @__proto__
+    for name of this
+      delete this[name] unless name == '$' || name == '_uid'
+    @_destroyed = true
+    @toString = ST.Destructable.destroyedToString
+
+  @method 'retain', ->
+    @retainCount++
   
   @method 'release', ->
     @retainCount--
@@ -12,3 +28,5 @@ ST.module 'Destructable', ->
         this[member] = null
   
   @method 'autorelease', -> STObject.AutoReleaseObject this
+  
+  @destroyedToString = -> '<Destroyed ' + @$._name + ' #' + @_uid + '>'

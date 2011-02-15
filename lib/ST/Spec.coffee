@@ -26,21 +26,18 @@ ST.class 'Spec', ->
     definition()
     
   @classMethod 'finalize', ->
+    summary = "#{@counts.passed} passed, #{@counts.failed} failed, #{@counts.total} total"
     switch @Format
+      when 'ul'
+        document.title = summary
+        for error in @errors
+          console.error "#{error.message} - #{error.title}"
       when 'terminal'
         $('.results').append "<br>"
         for error in @errors
           $('.results').append "&#x1b;[31m#{error.message}&#x1b;[0m #{error.title}<br>"
-        $('.results').append "#{@counts.passed} passed, #{@counts.failed} failed, #{@counts.total} total"
-    
-  @classMethod 'expectation', (message) ->
-    expectation = {
-      met:      false
-      message:  message
-      meet:     -> @met = true
-    }
-    @expectations.push expectation
-    expectation
+        color = if @counts.failed > 0 then '31'; else '32'
+        $('.results').append "&#x1b;[1m&#x1b;[#{color}m#{summary}&#x1b;[0m<br>"
     
   @classMethod 'initializeEnvironment', ->
     @EnvironmentInitialized = true
@@ -68,36 +65,74 @@ ST.class 'Spec', ->
     Object.prototype.shouldNot = (matcher) ->
       result = matcher(this)
       ST.Spec.fail "expected not #{result[1]}" if result[0]
-    
+      
+    window.expectation = (message) ->
+      exp = {
+        message:      message
+        meet:         -> @met++
+        met:          0
+        desired:      1
+        twice:        ->
+          @desired = 2
+          this
+        exactly:      (times) ->
+          @desired = times
+          {times: this}
+        timesString:  (times) ->
+          switch times
+            when 1
+              'once'
+            when 2
+              'twice'
+            else
+              "#{times} times"
+        check:        ->
+          if @met != @desired
+            ST.Spec.fail "expected #{message} #{@timesString @desired}, actual: #{@timesString @met}"
+      }
+      ST.Spec.expectations.push exp
+      exp
+
     Object.prototype.shouldReceive = (name) ->
       object = this
+
+      received = expectation "to receive &ldquo;#{name}&rdquo;"
+
+      passthrough = object[name]
+      object[name] = -> received.meet()
+
+      received.with = (expectArgs...) ->
+        object[name] = (args...) ->
+          correct = true
+          correct = false if expectArgs.length != args.length
+          if correct
+            for i in [0..args.length]
+              correct = false unless expectArgs[i] == args[i]
+          if correct
+            received.meet()
+          else
+            received.message = "to be called with arguments &ldquo;#{expectArgs.join ', '}&rdquo;, actual: &ldquo;#{args.join ', '}&rdquo;"
+        received
+
+      received.andReturn = (returnValue) ->
+        fn = object[name]
+        object[name] = ->
+          fn.apply this, arguments
+          returnValue
+        received
       
-      expectation = ST.Spec.expectation "object should receive &ldquo;#{name}&rdquo;"
+      received.andPassthrough = ->
+        fn = object[name]
+        object[name] = ->
+          fn.apply this, arguments
+          passthrough.apply this, arguments
+        received
+
+      received
       
-      object[name] = -> expectation.meet()
-      
-      more = {
-        with: (expectArgs...) ->
-          object[name] = (args...) ->
-            correct = true
-            correct = false if expectArgs.length != args.length
-            if correct
-              for i in [0..args.length]
-                correct = false unless expectArgs[i] == args[i]
-            if correct
-              expectation.meet()
-            else
-              expectation.message = "Expected &ldquo;#{name}&rdquo; to be called with arguments &ldquo;#{expectArgs.join ', '}&rdquo;, actual: &ldquo;#{args.join ', '}&rdquo;"
-          more
-        
-        andReturn: (returnValue) ->
-          fn = object[name]
-          object[name] = ->
-            fn.apply this, arguments
-            returnValue
-          more
-      }
-      
+    Object.prototype.shouldNotReceive = (name) ->
+      @shouldReceive(name).exactly(0).times
+    
     window.expect = (object) ->
       {
         to: (matcher) ->
@@ -152,8 +187,7 @@ ST.class 'Spec', ->
         ST.Spec.fail 'Error: ' + e
         
       for expectation in ST.Spec.expectations
-        unless expectation.met
-          ST.Spec.fail expectation.message
+        expectation.check()
       
       delete ST.Spec.expectations
       delete ST.Spec.testTitle
@@ -182,26 +216,26 @@ ST.class 'Spec', ->
         ST.Spec.counts.failed++
       ST.Spec.counts.total++
       
-    window.beAFunction = (object) ->
-      [typeof object is 'function', "to have type &ldquo;function&rdquo;, actual &ldquo;#{typeof object}&rdquo;"]
+    window.beAFunction = (value) ->
+      [typeof value is 'function', "to have type &ldquo;function&rdquo;, actual &ldquo;#{typeof value}&rdquo;"]
     
     window.be = (expected) ->
-      (object) ->
-        [object is expected, "to be &ldquo;#{expected}&rdquo;, actual &ldquo;#{object}&rdquo;"]
+      (value) ->
+        [value is expected, "to be &ldquo;#{expected}&rdquo;, actual &ldquo;#{value}&rdquo;"]
           
-    window.beTrue = (object) ->
-      [String(object) == 'true', "to be true, got &ldquo;#{object}&rdquo;"]
+    window.beTrue = (value) ->
+      [String(value) == 'true', "to be true, got &ldquo;#{value}&rdquo;"]
 
-    window.beFalse = (object) ->
-      [String(object) == 'false', "to be false, got &ldquo;#{object}&rdquo;"]
+    window.beFalse = (value) ->
+      [String(value) == 'false', "to be false, got &ldquo;#{value}&rdquo;"]
           
     window.beAnInstanceOf = (klass) ->
-      (object) ->
-        [object instanceof klass, "to be an instance of &ldquo;#{klass}&rdquo;"]
+      (value) ->
+        [value instanceof klass, "to be an instance of &ldquo;#{klass}&rdquo;"]
           
     window.equal = (expected) ->
-      (object) ->
-        [String(object) == String(expected), "to equal &ldquo;#{expected}&rdquo;, actual &ldquo;#{object}&rdquo;"]
+      (value) ->
+        [String(value) == String(expected), "to equal &ldquo;#{expected}&rdquo;, actual &ldquo;#{value}&rdquo;"]
     
   @classMethod 'fail', (message) ->
     @passed = false
@@ -219,8 +253,14 @@ ST.class 'Spec', ->
     @EnvironmentInitialized = false
     
     delete Object.prototype.should
+    delete Object.prototype.shouldNot
+    delete window.expectation
     delete Object.prototype.shouldReceive
+    delete Object.prototype.shouldNotReceive
+    delete window.expect
+    delete window.beforeEach
     delete window.describe
+    delete window.context
     delete window.it
     delete window.beAFunction
     delete window.be

@@ -10,8 +10,8 @@ $ ->
     
     it "should create an empty array", ->
       list = ST.List.create()
-      list.array.should beAnInstanceOf(Array)
-      list.array.length.should equal(0)
+      list._array.should beAnInstanceOf(Array)
+      list._array.length.should equal(0)
   
   describe "each", ->
     it "should iterate item", ->
@@ -71,7 +71,7 @@ $ ->
       
   describe "add", ->
     it "should call insertAt for last item", ->
-      @list.array = [1, 2]
+      @list._array = [1, 2]
       object = {}
       @list.shouldReceive('insertAt').with(2, object)
       @list.add object
@@ -79,15 +79,15 @@ $ ->
     it "should add object to empty list", ->
       object = 'test'
       @list.add object
-      @list.array.length.should equal(1)
-      @list.array[0].should equal('test')
+      @list._array.length.should equal(1)
+      @list._array[0].should equal('test')
   
     it "should add object to non-empty list", ->
       object = 'test'
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.add object
-      @list.array.length.should equal(4)
-      @list.array[3].should equal('test')
+      @list._array.length.should equal(4)
+      @list._array[3].should equal('test')
         
   describe "insertAt", ->
     it "should retain object", ->
@@ -96,17 +96,17 @@ $ ->
       @list.add object
       
     it "should insert at beginning of array", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.insertAt 0, 'test'
-      @list.array[0].should equal('test')
-      @list.array[1].should equal(1)
+      @list._array[0].should equal('test')
+      @list._array[1].should equal(1)
     
     it "should insert in middle of array", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.insertAt 2, 'test'
-      @list.array[2].should equal('test')
-      @list.array[3].should equal(3)
-      @list.array[1].should equal(2)
+      @list._array[2].should equal('test')
+      @list._array[3].should equal(3)
+      @list._array[1].should equal(2)
       
     it "should bind list to changed event", ->
       object = {}
@@ -132,29 +132,29 @@ $ ->
   describe "removeAt", ->
     it "should ignore if no item at index", ->
       @list.removeAt 1
-      @list.array.length.should equal(0)
+      @list._array.length.should equal(0)
     
     it "should remove item from array", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.removeAt 1
-      @list.array.length.should equal(2)
-      @list.array[1].should equal(3)
+      @list._array.length.should equal(2)
+      @list._array[1].should equal(3)
     
     it "should unbind list from changed event", ->
       object = {}
-      @list.array = [object]
+      @list._array = [object]
       object.shouldReceive('unbind').with('changed', @list)
       @list.removeAt 0
       
     it "should trigger itemRemoved event", ->
       object = {}
-      @list.array = [object]
+      @list._array = [object]
       @list.shouldReceive('trigger').with('itemRemoved', object)
       @list.removeAt 0
     
     it "should release object", ->
       object = {}
-      @list.array = [object]
+      @list._array = [object]
       object.shouldReceive 'release'
       @list.removeAt 0
   
@@ -163,37 +163,37 @@ $ ->
       @list.removeLast().should beFalse
       
     it "should call removeAt for last item", ->
-      @list.array = [1]
+      @list._array = [1]
       @list.shouldReceive('removeAt').with(0)
       @list.removeLast()
       
   describe "remove", ->
     it "should find an item and remove it", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.remove 2
-      @list.array.length.should equal(2)
-      @list.array[0].should equal(1)
-      @list.array[1].should equal(3)
+      @list._array.length.should equal(2)
+      @list._array[0].should equal(1)
+      @list._array[1].should equal(3)
     
     it "should do nothing if item not found", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.remove 4
-      @list.array.length.should equal(3)
+      @list._array.length.should equal(3)
     
     it "should remove first item if multiple", ->
-      @list.array = [1, 2, 2, 3]
+      @list._array = [1, 2, 2, 3]
       @list.remove 2
-      @list.array.length.should equal(3)
+      @list._array.length.should equal(3)
   
   describe "append", ->
     it "should add items in other list to this one", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       other = ST.List.create();
-      other.array = [4, 5, 6]
+      other._array = [4, 5, 6]
       @list.append other
-      @list.array.length.should equal(6)
-      @list.array[0].should equal(1)
-      @list.array[3].should equal(4)
+      @list._array.length.should equal(6)
+      @list._array[0].should equal(1)
+      @list._array[3].should equal(4)
       
   describe "copy", ->
     it "should make a new list object", ->
@@ -203,12 +203,12 @@ $ ->
       
   describe "empty", ->
     it "should clear list", ->
-      @list.array = [1, 2, 3]
+      @list._array = [1, 2, 3]
       @list.empty()
-      @list.array.length.should equal(0)
+      @list._array.length.should equal(0)
       
     it "should release object", ->
       object = {}
-      @list.array = [object]
+      @list._array = [object]
       object.shouldReceive 'release'
       @list.empty()

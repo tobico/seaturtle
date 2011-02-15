@@ -10,10 +10,13 @@ ST.class 'Object', null, ->
   
   # Override or assign instance method
   @classMethod 'method', (name, fn) ->
-    if @$ && @$.prototype[name]
-      @prototype[name] = ST.overrideMethod @$.prototype[name], fn
+    if fn?
+      if @$ && @$.prototype[name]
+        @prototype[name] = ST.overrideMethod @$.prototype[name], fn
+      else
+        @prototype[name] = fn
     else
-      @prototype[name] = fn
+      @prototype[name]
     
     # Set function displayName for debugging
     @prototype[name].displayName = @_name + '#' + name
@@ -31,82 +34,45 @@ ST.class 'Object', null, ->
       object = new this()
       object['init' + name].apply object, arguments
       object
-  
-  # Create 'destroy' destructor method
-  @classMethod 'destructor', (fn) -> @method 'destroy', fn
-  
-  # Make a subclass of this class
-  @classMethod 'subClass', (name, definition) ->
-    ST.makeClass name, @$, definition
     
   # Include a module
   @classMethod 'include', (name) ->
     ST._modules[name].call this
-    
-  # Generates an abstract method, abstract methods must be overriden in
-  # subclasses.
-  @classMethod 'abstract', (name) ->
-    @method name, -> ST.error 'Abstract function called'
-
-  # Generates a "virtual" method. This method does nothing, but
-  # can be overridden in subclasses.
-  @classMethod 'virtual', (name, args...) ->
-    expectedArgumentsLength = args.length
-    @method name ->
-      unless arguments.length == expectedArgumentsLength
-        ST.error arguments.length + ' arguments supplied to virtual function, expected ' + expectedArgumentsLength
-
-  # Generates a property (accessors for ivars)
-  #
-  # method -> 'retain': calls retain/release on assignment
-  # mode -> 'readonly': Don't generate setter
-  # mode -> 'writeonly': Don't generate geter
-  @classMethod 'property', (method, mode) ->
+  
+  # Creates getter, setter, and property accessor
+  @classMethod 'property', (name) ->
     ucName = ST.ucFirst name
-    unless mode == 'readonly' || @prototype['set' + ucName]
-      @prototype['set' + ucName] = (newValue) ->
-        oldValue = this[name]
-        if method == 'retain' && newValue && newValue.retain
-          newValue.retain()
-        this[name] = newValue
-        @_changed name, oldValue, newValue if @_changed
-        if method == 'retain' && oldValue && oldValue.release
-          oldValue.release()
-    unless mode == 'writeonly' || @prototype['get' + ucName]
-      @prototype['get' + ucName] = -> this[name]
-
+    
+    @method "get#{ucName}", ->
+      this["_#{name}"]
+      
+    @method "set#{ST.ucFirst name}", (newValue) ->
+      oldValue = this["_#{name}"]
+      this["_#{name}"] = newValue
+      @_changed name, oldValue, newValue if @_changed
+    
+    @method name, (value) ->
+      if value?
+        this["set#{ucName}"](value)
+      else
+        this["get#{ucName}"]()
+  
   # Generates a "forwarder" method, that acts as a proxy for the
   # given member object.
-
   @classMethod 'delegate', (name, toObject, as) ->
     @method (as || name), ->
-      through = @[toObject]
-      through = through.call this if through.call
-      result = through[name]
-      result = result.call through if result.call
-      result
-
-  # Generates a "trigger" method that triggers the given event when caled.
-  @classMethod 'triggerMethod', (name, args...) ->
-    @method name, ->
-      @trigger.apply this, args
-
+      through = this[toObject] || this["_#{toObject}"]
+      through = through.call this if through && through.call
+      if through
+        attr = through[name]
+        attr = attr.call through if attr && attr.call
+        attr
+      
+  # Creates a "singleton pattern" class, with a method ".instance" which
+  # always returns the same instance of class.
   @classMethod 'singleton', ->
-    _class = this
-    @method 'instance', ->
-      _class._instance = _class.create() unless _class._instance
-      _class._instance
-  
-  # Autorelease objects
-  @AutoReleasePool = []
-  @AutoReleaseObject = (object) ->
-    if @AutoReleasePool.length
-      setTimeout ->
-        for object in ST.Object.AutoReleasePool
-          object.release() if object && object.release
-        ST.Object.AutoReleasePool.length = 0
-      , 1
-      @AutoReleasePool.push object
+    @classMethod 'instance', ->
+      @_instance ||= @create()
     
   @UID = 0
     
@@ -116,20 +82,7 @@ ST.class 'Object', null, ->
             target.selector
   
   @initializer ->
-    ST.error 'Object initialized twice: ' + this if @retainCount
-    @retainCount = 1
     @_uid = ST.Object.UID++
-  
-  @destructor ->
-    @__proto__ = Object if @__proto__
-    for name of this
-      delete this[name] unless name == '$' || name == '_uid'
-    @_destroyed = true
-    @toString = ST.Object.destroyedToString
-  
-  @method 'conformsToProtocol', (protocol) ->
-    self = this
-    protocol.all -> self[this]
 
   @method 'toString', -> '<' + @$._name + ' #' + @_uid + '>'
   
@@ -137,32 +90,36 @@ ST.class 'Object', null, ->
     key = '_' + name + 'Changed';
     this[key] oldValue, newValue if this[key] && this[key].call
   
-  @method 'set', (hash) ->
-    setKey = @setKey || ST.Object.prototype.setKey
-    if arguments.length == 2
-      setKey.apply this, arguments
+  @method 'set', (keys, value=null) ->
+    if value
+      @setKey keys, value
     else
-      for key, value of hash
-        setKey.call this, key, value
+      for key, value of keys
+        @setKey key, value
   
   @method 'setKey', (key, value) ->
-    self = this
     a = key.split '.'
-    thisKey = a.shift()
-    while a.length
-      if self['get' + ST.ucFirst(thisKey)]
-        self = self['get' + ST.ucFirst(thisKey)].call self
-      else if self[thisKey] isnt undefined
-        self = self[thisKey]
-      else
-        self = null
-      return null if self is null
-      thisKey = a.shift()
+    here = a.shift()
+    there = a.join '.'
+    ucHere = ST.ucFirst here
     
-    if self['set' + ST.ucFirst(thisKey)]
-      self['set' + ST.ucFirst(thisKey)].call self, value
+    if there && there.length
+      that = if this["get#{ucHere}"]
+        this["get#{ucHere}"]()
+      else
+        this[here]
+      
+      if that == null
+        null
+      else if that.setKey
+        that.setKey there, value
+      else
+        ST.Object.prototype.setKey.call that, there, value
     else
-      self[thisKey] = value
+      if this["set#{ucHere}"]
+        this["set#{ucHere}"](value)
+      else
+        this[here] = value
   
   @method 'get', (key) ->
     value = this
@@ -222,5 +179,3 @@ ST.class 'Object', null, ->
   @method 'error', (message) ->
     # Call an undefined method to trigger a javascript exception
     @causeAnException()
-  
-  @destroyedToString = -> '<Destroyed ' + @$._name + ' #' + @_uid + '>'

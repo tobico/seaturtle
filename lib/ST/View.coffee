@@ -1,5 +1,5 @@
 ST.class 'View', ->
-  @include 'Retained'
+  @include 'Destructable'
   
   @ViewWithContent = (content) ->
     view = @create()
