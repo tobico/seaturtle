@@ -1,8 +1,22 @@
 ST.class 'Object', null, ->
+  # Used to override an existing method of an STObject. Allows the overriding
+  # method to call the overridden method using `@super()`, no matter how
+  # many methods are chained together.
+  #
+  # If the method does not return a value, the STObject the method was called
+  # will be returned, to allow chaining of methods
+  @OverrideMethod = (oldMethod, newMethod) ->
+    ->
+      oldSuper = @super || null
+      @super = oldMethod
+      result = newMethod.apply this, arguments
+      @super = oldSuper
+      result
+  
   # Override or assign class method
   @classMethod = (name, fn) ->
     if this[name]
-      this[name] = ST.overrideMethod this[name], fn
+      this[name] = ST.Object.OverrideMethod this[name], fn
     else
       this[name] = fn
       this._classMethods.push name
@@ -11,8 +25,8 @@ ST.class 'Object', null, ->
   # Override or assign instance method
   @classMethod 'method', (name, fn) ->
     if fn?
-      if @$ && @$.prototype[name]
-        @prototype[name] = ST.overrideMethod @$.prototype[name], fn
+      if @_superclass && @_superclass.prototype[name]
+        @prototype[name] = ST.Object.OverrideMethod @_superclass.prototype[name], fn
       else
         @prototype[name] = fn
 
@@ -79,7 +93,7 @@ ST.class 'Object', null, ->
   @initializer ->
     @_uid = ST.Object.UID++
 
-  @method 'toString', -> '<' + @$._name + ' #' + @_uid + '>'
+  @method 'toString', -> '<' + @_class._name + ' #' + @_uid + '>'
   
   @method '_changed', (name, oldValue, newValue) ->
     key = '_' + name + 'Changed';

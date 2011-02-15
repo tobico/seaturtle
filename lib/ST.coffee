@@ -31,20 +31,6 @@ window.ST = {
     else
       ST.error 'Could not convert object to Proc'
 
-  # Used to override an existing method of an STObject. Allows the overriding
-  # method to call the overridden method using `this._super`, no matter how
-  # many methods are chained together.
-  #
-  # If the method does not return a value, the STObject the method was called
-  # will be returned, to allow chaining of methods
-  overrideMethod: (oldMethod, newMethod) ->
-    ->
-      oldSuper = @super || null;
-      @super = oldMethod
-      result = newMethod.apply this, arguments
-      @super = oldSuper
-      result
-
   # Creates a new class. This would normally be called as a result of calling
   # STObject.subClass().
   class: (className, superClass, definition) ->
@@ -53,7 +39,7 @@ window.ST = {
       superClass = 'Object'
     
     newClass = ->
-      @$ = newClass
+      @_class = newClass
       this
     
     newClass._classMethods = []
@@ -61,7 +47,7 @@ window.ST = {
     # Inherit superclass
     if superClass && superClass = ST[superClass]
       newClass.prototype = new superClass
-      newClass.$ = superClass
+      newClass._superclass = superClass
       
       # Inherit class methods
       for methodName in superClass._classMethods

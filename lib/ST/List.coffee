@@ -65,7 +65,7 @@ ST.class 'List', ->
       self.add item
 
   @method 'copy', ->
-    newList = @$.create()
+    newList = @_class.create()
     for object in @_array
       newList.add object
     newList

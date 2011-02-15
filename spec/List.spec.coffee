@@ -6,7 +6,7 @@ $ ->
   describe "initializer", ->
     it "should create a new list", ->
       list = ST.List.create()
-      list.$.should be(ST.List)
+      list._class.should be(ST.List)
     
     it "should create an empty array", ->
       list = ST.List.create()
