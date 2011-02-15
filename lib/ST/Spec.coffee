@@ -26,7 +26,7 @@ ST.class 'Spec', ->
     definition()
     
   @classMethod 'finalize', ->
-    summary = "#{@counts.passed} passed, #{@counts.failed} failed, #{@counts.total} total"
+    summary = "#{@counts.passed} passed, #{@counts.failed} failed, #{@counts.pending} pending, #{@counts.total} total"
     switch @Format
       when 'ul'
         document.title = summary
@@ -36,7 +36,12 @@ ST.class 'Spec', ->
         $('.results').append "<br>"
         for error in @errors
           $('.results').append "&#x1b;[31m#{error.message}&#x1b;[0m #{error.title}<br>"
-        color = if @counts.failed > 0 then '31'; else '32'
+        color = if @counts.failed > 0
+          31
+        else if @counts.pending > 0
+          33
+        else
+          32
         $('.results').append "&#x1b;[1m&#x1b;[#{color}m#{summary}&#x1b;[0m<br>"
     
   @classMethod 'initializeEnvironment', ->
@@ -44,9 +49,10 @@ ST.class 'Spec', ->
     
     @errors = []
     @counts = {
-      passed: 0
-      failed: 0
-      total: 0
+      passed:   0
+      failed:   0
+      pending:  0
+      total:    0
     }
     
     @Format = 'ul'
@@ -168,53 +174,51 @@ ST.class 'Spec', ->
       ST.Spec.testStack.pop()
 
     window.it = (title, definition) ->
-      env = {}
-      for test in ST.Spec.testStack
-        for action in test.before
-          action.call env
-    
       test = ST.Spec.testStack[ST.Spec.testStack.length - 1]
+      status = if definition?
+        env = {}
+        for aTest in ST.Spec.testStack
+          for action in aTest.before
+            action.call env
       
-      ST.Spec.expectations = []
-      ST.Spec.testTitle = title
+        ST.Spec.expectations = []
+        ST.Spec.testTitle = title
       
-      window.onerror = (message) ->
-        ST.Spec.fail "Error: #{message}"
+        window.onerror = (message) ->
+          ST.Spec.fail "Error: #{message}"
       
-      ST.Spec.passed = true
-      try
-        definition.call env
-      catch e
-        ST.Spec.fail 'Error: ' + e
+        ST.Spec.passed = true
+        try
+          definition.call env
+        catch e
+          ST.Spec.fail 'Error: ' + e
         
-      for expectation in ST.Spec.expectations
-        expectation.check()
+        for expectation in ST.Spec.expectations
+          expectation.check()
       
-      delete ST.Spec.expectations
-      delete ST.Spec.testTitle
-      delete window.onerror
+        delete ST.Spec.expectations
+        delete ST.Spec.testTitle
+        delete window.onerror
+        
+        if ST.Spec.passed then "passed"; else "failed"
+      else
+        "pending"
 
       switch ST.Spec.Format
         when 'ul'
           li = $('<li>' + title + '</li>')
-          if ST.Spec.passed
-            li.addClass 'passed'
-          else
-            li.addClass 'failed'
+          li.addClass status
 
           test.ul.append li
         when 'terminal'
           s = title
-          if ST.Spec.passed
-            s = "&#x1b;[32m#{s}&#x1b;[0m<br>"
-          else
-            s = "&#x1b;[31m#{s}&#x1b;[0m<br>"
-          $('.results').append ST.Spec.Pad(s, test.ul.depth)
-    
-      if ST.Spec.passed
-        ST.Spec.counts.passed++
-      else
-        ST.Spec.counts.failed++
+          color = switch status
+            when 'passed' then 32
+            when 'failed' then 31
+            when 'pending' then 33
+          $('.results').append ST.Spec.Pad("&#x1b;[#{color}m#{s}&#x1b;[0m<br>", test.ul.depth)
+      
+      ST.Spec.counts[status]++
       ST.Spec.counts.total++
       
     window.beAFunction = (value) ->

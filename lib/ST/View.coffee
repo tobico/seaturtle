@@ -1,20 +1,20 @@
-ST.class 'View', ->
-  @include 'Destructable'
-  
+ST.class 'View', 'Destructable', ->
   @ViewWithContent = (content) ->
     view = @create()
     view.load()
     view.getElement().append content
     view
     
-  @constructor ->
-    @initWithElement $(document.createElement('view')).addClass(this.$._name)
+  @initializer ->
+    element = ST.ViewHelper.instance().tag('view')
+    element.addClass @_class._name
+    @initWithElement element
   
-  @constructor 'withElement', (element) ->
-    ST.Object.prototype.init.call this
+  @initializer 'withElement', (element) ->
+    ST.Destructable.method('init').call this
     @helper = ST.ViewHelper.instance()
     @children = ST.List.create()
-    @children.bind 'itemAdded', this, 'childAdded'
+    @children.bind 'itemAdded',   this, 'childAdded'
     @children.bind 'itemRemoved', this, 'childRemoved'
     @header = null
     @footer = null

@@ -5,7 +5,10 @@ ST.class 'ViewHelper', ->
     $(document.createElement(name))
   
   @method 'linkTag', (contents, action) ->
-    $(document.createElement('a')).attr('href', 'javascript:;').click(action)
+    $(document.createElement('a'))
+      .attr('href', 'javascript:;')
+      .append(contents)
+      .click(action)
 
   # Truncates a string to the specified length, adding "..." to the end
   @method 'truncate', (text, length) ->

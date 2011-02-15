@@ -4,3 +4,6 @@
 .passed {
   color: #090;
 }
+.pending {
+  color: #990;
+}
