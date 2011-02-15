@@ -80,6 +80,8 @@ ST.class 'Spec', ->
           {times: this}
         timesString:  (times) ->
           switch times
+            when 0
+              'not at all'
             when 1
               'once'
             when 2
@@ -88,7 +90,7 @@ ST.class 'Spec', ->
               "#{times} times"
         check:        ->
           if @met != @desired
-            ST.Spec.fail "expected #{message} #{@timesString @desired}, actual: #{@timesString @met}"
+            ST.Spec.fail "expected #{message} #{@timesString @desired}, actually received #{@timesString @met}"
       }
       ST.Spec.expectations.push exp
       exp
@@ -103,15 +105,14 @@ ST.class 'Spec', ->
 
       received.with = (expectArgs...) ->
         object[name] = (args...) ->
+          received.meet()
           correct = true
           correct = false if expectArgs.length != args.length
           if correct
             for i in [0..args.length]
-              correct = false unless expectArgs[i] == args[i]
-          if correct
-            received.meet()
-          else
-            received.message = "to be called with arguments &ldquo;#{expectArgs.join ', '}&rdquo;, actual: &ldquo;#{args.join ', '}&rdquo;"
+              correct = false unless String(expectArgs[i]) == String(args[i])
+          unless correct
+            ST.Spec.fail "expected ##{name} to be called with arguments &ldquo;#{expectArgs.join ', '}&rdquo;, actual arguments: &ldquo;#{args.join ', '}&rdquo;"
         received
 
       received.andReturn = (returnValue) ->

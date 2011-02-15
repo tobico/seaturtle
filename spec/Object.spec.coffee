@@ -40,6 +40,11 @@ $ ->
             subCalled.meet()
           subTest = ST.SubTest.create()
           subTest.test()
+          
+        it "should return existing method", ->
+          test = -> false
+          ST.Test.method 'test', test
+          ST.Test.method('test').should be(test)
       
       describe ".initializer", ->
         it "should override an init method", ->
@@ -175,34 +180,111 @@ $ ->
     
     describe "#setKey", ->
       it "should set attribute", ->
-        @object.setKey 'foo', 'bacon'
-        @object.foo.should equal('bacon')
+        @object.setKey '_foo', 'bacon'
+        @object._foo.should equal('bacon')
       
       it "should call setter", ->
         @object.shouldReceive('setFoo').with('bacon')
         @object.setKey 'foo', 'bacon'
       
       it "should set attribute of attribute", ->
-        @object.parent = {foo: 'waffles'}
-        @object.setKey 'parent.foo', 'bacon'
-        @object.parent.foo.should equal('bacon')
+        @object._parent = {_foo: 'waffles'}
+        @object.setKey '_parent._foo', 'bacon'
+        @object._parent._foo.should equal('bacon')
       
       it "should call setter of attribute", ->
         parent = {}
         parent.shouldReceive('setFoo').with('bacon')
-        @object.parent = parent
-        @object.setKey 'parent.foo', 'bacon'
+        @object._parent = parent
+        @object.setKey '_parent.foo', 'bacon'
       
       it "should set attribute through getter", ->
-        parent = {foo: 'waffles'}
+        parent = {_foo: 'waffles'}
         @object.getParent = -> parent
-        @object.setKey 'parent.foo', 'bacon'
-        parent.foo.should equal('bacon')
+        @object.setKey 'parent._foo', 'bacon'
+        parent._foo.should equal('bacon')
       
       it "should traverse many objects to set value", ->
-        planet = {size: 100}
+        planet = {_size: 100}
         forest = {getPlanet: -> planet}
-        tree = {forest: forest}
+        tree = {_forest: forest}
         @object.getTree = -> tree
-        @object.setKey 'tree.forest.planet.size', 10000
-        planet.size.should equal(10000)
+        @object.setKey 'tree._forest.planet._size', 10000
+        planet._size.should equal(10000)
+    
+    describe "#get", ->
+      it "should get attribute", ->
+        @object._foo = 'bacon'
+        @object.get('_foo').should equal('bacon')
+      
+      it "should get attribute through getter", ->
+        @object.getParent = -> {_foo: 'bacon'}
+        @object.get('parent._foo').should equal('bacon')
+        
+    describe "#method", ->
+      it "should return encapsulated method", ->
+        method = @object.method('setKey')
+        method '_foo', 'bacon'
+        @object._foo.should equal('bacon')
+        
+    describe "#bind", ->
+      it "should create an event binding", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object._bindings.foo.length.should equal(1)
+      
+      it "should set the correct receiver", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object._bindings.foo[0].receiver.should be(bound)
+      
+      it "should use trigger as default selector", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object._bindings.foo[0].selector.should equal('foo')
+      
+      it "should use specified selector", ->
+        bound = {}
+        @object.bind 'foo', bound, 'testFoo'
+        @object._bindings.foo[0].selector.should equal('testFoo')
+    
+    describe "#unbindOne", ->
+      it "should remove an event binding", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object.unbindOne 'foo', bound
+        @object._bindings.foo.length.should equal(0)
+      
+      it "should do nothing if no matching binding", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object.unbindOne 'bar', bound
+        @object._bindings.foo.length.should equal(1)
+    
+    describe "#unbindAll", ->
+      it "should remove any event bindings", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object.bind 'bar', bound
+        @object.unbindAll bound
+        @object._bindings.foo.length.should equal(0)
+        @object._bindings.bar.length.should equal(0)
+        
+    describe "#trigger", ->
+      it "should trigger matching bindings", ->
+        bound = {}
+        bound.shouldReceive('foo')
+        @object.bind 'foo', bound
+        @object.trigger 'foo'
+      
+      it "should call bindings with object as parameter", ->
+        bound = {}
+        bound.shouldReceive('foo').with(@object)
+        @object.bind 'foo', bound
+        @object.trigger 'foo'
+      
+      it "should pass through parameters to bound function", ->
+        bound = {}
+        bound.shouldReceive('foo').with(@object, 'bacon')
+        @object.bind 'foo', bound
+        @object.trigger 'foo', 'bacon'

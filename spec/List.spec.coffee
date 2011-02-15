@@ -204,6 +204,7 @@ $ ->
   describe "empty", ->
     it "should clear list", ->
       @list._array = [1, 2, 3]
+      @list.shouldReceive('removeLast').andPassthrough().exactly(3).times
       @list.empty()
       @list._array.length.should equal(0)
       

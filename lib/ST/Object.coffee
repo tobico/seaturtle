@@ -15,11 +15,11 @@ ST.class 'Object', null, ->
         @prototype[name] = ST.overrideMethod @$.prototype[name], fn
       else
         @prototype[name] = fn
+
+      # Set function displayName for debugging
+      @prototype[name].displayName = @_name + '#' + name
     else
       @prototype[name]
-    
-    # Set function displayName for debugging
-    @prototype[name].displayName = @_name + '#' + name
   
   # Create matching init (instance) and create (class) constructor methods
   @classMethod 'initializer', (name, fn) ->
@@ -75,11 +75,6 @@ ST.class 'Object', null, ->
       @_instance ||= @create()
     
   @UID = 0
-    
-  @BindingError = (object, trigger, target) ->
-    ST.error 'Error triggering binding from ' + object +
-            ':' + trigger + ' to ' + target.receiver + '.' +
-            target.selector
   
   @initializer ->
     @_uid = ST.Object.UID++
@@ -114,28 +109,35 @@ ST.class 'Object', null, ->
       else if that.setKey
         that.setKey there, value
       else
-        ST.Object.prototype.setKey.call that, there, value
+        ST.Object.method('setKey').call that, there, value
     else
       if this["set#{ucHere}"]
-        this["set#{ucHere}"](value)
+        this["set#{ucHere}"] value
       else
         this[here] = value
   
   @method 'get', (key) ->
-    value = this
     a = key.split '.'
-    while a.length
-      thisKey = a.shift()
-      if value['get' + ST.ucFirst(thisKey)]
-        value = value['get' + ST.ucFirst(thisKey)].call value
-      else if value[thisKey] isnt undefined
-        value = value[thisKey]
-      else
-        value = null
-      return null if value is null
-    value
+    here = a.shift()
+    there = a.join '.'
+    ucHere = ST.ucFirst here
   
-  @method 'methodFn', (name) ->
+    that = if this["get#{ucHere}"]
+      this["get#{ucHere}"]()
+    else
+      this[here]
+
+    if there && there.length
+      if that == null
+        null
+      else if that.get
+        that.get there
+      else
+        ST.Object.method('get').call that, there  
+    else
+      that
+  
+  @method 'method', (name) ->
     self = this
     -> self[name].apply self, arguments
     
@@ -147,34 +149,32 @@ ST.class 'Object', null, ->
       selector: selector || trigger
     }
   
-  @method 'unbind', (trigger, receiver) ->
+  @method 'unbindOne', (trigger, receiver) ->
     if @_bindings && @_bindings[trigger]
-      newBindings = []
-      for binding in @_bindings[trigger]
-        newBindings.push binding unless binding.receiver == this
-      @_bindings[trigger] = newBindings
+      bindings = @_bindings[trigger]
+      i = 0
+      while bindings[i]
+        bindings.splice i, 1 if bindings[i].receiver == receiver
+        i++
   
   @method 'unbindAll', (receiver) ->
     if @_bindings
       for trigger of @_bindings
-        @unbind trigger, receiver
+        @unbindOne trigger, receiver
+  
+  @method 'unbind', (trigger, receiver) ->
+    if receiver?
+      @unbindOne trigger, receiver
+    else
+      @unbindAll trigger
   
   @method 'trigger', (trigger, passArgs...) ->
     if @_bindings && @_bindings[trigger]
       for target in @_bindings[trigger]
         if target.receiver[target.selector]
-          target.receiver[target.selector].apply target.receiver, passArgs
+          target.receiver[target.selector] this, passArgs...
         else
-          ST.Object.BindingError this, trigger, target
-  @method 'triggerFn', (args...) ->
-    self = this
-    -> self.trigger.apply self, args
-  
-  @method 'scheduleMethod', (method, options={}) ->
-    self = this
-    setTimeout ->
-      self[method].apply self, options.args || []
-    , options.delay || 1
+          ST.error "Error triggering binding from #{this}: #{trigger} to #{target.receiver}.#{target.selector}"
   
   @method 'error', (message) ->
     # Call an undefined method to trigger a javascript exception
