@@ -2,9 +2,6 @@ ST.class 'Object', null, ->
   # Used to override an existing method of an STObject. Allows the overriding
   # method to call the overridden method using `@super()`, no matter how
   # many methods are chained together.
-  #
-  # If the method does not return a value, the STObject the method was called
-  # will be returned, to allow chaining of methods
   @OverrideMethod = (oldMethod, newMethod) ->
     ->
       oldSuper = @super || null
@@ -54,16 +51,18 @@ ST.class 'Object', null, ->
     ST._modules[name].call this
   
   # Creates getter, setter, and property accessor
-  @classMethod 'property', (name) ->
+  @classMethod 'property', (name, mode) ->
     ucName = ST.ucFirst name
     
-    @method "get#{ucName}", ->
-      this["_#{name}"]
-      
-    @method "set#{ST.ucFirst name}", (newValue) ->
-      oldValue = this["_#{name}"]
-      this["_#{name}"] = newValue
-      @_changed name, oldValue, newValue if @_changed
+    unless mode == 'write'
+      @method "get#{ucName}", ->
+        this["_#{name}"]
+    
+    unless mode == 'read'
+      @method "set#{ST.ucFirst name}", (newValue) ->
+        oldValue = this["_#{name}"]
+        this["_#{name}"] = newValue
+        @_changed name, oldValue, newValue if @_changed
     
     @method name, (value) ->
       if value?

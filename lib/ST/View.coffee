@@ -2,7 +2,7 @@ ST.class 'View', 'Destructable', ->
   @ViewWithContent = (content) ->
     view = @create()
     view.load()
-    view.getElement().append content
+    view.element().append content
     view
     
   @initializer ->
@@ -12,151 +12,123 @@ ST.class 'View', 'Destructable', ->
   
   @initializer 'withElement', (element) ->
     ST.Destructable.method('init').call this
-    @helper = ST.ViewHelper.instance()
-    @children = ST.List.create()
-    @children.bind 'itemAdded',   this, 'childAdded'
-    @children.bind 'itemRemoved', this, 'childRemoved'
-    @header = null
-    @footer = null
-    @element = element
-    @loaded = false
-    @rendered = false
-    
-  @property 'element', null, 'readonly'
-  @property 'header', 'retain'
-  @property 'footer', 'retain'
+    @_element = element
+    @_loaded = false
+    @_rendered = false
+  
+  @property 'parent'
+  @property 'children', 'read'
+  @property 'header'
+  @property 'footer'
+  @property 'element',  'read'
+  @property 'loaded',   'read'
+  @property 'rendered', 'read'
 
   @destructor ->
-    @unload() if @loaded
-    @releaseMembers 'children', 'header', 'footer'
-    @element.remove() if @element
-    @empty()
-    @_super()
+    @unload() if @loaded()
+    if @_children
+      @_children.empty()
+      @_children.unbind this
+    @releaseProperties 'children', 'header', 'footer'
+    @element().remove()
+    @super()
   
-  # Current header for this view. Creates a new custom view if no header is
-  # currently defined.
-  @method 'getOrCreateHeader', ->
-    unless @header
-      header = STView.createWithElement $(document.createElement 'header')
-      header.load()
-      @setHeader header
-      header.release()
-    @header
-
-  # Current footer for this view. Creates a new custom view if no footer is
-  # currently defined.
-  @method 'getOrCreateFooter', ->
-    unless @footer
-      footer = STView.createWithElement $(document.createElement 'footer')
-      footer.load()
-      @setFooter footer
-      footer.release()
-    @footer
+  @method 'helper', ->
+    ST.ViewHelper.instance()
+  
+  @method 'getChildren', ->
+    unless @_children
+      @_children = ST.List.create()
+      @_children.bind 'itemAdded',   this, 'childAdded'
+      @_children.bind 'itemRemoved', this, 'childRemoved'
+    @_children
     
   # Sets a view as the header for this view. Headers always remain above
   # any content and all child views for a view.
   @method 'setHeader', (newHeader) ->
     return if newHeader == @header
-    if @header
-      @header.getElement().detach()
-      @header.release()
+    if @_header
+      @_header.element().detach()
+      @_header.release()
     
-    @header = newHeader
+    @_header = newHeader
     
-    if @header
-      @header.retain()
-      @element.prepend @header.getElement() if @loaded
-  
-  @method 'setAndReleaseHeader', (newHeader) ->
-    @setHeader newHeader
-    newHeader.release()
+    if @_header
+      @_header.retain()
+      @element.prepend @_header.element() if @loaded()
     
   # Sets a view as the footer for this view. Footers always remain below
   # any content and all child views for a view.
   @method 'setFooter', (newFooter) ->
     return if newFooter == @footer
-    if @footer
-      @footer.getElement().detach()
-      @footer.release()
+    if @_footer
+      @_footer.element().detach()
+      @_footer.release()
     
-    @footer = newFooter
+    @_footer = newFooter
     
-    if @footer
-      @footer.retain()
-      @element.append @footer.getElement() if @loaded
-    
-  @method 'setAndReleaseHeader', (newFooter) ->
-    @setHeader newFooter
-    newFooter.release()
+    if @_footer
+      @_footer.retain()
+      @element.append @_footer.getElement() if @loaded()
   
   @method 'childAdded', (children, child) ->
-    child.parent = this
-    if @loaded
-      if @footer
-        @footer.getElement().before child.getElement()
+    child.parent this
+    if @loaded()
+      if @footer()
+        @footer().element().before child.element()
       else
-        @element.append view.getElement()
+        @element().append view.element()
   
   @method 'childRemoved', (children, child) ->
-    child.getElement().detach() if child.loaded
+    child.element().detach() if child.loaded()
   
   @method 'render', (element) ->
     ST.error 'View rendered twice during load: ' + this if @rendered
     @rendered = true
   
   @method 'load', ->
-    return if @loaded
+    unless @loaded()
+      @trigger 'loading'
     
-    @trigger 'loading'
-    
-    if @header
-      @element.append @header.getElement()
-      @header.load unless @header.loaded
+      if @header()
+        @element().append @header().element()
+        @header().load
         
-    @render @element
-    @loadChildren()
+      @render @element()
+      @loadChildren()
       
-    if @footer
-      @element.append @footer.getElement()
-      @footer.load unless @footer.loaded
+      if @footer()
+        @element().append @footer().element()
+        @footer().load
     
-    @loaded = true
-    @triger 'loaded'
+      @loaded true
+      @trigger 'loaded'
     
   @method 'loadChildren', ->
-    self = this
+    element = @element()
     @children.each (child) ->
-      self.element.append child.getElement()
-      child.load() unless child.loaded
+      element.append child.element()
+      child.load()
   
   @method 'unload', ->
-    return unless @loaded
-    
-    @trigger 'unloading'
-
-    @unloadChildren()
-    @element.empty()
-        
-    @rendered = false
-    @loaded = false
-    
-    @trigger 'unloaded'
+    if @loaded()
+      @trigger 'unloading'
+      @unloadChildren()
+      @element().empty()
+      @rendered false
+      @loaded false
+      @trigger 'unloaded'
     
   @method 'unloadChildren', ->
-    @children.each 'unload'
+    @children().each 'unload'
     
   @method 'reload', ->
-    if @loaded
-      @header.getElement().detach() if @header
-      @footer.getElement().detach() if @footer
+    if @loaded()
+      @header().element().detach() if @header()
+      @footer().element().detach() if @footer()
       @unload()
     @load()
         
-  @method 'scrollTo', -> $.scrollTo @element
+  @method 'scrollTo', -> $.scrollTo @element()
   
   @method 'showDialog', (events) -> ST.Dialog.showView this, events
-  
-  @method 'stealElement', ->
-    element = @element
-    @element = null
-    element
