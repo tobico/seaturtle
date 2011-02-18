@@ -2306,7 +2306,7 @@ jQuery.event = {
 				for ( j = 0; j < eventType.length; j++ ) {
 					handleObj = eventType[ j ];
 
-					if ( all || namespace.test( handleObj.namespace ) ) {
+					if ( handleObj && (all || namespace.test( handleObj.namespace )) ) {
 						jQuery.event.remove( elem, origType, handleObj.handler, j );
 						eventType.splice( j--, 1 );
 					}

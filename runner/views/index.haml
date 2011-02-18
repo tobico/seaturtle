@@ -1,0 +1,26 @@
+!!! 5
+%head
+  %script{ :src => 'jquery-1.5.js' }
+
+  %script{ :src => 'lib/ST.js' }
+  
+  %script{ :src => 'lib/ST/Enumerable.js' }
+  
+  %script{ :src => 'lib/ST/Object.js' }
+  %script{ :src => 'lib/ST/Spec.js' }
+  %script{ :src => 'lib/ST/List.js' }
+  %script{ :src => 'lib/ST/Destructable.js' }
+  %script{ :src => 'lib/ST/ViewHelper.js' }
+  %script{ :src => 'lib/ST/View.js' }
+  %script{ :src => 'lib/ST/TabView.js' }
+  
+  %link{ :rel => 'stylesheet', :href => 'spec.css', :type => 'text/css' }
+  
+  - Dir['spec/*.spec.coffee'].each do |file|
+    %script{ :src => file.sub(/\.coffee$/, '.js') }
+
+%body
+  :javascript
+    $(function() {
+      ST.Spec.finalize();
+    });

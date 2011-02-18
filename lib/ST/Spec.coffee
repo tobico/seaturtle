@@ -5,6 +5,9 @@ ST.class 'Spec', ->
     for i in [1..times]
       string = '&nbsp;' + string
     string
+    
+  @Escape = (string) ->
+    $('<div/>').text(String(string)).html()
   
   @classMethod 'describe', (title, definition) ->
     @initializeEnvironment() unless @EnvironmentInitialized
@@ -16,7 +19,7 @@ ST.class 'Spec', ->
       when 'terminal'
         $('.results').append "#{title}<br>"
         ul.depth = 2
-
+    
     @testStack = [{
       title:    title
       ul:       ul
@@ -30,8 +33,11 @@ ST.class 'Spec', ->
     switch @Format
       when 'ul'
         document.title = summary
-        for error in @errors
-          console.error "#{error.message} - #{error.title}"
+        if @errors.length
+          $('<h3>Errors</h3>').appendTo document.body
+          ul = $('<ul></ul>').addClass('errors').appendTo(document.body)
+          for error in @errors
+            ul.append $('<li>').append($('<span>').html(error.message), ' - ', $('<span>').html(error.title))
       when 'terminal'
         $('.results').append "<br>"
         for error in @errors
@@ -43,7 +49,7 @@ ST.class 'Spec', ->
         else
           32
         $('.results').append "&#x1b;[1m&#x1b;[#{color}m#{summary}&#x1b;[0m<br>"
-    
+  
   @classMethod 'initializeEnvironment', ->
     @EnvironmentInitialized = true
     
@@ -176,7 +182,7 @@ ST.class 'Spec', ->
     window.it = (title, definition) ->
       test = ST.Spec.testStack[ST.Spec.testStack.length - 1]
       status = if definition?
-        env = {}
+        env = {sandbox: $('<div/>').appendTo document.body}
         for aTest in ST.Spec.testStack
           for action in aTest.before
             action.call env
@@ -199,6 +205,8 @@ ST.class 'Spec', ->
         delete ST.Spec.expectations
         delete ST.Spec.testTitle
         delete window.onerror
+        
+        env.sandbox.empty().remove()
         
         if ST.Spec.passed then "passed"; else "failed"
       else
@@ -226,13 +234,13 @@ ST.class 'Spec', ->
     
     window.be = (expected) ->
       (value) ->
-        [value is expected, "to be &ldquo;#{expected}&rdquo;, actual &ldquo;#{value}&rdquo;"]
+        [value is expected, "to be &ldquo;#{ST.Spec.Escape expected}&rdquo;, actual &ldquo;#{ST.Spec.Escape value}&rdquo;"]
           
     window.beTrue = (value) ->
-      [String(value) == 'true', "to be true, got &ldquo;#{value}&rdquo;"]
+      [String(value) == 'true', "to be true, got &ldquo;#{ST.Spec.Escape value}&rdquo;"]
 
     window.beFalse = (value) ->
-      [String(value) == 'false', "to be false, got &ldquo;#{value}&rdquo;"]
+      [String(value) == 'false', "to be false, got &ldquo;#{ST.Spec.Escape value}&rdquo;"]
           
     window.beAnInstanceOf = (klass) ->
       (value) ->
@@ -240,7 +248,7 @@ ST.class 'Spec', ->
           
     window.equal = (expected) ->
       (value) ->
-        [String(value) == String(expected), "to equal &ldquo;#{expected}&rdquo;, actual &ldquo;#{value}&rdquo;"]
+        [String(value) == String(expected), "to equal &ldquo;#{ST.Spec.Escape expected}&rdquo;, actual &ldquo;#{ST.Spec.Escape value}&rdquo;"]
     
   @classMethod 'fail', (message) ->
     @passed = false

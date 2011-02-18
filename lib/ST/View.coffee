@@ -83,8 +83,8 @@ ST.class 'View', 'Destructable', ->
     child.element().detach() if child.loaded()
   
   @method 'render', (element) ->
-    ST.error 'View rendered twice during load: ' + this if @rendered
-    @rendered = true
+    ST.error 'View rendered twice during load: ' + this if @_rendered
+    @_rendered = true
   
   @method 'load', ->
     unless @loaded()
@@ -101,12 +101,12 @@ ST.class 'View', 'Destructable', ->
         @element().append @footer().element()
         @footer().load
     
-      @loaded true
+      @_loaded = true
       @trigger 'loaded'
     
   @method 'loadChildren', ->
     element = @element()
-    @children.each (child) ->
+    @children().each (child) ->
       element.append child.element()
       child.load()
   
@@ -115,8 +115,8 @@ ST.class 'View', 'Destructable', ->
       @trigger 'unloading'
       @unloadChildren()
       @element().empty()
-      @rendered false
-      @loaded false
+      @_rendered = false
+      @_loaded = false
       @trigger 'unloaded'
     
   @method 'unloadChildren', ->
