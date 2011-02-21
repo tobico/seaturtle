@@ -23,6 +23,9 @@ ST.class 'View', 'Destructable', ->
   @property 'element',  'read'
   @property 'loaded',   'read'
   @property 'rendered', 'read'
+  
+  @delegate 'add', 'children', 'addChild'
+  @delegate 'remove', 'children', 'removeChild'
 
   @destructor ->
     @unload() if @loaded()
@@ -46,7 +49,7 @@ ST.class 'View', 'Destructable', ->
   # Sets a view as the header for this view. Headers always remain above
   # any content and all child views for a view.
   @method 'setHeader', (newHeader) ->
-    return if newHeader == @header
+    return if newHeader is @_header
     if @_header
       @_header.element().detach()
       @_header.release()
@@ -55,12 +58,12 @@ ST.class 'View', 'Destructable', ->
     
     if @_header
       @_header.retain()
-      @element.prepend @_header.element() if @loaded()
+      @element().prepend @_header.element() if @loaded()
     
   # Sets a view as the footer for this view. Footers always remain below
   # any content and all child views for a view.
   @method 'setFooter', (newFooter) ->
-    return if newFooter == @footer
+    return if newFooter is @_footer
     if @_footer
       @_footer.element().detach()
       @_footer.release()
@@ -69,7 +72,7 @@ ST.class 'View', 'Destructable', ->
     
     if @_footer
       @_footer.retain()
-      @element.append @_footer.getElement() if @loaded()
+      @element().append @_footer.getElement() if @loaded()
   
   @method 'childAdded', (children, child) ->
     child.parent this
@@ -77,10 +80,10 @@ ST.class 'View', 'Destructable', ->
       if @footer()
         @footer().element().before child.element()
       else
-        @element().append view.element()
+        @element().append child.element()
   
   @method 'childRemoved', (children, child) ->
-    child.element().detach() if child.loaded()
+    child.element().detach() if @loaded()
   
   @method 'render', (element) ->
     ST.error 'View rendered twice during load: ' + this if @_rendered
@@ -92,14 +95,14 @@ ST.class 'View', 'Destructable', ->
     
       if @header()
         @element().append @header().element()
-        @header().load
+        @header().load()
         
       @render @element()
       @loadChildren()
       
       if @footer()
         @element().append @footer().element()
-        @footer().load
+        @footer().load()
     
       @_loaded = true
       @trigger 'loaded'
@@ -113,6 +116,8 @@ ST.class 'View', 'Destructable', ->
   @method 'unload', ->
     if @loaded()
       @trigger 'unloading'
+      @header().element().detach() if @header()
+      @footer().element().detach() if @footer()
       @unloadChildren()
       @element().empty()
       @_rendered = false
@@ -120,13 +125,12 @@ ST.class 'View', 'Destructable', ->
       @trigger 'unloaded'
     
   @method 'unloadChildren', ->
-    @children().each 'unload'
+    @children().each (child) ->
+      child.unload()
+      child.element().detach()
     
   @method 'reload', ->
-    if @loaded()
-      @header().element().detach() if @header()
-      @footer().element().detach() if @footer()
-      @unload()
+    @unload() if @loaded()
     @load()
         
   @method 'scrollTo', -> $.scrollTo @element()

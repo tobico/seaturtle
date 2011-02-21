@@ -20,14 +20,15 @@ def compile source, target
     File.read target
   rescue CoffeeScript::CompilationError => e
     message = if e.message.match /^SyntaxError: (.*) on line (\d+)\D*$/
-      "#{file}:#{$2}".ljust(longest_name + 6) + " #{$1}"
+      "#{source}:#{$2}".ljust(40) + " #{$1}"
     elsif e.message.match /^Parse error on line (\d+): (.*)$/
-      "#{file}:#{$1}".ljust(longest_name + 6) + " #{$2}"
+      "#{source}:#{$1}".ljust(40) + " #{$2}"
     else
-      "#{file} - #{e.message}"
+      "#{source} - #{e.message}"
     end
     puts "\e[31m#{message}\e[0m"
-    "console.error('#{message}');"
+    html = "<pre class=\"failed\">#{message}</pre>"
+    "$(function(){$(document.body).prepend(#{html.to_json});});"
   end
 end
 

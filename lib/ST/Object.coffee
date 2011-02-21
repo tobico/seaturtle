@@ -65,7 +65,7 @@ ST.class 'Object', null, ->
         @_changed name, oldValue, newValue if @_changed
     
     @method name, (value) ->
-      if value?
+      if arguments.length
         this["set#{ucName}"](value)
       else
         this["get#{ucName}"]()
@@ -78,7 +78,7 @@ ST.class 'Object', null, ->
       through = through.call this if through && through.call
       if through
         attr = through[name]
-        attr = attr.call through if attr && attr.call
+        attr = attr.apply through, arguments if attr && attr.call
         attr
       
   # Creates a "singleton pattern" class, with a method ".instance" which

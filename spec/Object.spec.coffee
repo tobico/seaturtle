@@ -80,9 +80,13 @@ $ ->
           @test.shouldReceive('getFoo')
           @test.foo()
         
-        it "shoul call setter", ->
+        it "should call setter", ->
           @test.shouldReceive('setFoo').with('bacon')
-          @test.foo('bacon')
+          @test.foo 'bacon'
+        
+        it "should call setter with null attribute", ->
+          @test.shouldReceive('setFoo').with(null)
+          @test.foo null
 
         describe "#getFoo", ->
           it "should get the value of assigned attribute", ->
@@ -113,6 +117,12 @@ $ ->
             foo: -> 'bacon'
           }
           @test.foo().should equal('bacon')
+        
+        it "should pass through arguments", ->
+          parent = {}
+          parent.shouldReceive('foo').with('bacon')
+          @test._parent = parent
+          @test.foo 'bacon'
           
         it "should return public attribute of method result", ->
           @test.parent = -> {foo: 'bacon'}
