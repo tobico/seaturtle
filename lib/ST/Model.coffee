@@ -1,17 +1,18 @@
-ST.class 'Model', ->
-  @include 'Enumerable'
-  
+#require ST/Object
+#require ST/Enumerable
+
+ST.class 'Model', ->  
   @Index        = {}
   @NotFound     = {}
   @GenerateUUID = Math.uuid || (-> null)
   @Storage      = null
   @Debug        = false
   
-  @classMethod 'fetch', (uuid, callback) ->
+  @classMethod 'fetch', (uuid, yield) ->
     self = this
             
     if STModel.Index[uuid]
-      callback STModel.Index[uuid]
+      yield STModel.Index[uuid]
     else if @FindUrl
       $.ajax {
         url:      @FindUrl.replace('?', uuid)
@@ -19,76 +20,20 @@ ST.class 'Model', ->
         data:     @FindData || {}
         success:  (data) ->
           model = ST.Model.createWithData data
-          callback model
+          yield model
       }
     else
       ST.error "No find URL for model: #{@_name}"
+      
+  @classDelegate 'where', 'scoped'
+  @classDelegate 'order', 'scoped'
+  @classDelegate 'each',  'scoped'
   
-  @classMethod 'find', (mode, options={}) ->
-    self = this
-    
-    if mode == 'first' || mode == 'all'
-      console.log "Finding #{mode} in #{@_name} , with options: #{JSON.stringify options}" if ST.Model.Debug
-
-      found = []
-      unless @Index
-        return if mode == 'first'
-          null
-        else
-          found
-      
-      index = false
-      nonIndexConditions = 0
-      for key of options.conditions
-        indexName = "Index #{ST.ucFirst key}"
-        if !index && @[indexName]
-          value = options.conditions[key]
-          if @[indexName][value]
-            index = @[indexName][value].array
-          else
-            console.log "Found empty index for condition: #{key}=#{value}" if ST.Model.Debug
-            return if mode == 'first' then null; else []
-        else
-          nonIndexConditions++
-      
-      if index
-        if nonIndexConditions == 0
-          console.log "Indexed result - #{index.length}" if ST.Model.Debug
-          if mode == 'first'
-            return if index.length then index[0]; else null
-          return index
-        else
-          if ST.Model.Debug
-            console.log "Partially-Indexed result"
-            console.log options.conditions
-          filter = (o) -> o.matches options.conditions
-          if mode == 'first'
-            index.find filter
-          else
-            index.collect filter
-      else
-        console.log 'Unindexed result' if ST.Model.Debug
-        for uuid of @Index
-          if !@Index[uuid].destroyed && (!options.conditions || @Index[uuid].matches(options.conditions))
-            return if mode == 'first'
-              @Index[uuid]
-            else
-              found.push @Index[uuid]
-        return if mode == 'first'
-          null
-        else
-          found
-    else if mode == 'by' || mode == 'all_by'
-      conditions = {}
-      conditions[arguments[1]] = arguments[2]
-      @find(
-          (if mode == 'by' then 'first'; else 'all'),
-          {conditions: conditions}
-      )
-    else if STModel.Index[mode]
-      STModel.Index[mode]
-    else
-      ST.error 'Model not found'
+  @classMethod 'scoped', ->
+    ST.Scope.createWithModel this
+  
+  @classMethod 'find', (id) ->
+    STModel.Index[id]
   
   @classMethod 'load', (data) ->
     self = this
@@ -141,7 +86,7 @@ ST.class 'Model', ->
     data.created.sort ST.makeSortFn('uuid')
     data
   
-  @classMethid 'saveToServer', (url, async, extraData) ->
+  @classMethod 'saveToServer', (url, async, extraData) ->
     return if ST.Model.Saving
     
     updatedData = @getUpdatedModelData()
@@ -452,11 +397,7 @@ ST.class 'Model', ->
     if foreign
       # One-to-many assocation through a Model and foreign key
       @method "get#{ST.ucFirst name}", ->
-        unless this[name]
-          conditions = {}
-          conditions["#{foreign}Uuid"] = @uuid
-          this[name] = ST.Scope.create(window[assocModel], { conditions: conditions }) 
-        this[name]
+        this[name] ||= @_namespace.getClass(assocModel).where("#{foreign}Uuid", @uuid)
       
       if options && options.bind
         for key of options.bind

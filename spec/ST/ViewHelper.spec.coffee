@@ -1,3 +1,5 @@
+#require ST/ViewHelper
+
 $ ->
   ST.Spec.describe "ViewHelper", ->
     beforeEach ->

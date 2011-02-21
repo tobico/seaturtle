@@ -1,3 +1,5 @@
+#require ST/View
+
 $ ->
   ST.Spec.describe "View", ->
     describe "#init", ->

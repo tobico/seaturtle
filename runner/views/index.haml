@@ -13,10 +13,12 @@
   %script{ :src => 'lib/ST/ViewHelper.js' }
   %script{ :src => 'lib/ST/View.js' }
   %script{ :src => 'lib/ST/TabView.js' }
-  
+  %script{ :src => 'lib/ST/Model.js' }
+  %script{ :src => 'lib/ST/Model/Index.js' }
+
   %link{ :rel => 'stylesheet', :href => 'spec.css', :type => 'text/css' }
   
-  - Dir['spec/*.spec.coffee'].each do |file|
+  - Dir['spec/**/*.spec.coffee'].each do |file|
     %script{ :src => file.sub(/\.coffee$/, '.js') }
 
 %body

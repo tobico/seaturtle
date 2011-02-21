@@ -1,3 +1,5 @@
+#require ST/Object
+
 $ ->
  ST.Spec.describe "List", ->
   beforeEach ->

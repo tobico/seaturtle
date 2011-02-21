@@ -1,3 +1,5 @@
+#require ST/TabView
+
 $ ->
   ST.Spec.describe "TabView", ->
     describe "#initializer", ->

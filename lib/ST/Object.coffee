@@ -1,3 +1,5 @@
+#require ST
+
 ST.class 'Object', null, ->
   # Used to override an existing method of an STObject. Allows the overriding
   # method to call the overridden method using `@super()`, no matter how
@@ -70,6 +72,17 @@ ST.class 'Object', null, ->
       else
         this["get#{ucName}"]()
   
+  # Generates a "forwarder" method, that acts as a proxy for the
+  # given member object.
+  @classMethod 'classDelegate', (name, toObject, as) ->
+    @classMethod (as || name), ->
+      through = this[toObject] || this["_#{toObject}"]
+      through = through.call this if through && through.call
+      if through
+        attr = through[name]
+        attr = attr.apply through, arguments if attr && attr.call
+        attr
+
   # Generates a "forwarder" method, that acts as a proxy for the
   # given member object.
   @classMethod 'delegate', (name, toObject, as) ->

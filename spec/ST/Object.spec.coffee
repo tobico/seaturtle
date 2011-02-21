@@ -1,3 +1,5 @@
+#require ST/Object
+
 $ ->
   ST.Spec.describe "Object", ->
     context "with a test subclass", ->

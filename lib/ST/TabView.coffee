@@ -1,3 +1,5 @@
+#require ST/View
+
 ST.class 'TabView', 'View', ->
   @initializer ->
     @initWithElement @helper().tag('ul').addClass('tabs')

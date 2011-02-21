@@ -1,6 +1,8 @@
-ST.class 'ViewController', ->
-  @constructor ->
-    @_super()
+#require ST/Destructable
+
+ST.class 'ViewController', 'Destructable' ->
+  @initializer ->
+    @super()
     @view = null
   
   @destructor ->

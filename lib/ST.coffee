@@ -30,10 +30,18 @@ window.ST = {
       ST.stringToProc object
     else
       ST.error 'Could not convert object to Proc'
-
-  # Creates a new class. This would normally be called as a result of calling
-  # STObject.subClass().
+  
+  # Finds class with given name in this namespace or a parent namespace
+  getClass: (className) ->
+    namespace = this
+    while namespace
+      return namespace[className] if namespace[className]
+      namespace = namespace._namespace
+    null
+  
+  # Creates a new class in this namespace
   class: (className, superClass, definition) ->
+    # If superclass parameter omitted, use 'Object' as superclass
     unless definition
       definition = superClass
       superClass = 'Object'
@@ -45,7 +53,8 @@ window.ST = {
     newClass._classMethods = []
     
     # Inherit superclass
-    if superClass && superClass = ST[superClass]
+    superClass = @getClass superClass if superClass && (typeof superClass == 'string')
+    if superClass
       newClass.prototype = new superClass
       newClass._superclass = superClass
       
@@ -57,9 +66,15 @@ window.ST = {
     # Set _name variable to name of class
     newClass._name = className
       
-    # Add class to global object
-    ST[className] = newClass
+    # Add class to namespace
+    this[className] = newClass
+    newClass._namespace = this
     
+    # Allow new class to function as a namespace
+    newClass.class = @class
+    newClass.getClass = @getClass
+    
+    # Run class definition
     definition.call newClass
     
   module: (name, definition) ->

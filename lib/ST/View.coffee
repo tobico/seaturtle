@@ -1,3 +1,5 @@
+#require ST/Destructable
+
 ST.class 'View', 'Destructable', ->
   @ViewWithContent = (content) ->
     view = @create()
