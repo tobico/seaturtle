@@ -2,7 +2,7 @@
 #require ST/Enumerable
 
 ST.class 'Model', ->  
-  @Index        = {}
+  @_byUuid       = {}
   @NotFound     = {}
   @GenerateUUID = Math.uuid || (-> null)
   @Storage      = null
@@ -11,8 +11,8 @@ ST.class 'Model', ->
   @classMethod 'fetch', (uuid, yield) ->
     self = this
             
-    if STModel.Index[uuid]
-      yield STModel.Index[uuid]
+    if STModel._byUuid[uuid]
+      yield STModel._byUuid[uuid]
     else if @FindUrl
       $.ajax {
         url:      @FindUrl.replace('?', uuid)
@@ -30,10 +30,10 @@ ST.class 'Model', ->
   @classDelegate 'each',  'scoped'
   
   @classMethod 'scoped', ->
-    ST.Scope.createWithModel this
+    ST.Model.Scope.createWithModel this
   
-  @classMethod 'find', (id) ->
-    STModel.Index[id]
+  @classMethod 'find', (uuid) ->
+    ST.Model._byUuid[uuid]
   
   @classMethod 'load', (data) ->
     self = this
@@ -42,7 +42,7 @@ ST.class 'Model', ->
         @load row
     else
       return unless data && data.uuid
-      return if STModel.Index[data.uuid]
+      return if ST.Model._byUuid[data.uuid]
       @createWithObject data
   
   @classMethod 'buildIndex', (attribute) ->
@@ -50,8 +50,8 @@ ST.class 'Model', ->
     return if @[indexName]
     
     index = {}
-    for uuid of @Index
-      object = @Index[uuid]
+    for uuid of @_byUuid
+      object = @_byUuid[uuid]
       value = object.attributes[attribute]
       index[value] ||= STList.create()
       index[value].add object
@@ -71,16 +71,16 @@ ST.class 'Model', ->
       updated: []
       deleted: []
     }
-    for uuid of @Index
-      model = @Index[uuid]
-      continue if model.$.ReadOnly
+    for uuid of @_byUuid
+      model = @_byUuid[uuid]
+      continue if model._class.ReadOnly
       if model.created && model.approved
         data.created.push model.objectify()
       else if model.updated && model.approved
         data.updated.push model.objectify()
       else if model.deleted
         data.deleted.push {
-          '_model':   model.$._name
+          '_model':   model._class._name
           uuid:       model.getUuid()
         }
     data.created.sort ST.makeSortFn('uuid')
@@ -132,28 +132,28 @@ ST.class 'Model', ->
     @approved = true
     @created = !data['uuid']
     @deleted = false
-    @setUuid data['uuid'] || ST.Model.GenerateUUID()
+    @uuid data['uuid'] || ST.Model.GenerateUUID()
     @attributes = {}
-    for attribute of @$.Attributes
+    for attribute of @_class.Attributes
       if data[attribute]?
         @set attribute, data[attribute]
       else
-        defaultValue = @$.Attributes[attribute]
+        defaultValue = @_class.Attributes[attribute]
         if typeof defaultValue == 'function'
           @set attribute, new defaultValue()
         else
           @set attribute, defaultValue
-    if @$.ManyMany
-      @$.ManyMany.each (key) ->
+    if @_class.ManyMany
+      @_class.ManyMany.each (key) ->
         fullKey = "#{key}Uuids"
         self.attributes[fullKey] = []
         self.attributes[fullKey].append data[fullKey] if data[fullKey]
-    if @$.ManyBinds
-      @$.ManyBinds.each (binding) ->
+    if @_class.ManyBinds
+      @_class.ManyBinds.each (binding) ->
         self.get(binding.assoc).bind(binding.from, self, binding.to);
 
     @updated = false
-    @setUuid = null
+    @uuid null
     @persists = !(options && options.temporary)
     @persist()
   
@@ -168,8 +168,8 @@ ST.class 'Model', ->
       else
         null
     # If object with uuid already exists, update object and return it
-    else if data.uuid && ST.Model.Index[data.uuid]
-      object = STModel.Index[data.uuid]
+    else if data.uuid && ST.Model._byUuid[data.uuid]
+      object = STModel._byUuid[data.uuid]
       object.persists = true unless options && options.temporary
       for attribute of object.attributes
         object.set attribute, data[attribute] if data[attribute]?
@@ -192,23 +192,23 @@ ST.class 'Model', ->
   
   # Makes a new uuid for object.
   @method 'resetId', ->
-    this.id = null;
-    this.uuid = STModel.GenerateUUID();
+    @_id = null
+    @_uuid = STModel.GenerateUUID()
   
   @method 'setUuid', (newUuid) ->
     return if newUuid == @uuid
     
     # Insert object in global index
-    delete ST.Model.Index[@uuid]
-    ST.Model.Index[newUuid] = this
+    delete ST.Model._byUuid[@uuid]
+    ST.Model._byUuid[newUuid] = this
     
     # Insert object in model-specific index
-    @$.Index ||= {}
-    index = @$.Index
+    @_class._byUuid ||= {}
+    index = @_class._byUuid
     delete index[@uuid] if index[@uuid]
     index[newUuid] = this
     
-    @uuid = newUuid
+    @_uuid = newUuid
   
   @method 'matches', (conditions) ->
     if @attributes
@@ -278,7 +278,7 @@ ST.class 'Model', ->
       # our own triggers
       list.array.empty()
       for uuid in uuids
-        object = ST.Model.Index[uuid]
+        object = ST.Model._byUuid[uuid]
         list.array.push object if object
       
       this[member + 'NeedsRebuild'] = false
@@ -295,7 +295,7 @@ ST.class 'Model', ->
   # Returns saveable object containing model data.
   @method 'objectify', ->
     output = {
-      _model: @$._name
+      _model: @_class._name
       uuid:   @getUuid()
     }
     for attribute of @attributes
@@ -319,8 +319,8 @@ ST.class 'Model', ->
     for attribute of @attributes
       indexName = "Index#{ST.ucFirst attribute}"
       value = @attributes[attribute]
-      if @$[indexName]
-        index = @$[indexName]
+      if @_class[indexName]
+        index = @_class[indexName]
         index[value].remove this if index[value]
   
   # Marks model as destroyed, destroy to be propagated to server when 
@@ -334,7 +334,7 @@ ST.class 'Model', ->
   # Removes all local data for model.
   @method 'forget', ->
     @deindex()
-    delete ST.Model.Index[@uuid]
+    delete ST.Model._byUuid[@uuid]
     STModel.Storage.remove @uuid if ST.Model.Storage
     STObject.prototype.destroy.apply this
 
@@ -351,8 +351,8 @@ ST.class 'Model', ->
       @attributes[name] = newValue
   
       # Update index
-      if @$["Index#{ucName}"]
-        index = @$["Index#{ucName}"];
+      if @_class["Index#{ucName}"]
+        index = @_class["Index#{ucName}"];
         index[oldValue].remove this if index[oldValue]
         index[newValue] ||= ST.List.create()
         index[newValue].add this
@@ -373,10 +373,10 @@ ST.class 'Model', ->
     
     @method "get#{ucName}", ->
       uuid = @get "#{name}Uuid"
-      uuid && ST.Model.Index[uuid]
+      uuid && ST.Model._byUuid[uuid]
     
     @method "set#{ucName}", (value) ->
-      ST.error 'Invalid object specified for association' if value && value.$._name != assocModel
+      ST.error 'Invalid object specified for association' if value && value._class._name != assocModel
       @set "#{name}Uuid", value && value.uuid
   
     if options.bind
@@ -448,12 +448,12 @@ ST.class 'Model', ->
     
     if storage
       # Save any existing models to new storage
-      for object in ST.Model.Index
+      for object in ST.Model._byUuid
         object.persist()
   
       # Load any unloaded saved models from storage
       storage.each (key, value) ->
-        if value && value._model && window[value._model] && !STModel.Index[key]
+        if value && value._model && window[value._model] && !STModel.byUuid[key]
           model = ST.Model.createWithData value
           model.created = value._created if value._created?
           model.updated = value._updated if value._updated?
