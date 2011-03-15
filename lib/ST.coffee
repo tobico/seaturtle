@@ -76,9 +76,10 @@ window.ST = {
     
     # Run class definition
     definition.call newClass
-    
+  
+  _modules: {}
+  
   module: (name, definition) ->
-    ST._modules ||= {}
     ST._modules[name] = definition
 
   # Capitalizes the first letter of a string.

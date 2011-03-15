@@ -1,8 +1,20 @@
 #!/usr/bin/env ruby
 require 'rubygems'
 require 'sinatra'
-require 'haml'
+require 'slim'
+require 'v8'
 require 'coffee-script'
+require 'runner/required_files'
+
+module Sinatra
+  module Templates
+    def slim(template, options={}, locals={})
+      render :slim, template, options, locals
+    end 
+  end
+end
+
+Slim::Engine.set_default_options :pretty => true
 
 def compile source, target
   begin
@@ -41,5 +53,14 @@ get %r{^/spec/(.+)\.js$} do |file|
 end
 
 get "/" do
-  haml :index
+  requirements = RequiredFiles.new
+  requirements.paths = ['spec', 'lib']
+  requirements.add 'ST/Spec'
+  Dir['spec/**/*.spec.coffee'].each do |file|
+    requirements.add $1 if file.match /^spec\/(.*).coffee$/
+  end
+  @scripts = requirements.sorted_files
+  p @scripts
+  
+  slim :index
 end

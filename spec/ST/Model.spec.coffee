@@ -1,4 +1,5 @@
 #require ST/Model
+#require ST/Model/Scope
 
 NextUUID = 0
 ST.Model.GenerateUUID = -> NextUUID++

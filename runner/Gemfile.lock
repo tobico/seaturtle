@@ -7,6 +7,16 @@ GEM
     coffee-script-source (1.0.1)
     json (1.4.6)
     json (1.4.6-java)
+    rack (1.2.2)
+    sinatra (1.2.0)
+      rack (~> 1.1)
+      tilt (>= 1.2.2, < 2.0)
+    slim (0.9.1)
+      temple (~> 0.1.8)
+      tilt (~> 1.2)
+    temple (0.1.8)
+    therubyracer (0.8.1)
+    tilt (1.2.2)
 
 PLATFORMS
   java
@@ -16,3 +26,6 @@ DEPENDENCIES
   celerity
   coffee-script
   json
+  sinatra
+  slim
+  therubyracer

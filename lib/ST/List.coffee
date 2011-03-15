@@ -1,3 +1,6 @@
+#require ST/Object
+#require ST/Enumerable
+
 ST.class 'List', ->
   @include 'Enumerable'
 
