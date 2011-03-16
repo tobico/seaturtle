@@ -1,7 +1,7 @@
 #require ST/ViewHelper
 
 $ ->
-  ST.Spec.describe "ViewHelper", ->
+  Spec.describe "ViewHelper", ->
     beforeEach ->
       @helper = ST.ViewHelper.instance()
     

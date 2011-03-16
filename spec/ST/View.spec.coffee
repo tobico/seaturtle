@@ -1,7 +1,7 @@
 #require ST/View
 
 $ ->
-  ST.Spec.describe "View", ->
+  Spec.describe "View", ->
     describe "#init", ->
       it "should call #initWithElement", ->
         view = new ST.View()

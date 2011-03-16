@@ -1,5 +1,5 @@
 $ ->
-  ST.Spec.describe 'ST', ->
+  Spec.describe 'ST', ->
     describe 'stringToProc', ->
       it 'should return a function', ->
         ST.stringToProc('test').should beAFunction

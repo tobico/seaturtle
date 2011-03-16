@@ -43,7 +43,7 @@ ST.class 'Model', ->
     else
       return unless data && data.uuid
       return if ST.Model._byUuid[data.uuid]
-      @createWithObject data
+      @createWithData data
   
   @classMethod 'buildIndex', (attribute) ->
     indexName = "Index#{ST.ucFirst attribute}"
@@ -123,6 +123,7 @@ ST.class 'Model', ->
   
   @initializer (options) ->
     @initWithData {}, options
+    this
   
   # Initializes a new model, and loads the supplied attribute data, if any
   @initializer 'withData', (data, options) ->
@@ -130,9 +131,9 @@ ST.class 'Model', ->
     
     ST.Object.prototype.init.call this
     @approved = true
-    @created = !data['uuid']
+    @created = !data.uuid
     @deleted = false
-    @uuid data['uuid'] || ST.Model.GenerateUUID()
+    @uuid data.uuid || ST.Model.GenerateUUID()
     @attributes = {}
     for attribute of @_class.Attributes
       if data[attribute]?
@@ -153,9 +154,9 @@ ST.class 'Model', ->
         self.get(binding.assoc).bind(binding.from, self, binding.to);
 
     @updated = false
-    @uuid null
     @persists = !(options && options.temporary)
     @persist()
+    this
   
   # Creates a new object from model data. If the data includes a _model
   # property, as with data genereated by #objectify, the specified model

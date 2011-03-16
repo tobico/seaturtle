@@ -1,7 +1,7 @@
 #require ST/TabView
 
 $ ->
-  ST.Spec.describe "TabView", ->
+  Spec.describe "TabView", ->
     describe "#initializer", ->
       it "should create a UL element", ->
         view = ST.TabView.create()

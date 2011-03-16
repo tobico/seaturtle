@@ -1,7 +1,7 @@
 #require ST/Object
 
 $ ->
- ST.Spec.describe "List", ->
+ Spec.describe "List", ->
   beforeEach ->
     @list = ST.List.create()
  

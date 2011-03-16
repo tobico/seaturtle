@@ -1,7 +1,7 @@
 #require ST/Object
 
 $ ->
-  ST.Spec.describe "Object", ->
+  Spec.describe "Object", ->
     context "with a test subclass", ->
       beforeEach ->
         ST.class "Test", "Object", -> null

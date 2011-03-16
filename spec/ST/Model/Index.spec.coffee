@@ -1,7 +1,7 @@
 #require ST/Model/Index
 
 $ ->
-  ST.Spec.describe "Model/Index", ->
+  Spec.describe "Model/Index", ->
     beforeEach ->
       @index = ST.Model.Index.createWithModelAttribute(ST.Model, 'test')
       

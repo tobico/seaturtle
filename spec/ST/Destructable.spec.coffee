@@ -1,7 +1,7 @@
 #require ST/Object
 
 $ ->
-  ST.Spec.describe "Destructable", ->
+  Spec.describe "Destructable", ->
     describe "#init", ->
       it "should set _retainCount to 1", ->
         test = new ST.Destructable()
