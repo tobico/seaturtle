@@ -19,9 +19,7 @@ ST.Model.class 'Scope', ->
     @_order = scope.order()
   
   @property 'model'
-  @property 'conditions'
-  @property 'order'
-  
+    
   @method 'fork', (block) ->
     scope = @_class.createWithScope this
     block.call scope
@@ -29,11 +27,11 @@ ST.Model.class 'Scope', ->
   @method 'where', (conditions...) ->
     @fork ->
       for condition in conditions
-        @conditions().push condition
+        @_conditions.push condition
   
   @method 'order', (order) ->
     @fork ->
-      @order order
+      @_order = order
 
   @method 'enableBindings', ->
     for attribute, value of @conditions

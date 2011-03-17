@@ -1,5 +1,7 @@
 #require ST/Object
 #require ST/Enumerable
+#request ST/Model/Scope
+#request ST/Model/Index
 
 ST.class 'Model', ->  
   @_byUuid       = {}
@@ -45,53 +47,16 @@ ST.class 'Model', ->
       return if ST.Model._byUuid[data.uuid]
       @createWithData data
   
-  @classMethod 'buildIndex', (attribute) ->
-    indexName = "Index#{ST.ucFirst attribute}"
-    return if @[indexName]
+  @classMethod 'getIndex', (attribute) ->
+    @_indexes ||= {}
+    @_indexes[attribute] ||= ST.Model.Index.createWithModelAttribute(this, attribute)
     
-    index = {}
-    for uuid of @_byUuid
-      object = @_byUuid[uuid]
-      value = object.attributes[attribute]
-      index[value] ||= STList.create()
-      index[value].add object
-    @[indexName] = index
-  
-  @classMethod 'getValueIndex', (attribute, value) ->
-    indexName = "Index#{ST.ucFirst attribute}"
-    @buildIndex attribute unless @[indexName]
-    
-    index = @[indexName];
-    index[value] ||= STList.create()
-    index[value]
-  
-  @classMethod 'getUpdatedModelData', ->
-    data = {
-      created: []
-      updated: []
-      deleted: []
-    }
-    for uuid of @_byUuid
-      model = @_byUuid[uuid]
-      continue if model._class.ReadOnly
-      if model.created && model.approved
-        data.created.push model.objectify()
-      else if model.updated && model.approved
-        data.updated.push model.objectify()
-      else if model.deleted
-        data.deleted.push {
-          '_model':   model._class._name
-          uuid:       model.getUuid()
-        }
-    data.created.sort ST.makeSortFn('uuid')
-    data
+  @classMethod 'changes', ->
+    ST.Model._changes || []
   
   @classMethod 'saveToServer', (url, async, extraData) ->
     return if ST.Model.Saving
-    
-    updatedData = @getUpdatedModelData()
-    
-    return null if updatedData.created.length == 0 && updatedData.updated.length == 0 && updatedData.deleted.length == 0
+    return unless ST.Model._changes && ST.Model._changes.length
     
     ST.Model.Saving = true
     
@@ -119,7 +84,7 @@ ST.class 'Model', ->
              
       complete: ->
         ST.Model.Saving = false
-  }
+    }
   
   @initializer (options) ->
     @initWithData {}, options
@@ -130,9 +95,7 @@ ST.class 'Model', ->
     self = this
     
     ST.Object.prototype.init.call this
-    @approved = true
-    @created = !data.uuid
-    @deleted = false
+    
     @uuid data.uuid || ST.Model.GenerateUUID()
     @attributes = {}
     for attribute of @_class.Attributes
@@ -144,16 +107,10 @@ ST.class 'Model', ->
           @set attribute, new defaultValue()
         else
           @set attribute, defaultValue
-    if @_class.ManyMany
-      @_class.ManyMany.each (key) ->
-        fullKey = "#{key}Uuids"
-        self.attributes[fullKey] = []
-        self.attributes[fullKey].append data[fullKey] if data[fullKey]
     if @_class.ManyBinds
       @_class.ManyBinds.each (binding) ->
         self.get(binding.assoc).bind(binding.from, self, binding.to);
 
-    @updated = false
     @persists = !(options && options.temporary)
     @persist()
     this
@@ -181,35 +138,16 @@ ST.class 'Model', ->
   
   @property 'uuid'
   
-  # These properties specify what changes have been made locally and need
-  # to be synchronized to the server.
-  #
-  # Newly created objects will only be saved if they are marked as
-  # approved.
-  @property 'created'
-  @property 'updated'
-  @property 'deleted'
-  @property 'approved'
-  
-  # Makes a new uuid for object.
-  @method 'resetId', ->
-    @_id = null
-    @_uuid = STModel.GenerateUUID()
-  
   @method 'setUuid', (newUuid) ->
-    return if newUuid == @uuid
+    unless @_uuid    
+      # Insert object in global index
+      ST.Model._byUuid[newUuid] = this
     
-    # Insert object in global index
-    delete ST.Model._byUuid[@uuid]
-    ST.Model._byUuid[newUuid] = this
+      # Insert object in model-specific index
+      @_class._byUuid ||= {}
+      @_class._byUuid[newUuid] = this
     
-    # Insert object in model-specific index
-    @_class._byUuid ||= {}
-    index = @_class._byUuid
-    delete index[@uuid] if index[@uuid]
-    index[newUuid] = this
-    
-    @_uuid = newUuid
+      @_uuid = newUuid
   
   @method 'matches', (conditions) ->
     if @attributes
@@ -286,15 +224,11 @@ ST.class 'Model', ->
     
     this[member]
   
-  @method 'markChanged', ->
-    @changed = true
-  
   @method '_changed', (member, oldValue, newValue) ->
     @_super member, oldValue, newValue
-    @markChanged()
   
   # Returns saveable object containing model data.
-  @method 'objectify', ->
+  @method 'serialize', ->
     output = {
       _model: @_class._name
       uuid:   @getUuid()
@@ -303,17 +237,12 @@ ST.class 'Model', ->
       value = @attributes[attribute]
       value = String(value) if value instanceof Date
       output[attribute] = value
-    output
+    JSON.stringify output
   
   # Saves model data and saved status in Storage for persistance.
   @method 'persist', ->
-    if ST.Model.Storage && @persists
-      output = @objectify()
-      output._created = @created
-      output._updated = @updated
-      output._deleted = @deleted
-      output._approved = @approved
-      ST.Model.Storage.set @uuid, output
+    if ST.Model.Storage && @persists()
+      ST.Model.Storage.set @uuid(), @serialize()
   
   # Removes model from all indexes.
   @method 'deindex', ->
@@ -436,15 +365,8 @@ ST.class 'Model', ->
       @method "add#{ucsName}", (record) ->
         @getManyList(name).add record
         this
-      
-  @classMethod 'hasAndBelongsToMany', (name, assocModel) ->
-    @ManyMany ||= []
-    @ManyMany.push name
-    @method "get#{ST.ucFirst name}", ->
-      this[name] ||= STManyAssociation.create this, name
-      this[name]
     
-  @setStorage = (storage) ->
+  @classMethod 'setStorage', (storage) ->
     ST.Model.Storage = storage;
     
     if storage
