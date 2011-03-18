@@ -97,40 +97,38 @@ ST.class 'Model', ->
     ST.Object.prototype.init.call this
     
     @uuid data.uuid || ST.Model.GenerateUUID()
-    @attributes = {}
+    @_attributes = {}
     for attribute of @_class.Attributes
-      if data[attribute]?
-        @set attribute, data[attribute]
-      else
-        defaultValue = @_class.Attributes[attribute]
-        if typeof defaultValue == 'function'
-          @set attribute, new defaultValue()
+      if @_class.Attributes.hasOwnProperty attribute
+        @_attributes[attribute] = if data[attribute]?
+          data[attribute]
         else
-          @set attribute, defaultValue
+          defaultValue = @_class.Attributes[attribute]
+          if typeof defaultValue == 'function'
+            new defaultValue()
+          else
+            defaultValue
     if @_class.ManyBinds
       @_class.ManyBinds.each (binding) ->
         self.get(binding.assoc).bind(binding.from, self, binding.to);
-
-    @persists = !(options && options.temporary)
-    @persist()
     this
   
-  # Creates a new object from model data. If the data includes a _model
+  # Creates a new object from model data. If the data includes a 
   # property, as with data genereated by #objectify, the specified model
   # will be used instead of the model createWithData was called on.
   @classMethod 'createWithData', (data, options) ->
     # If data is being sent to the wrong model, transfer to correct model
-    if data._model && data._model != @_name
-      if (window[data._model])
-        window[data._model].createWithData data, options
+    if data.model && data.model != @_name
+      if (@_namespace[data.model])
+        @_namespace[data.model].createWithData data, options
       else
         null
     # If object with uuid already exists, update object and return it
     else if data.uuid && ST.Model._byUuid[data.uuid]
-      object = STModel._byUuid[data.uuid]
-      object.persists = true unless options && options.temporary
-      for attribute of object.attributes
-        object.set attribute, data[attribute] if data[attribute]?
+      object = ST.Model._byUuid[data.uuid]
+      for attribute of object._attributes
+        if object._attributes.hasOwnProperty attribute
+          object.set attribute, data[attribute] if data[attribute]?
       object
     # Otherwise, create a new object
     else
@@ -150,12 +148,13 @@ ST.class 'Model', ->
       @_uuid = newUuid
   
   @method 'matches', (conditions) ->
-    if @attributes
+    if @_attributes
       for key of conditions
-        if conditions[key] instanceof Function
-          return false unless conditions[key](@attributes[key])
-        else
-          return false unless @attributes[key] == conditions[key]
+        if conditions.hasOwnProperty key
+          if conditions[key] instanceof Function
+            return false unless conditions[key](@_attributes[key])
+          else
+            return false unless @_attributes[key] == conditions[key]
       true
     else
       false
@@ -178,13 +177,11 @@ ST.class 'Model', ->
       # Create new method to update UUIDs on added events
       this[s + 'Added'] = (list, item) ->
         this[s + 'Uuids'].push item
-        @setUpdated true
         @persist()
   
       # Create new method to update UUIDs on removed events
       this[s + 'Removed'] = (list, item) ->
         this[s + 'Uuids'].remove item
-        @setUpdated true
         @persist()
       
       this[member].find = (mode, options) ->
@@ -225,60 +222,73 @@ ST.class 'Model', ->
     this[member]
   
   @method '_changed', (member, oldValue, newValue) ->
-    @_super member, oldValue, newValue
+    @super member, oldValue, newValue
+    ST.Model._changes ||= []
+    ST.Model._changes.push {
+      uuid:       ST.Model.GenerateUUID()
+      model:      @_class._name
+      type:       'update'
+      objectUuid: @_uuid
+      attribute:  member
+      oldValue:   oldValue
+      newValue:   newValue
+    }
   
   # Returns saveable object containing model data.
   @method 'serialize', ->
     output = {
-      _model: @_class._name
+      model: @_class._name
       uuid:   @getUuid()
     }
-    for attribute of @attributes
-      value = @attributes[attribute]
-      value = String(value) if value instanceof Date
-      output[attribute] = value
+    for attribute of @_attributes
+      if @_attributes.hasOwnProperty attribute
+        value = @_attributes[attribute]
+        value = String(value) if value instanceof Date
+        output[attribute] = value
     JSON.stringify output
   
   # Saves model data and saved status in Storage for persistance.
   @method 'persist', ->
-    if ST.Model.Storage && @persists()
+    if ST.Model.Storage
       ST.Model.Storage.set @uuid(), @serialize()
-  
-  # Removes model from all indexes.
-  @method 'deindex', ->
-    for attribute of @attributes
-      indexName = "Index#{ST.ucFirst attribute}"
-      value = @attributes[attribute]
-      if @_class[indexName]
-        index = @_class[indexName]
-        index[value].remove this if index[value]
-  
-  # Marks model as destroyed, destroy to be propagated to server when 
-  # possible.
-  @method 'destroy', ->
-    @deleted = @destroyed = true
-    @deindex()
-    @updated = @created = false
-    @persist()
   
   # Removes all local data for model.
   @method 'forget', ->
-    @deindex()
-    delete ST.Model._byUuid[@uuid]
-    STModel.Storage.remove @uuid if ST.Model.Storage
-    STObject.prototype.destroy.apply this
+    # Remove from global index
+    delete ST.Model._byUuid[@_uuid]
+    
+    # Remove from model index
+    delete @_class._byUuid[@_uuid]
+    
+    # Remove from attribute indexes
+    ST.Model.Index.removeObject this
 
-  @classMethod 'attribute', (name, defaultValue) ->
+    # Remove from persistant storage
+    ST.Model.Storage.remove @_uuid if ST.Model.Storage
+
+  # Marks model as destroyed, destroy to be propagated to server when 
+  # possible.
+  @method 'destroy', ->
+    ST.Model._changes ||= []
+    ST.Model._changes.push {
+      uuid:       ST.Model.GenerateUUID()
+      model:      @_class._name
+      type:       'destroy'
+      objectUuid: @_uuid
+    }
+    @forget()
+
+  @classMethod 'attribute', (name, type, defaultValue) ->
     ucName = ST.ucFirst name
     
     @Attributes ||= {}
     @Attributes[name] = defaultValue
     
     @method "set#{ucName}", (newValue) ->
-      oldValue = @attributes[name]
+      oldValue = @_attributes[name]
   
       # Set new value
-      @attributes[name] = newValue
+      @_attributes[name] = newValue
   
       # Update index
       if @_class["Index#{ucName}"]
@@ -291,10 +301,24 @@ ST.class 'Model', ->
       @_changed name, oldValue, newValue if @_changed
       @trigger 'changed', name, oldValue, newValue
       
-      @setUpdated true
       @persist()
     
-    @method "get#{ucName}", -> @attributes[name]
+    @method "get#{ucName}", -> @_attributes[name]
+    
+    @method name, (value) ->
+      if value?
+        @["set#{ucName}"](value)
+      else
+        @["get#{ucName}"]()
+  
+  @classMethod 'string', (name, defaultValue) ->
+    @attribute name, 'string', defaultValue
+    
+  @classMethod 'number', (name, defaultValue) ->
+    @attribute name, 'number', defaultValue
+
+  @classMethod 'datetime', (name, defaultValue) ->
+    @attribute name, 'datetime', defaultValue
   
   @classMethod 'belongsTo', (name, assocModel, options={}) ->
     @attribute "#{name}Uuid"
@@ -313,7 +337,7 @@ ST.class 'Model', ->
       setUuidName = "set#{ucName}Uuid"
       oldSet = @prototype[setUuidName]
       @method setUuidName, (value) ->
-        oldValue = @attributes[name]
+        oldValue = @_attributes[name]
         unless oldValue == value
           if oldValue.unbind
             for key of options.bind
@@ -347,13 +371,12 @@ ST.class 'Model', ->
   
       #setCustomerUuids
       @method "set#{ucAttr}", (value) ->
-        @attributes[attr] = value
+        @_attributes[attr] = value
         this["#{name}NeedsRebuild"] = true
-        @setUpdated true
         @persist()
   
       #getCustomerUuids
-      @method "get#{ucAttr}", -> @attributes[attr]
+      @method "get#{ucAttr}", -> @_attributes[attr]
   
       ucName = ST.ucFirst name
       ucsName = ST.ucFirst ST.singularize(name)
@@ -376,7 +399,7 @@ ST.class 'Model', ->
   
       # Load any unloaded saved models from storage
       storage.each (key, value) ->
-        if value && value._model && window[value._model] && !STModel.byUuid[key]
+        if value && value.model && window[value.model] && !STModel.byUuid[key]
           model = ST.Model.createWithData value
           model.created = value._created if value._created?
           model.updated = value._updated if value._updated?

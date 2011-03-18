@@ -7,7 +7,7 @@ $ ->
   Spec.describe "Model", ->
     beforeEach ->
       ST.class 'TestModel', 'Model', ->
-        @attribute 'foo'
+        @string 'foo', 'bacon'
       @model = ST.TestModel.create()
       
     describe ".scoped", ->
@@ -43,8 +43,8 @@ $ ->
         ST.TestModel.getIndex('foo').should be(index)
     
     describe ".changes", ->
-      it "should return empty array", ->
-        ST.TestModel.changes().should equal([])
+      it "should return an array", ->
+        ST.TestModel.changes().should beAnInstanceOf(Array)
     
     describe ".saveToServer", ->
       it "should be tested"
@@ -56,63 +56,176 @@ $ ->
         model.init()
     
     describe "#initWithData", ->
-      it "should generate a new UUID"
-      it "should accept an existing UUID"
-      it "should set attributes to their defaults"
-      it "should load provided attributes"
+      beforeEach ->
+        @model = new ST.TestModel()
+      
+      it "should generate a new UUID", ->
+        ST.Model.GenerateUUID = -> 'foo'
+        @model.initWithData {}
+        @model.uuid().should equal('foo')
+        
+      it "should accept an existing UUID", ->
+        @model.initWithData {uuid: 'bar'}
+        @model.uuid().should equal('bar')
+        
+      it "should set attributes to their defaults", ->
+        @model.initWithData {}
+        @model.foo().should equal('bacon')
+        
+      it "should load provided attributes", ->
+        @model.initWithData {foo: 'waffles'}
+        @model.foo().should equal('waffles')
+      
       it "should apply bindings on one-to-many associations"
-      it "should be saved in persistant storage"
     
     describe ".createWithData", ->
-      it "should create using correct model type if specified"
-      it "should not create if specified model type is not found"
-      it "should update an existing object with same ID"
-      it "should create a new object"
+      it "should create using correct model type if specified", ->
+        model = ST.Model.createWithData {model: 'TestModel'}
+        model.should beAnInstanceOf(ST.TestModel)
+      
+      it "should not create if specified model type is not found", ->
+        model = ST.Model.createWithData {model: 'Bacon'}
+        expect(model).to be(null)
+      
+      it "should update an existing object with same ID", ->
+        model = ST.TestModel.createWithData {uuid: 'recreate', foo: 'bacon'}
+        ST.TestModel.createWithData {uuid: 'recreate', foo: 'waffles'}
+        model.foo().should equal('waffles')
+      
+      it "should create a new object", ->
+        model = ST.TestModel.createWithData {foo: 'bacon'}
+        model.should beAnInstanceOf(ST.TestModel)
     
     describe "#setUuid", ->
-      it "should add object to global index"
-      it "should add object to model index"
+      it "should add object to global index", ->
+        model = new ST.TestModel()
+        model.uuid 'test'
+        ST.Model._byUuid['test'].should be(model)
+      
+      it "should add object to model index", ->
+        model = new ST.TestModel()
+        model.uuid 'test'
+        ST.TestModel._byUuid['test'].should be(model)
+      
+      it "should do nothing if model already has ID", ->
+        model = new ST.TestModel()
+        model._uuid = "test"
+        model.uuid 'test'
+        ST.Model._byUuid['test'].shouldNot be(model)
     
     describe "#matches", ->
-      it "should evaluate conditions"
+      it "should match when meets conditions", ->
+        @model.matches(foo: 'bacon').should beTrue
+
+      it "should not match when fails condition", ->
+        @model.matches(foo: 'waffles').should beFalse
     
     describe "#getManyList", ->
       it "needs to be tested"
     
     describe "#_changed", ->
-      it "should store change in change list"
+      it "should store change in change list", ->
+        ST.Model._changes = []
+        @model.foo 'waffles'
+        ST.Model._changes.length.should equal(1)
+        change = ST.Model._changes[0]
+        change.uuid.shouldNot be(null)
+        change.model.should equal('TestModel')
+        change.type.should equal('update')
+        change.objectUuid.should equal(@model.uuid())
+        change.attribute.should equal('foo')
+        change.oldValue.should equal('bacon')
+        change.newValue.should equal('waffles')
+      
+      it "should update persistant storage", ->
+        @model.shouldReceive('persist')
+        @model.foo 'waffles'
     
     describe "#serialize", ->
-      it "should return a text representation of object"
+      it "should return a text representation of object", ->
+        @model._uuid = 'test'
+        @model.serialize().should equal('{"model":"TestModel","uuid":"test","foo":"bacon"}')
     
     describe "#persist", ->
-      it "should save object in persistant storage"
-    
-    describe "#deindex", ->
-      it "should remove object from global index"
-      it "should remove object from model index"
-      it "should remove object from attribute indexes"
-    
-    describe "#destroy", ->
-      it "should deindex object"
-      it "should store destruction in change list"
+      it "should save object in persistant storage", ->
+        ST.Model.Storage = {}
+        @model._uuid = 'test'
+        ST.Model.Storage.shouldReceive('set').with('test', @model.serialize())
+        @model.persist()
+        delete ST.Model.Storage
     
     describe "#forget", ->
-      it "should unload object from client"
+      it "should remove object from global index", ->
+        uuid = @model.uuid()
+        @model.forget()
+        expect(ST.Model._byUuid[uuid]).to be(undefined)
+      
+      it "should remove object from model index", ->
+        uuid = @model.uuid()
+        @model.forget()
+        expect(ST.TestModel._byUuid[uuid]).to be(undefined)
+      
+      it "should remove object from attribute indexes", ->
+        method = ST.Model.Index.removeObject
+        ST.Model.Index.shouldReceive 'removeObject'
+        @model.forget()
+        ST.Model.Index.removeObject = method
+        
+      it "should remove from persistant storage", ->
+        ST.Model.Storage = {}
+        @model._uuid = 'test'
+        ST.Model.Storage.shouldReceive('remove').with('test')
+        @model.forget()
+        delete ST.Model.Storage
+
+    describe "#destroy", ->
+      it "should store destruction in change list", ->
+        ST.Model._changes = []
+        uuid = @model.uuid()
+        @model.destroy()
+        ST.Model._changes.length.should equal(1)
+        change = ST.Model._changes[0]
+        change.uuid.shouldNot be(null)
+        change.model.should equal('TestModel')
+        change.type.should equal('destroy')
+        change.objectUuid.should equal(uuid)
+      
+      it "should forget object", ->
+        @model.shouldReceive 'forget'
+        @model.destroy()
     
     describe ".attribute", ->
-      it "should register default value for attribute"
-      it "should create a getter method"
-      it "should create a setter method"
-      it "should create an accessor method"
+      beforeEach ->
+        ST.TestModel.attribute 'bar', 'string', 'bacon'
+      
+      it "should register default value for attribute", ->
+        ST.TestModel.Attributes['bar'].should equal('bacon')
+      
+      it "should create a getter method", ->
+        @model.getBar.should beAFunction
+        
+      it "should create a setter method", ->
+        @model.setBar.should beAFunction
+        
+      it "should create an accessor method", ->
+        @model.bar.should beAFunction
       
       describe "#set(Attribute)", ->
-        it "should set new value"
+        it "should set new value", ->
+          @model.bar 'waffles'
+          @model.bar().should equal('waffles')
+          
         it "should update an attribute index"
-        it "should trigger _changed event"
+          
+        it "should trigger _changed event", ->
+          @model.bar 'bacon'
+          @model.shouldReceive('_changed').with('bar', 'bacon', 'waffles')
+          @model.bar 'waffles'
       
       describe "#get(Attribute)", ->
-        it "should return attribute value"
+        it "should return attribute value", ->
+          @model.bar 'waffles'
+          @model.bar().should equal('waffles')
     
     describe ".belongsTo", ->
       it "should create a Uuid attribute"

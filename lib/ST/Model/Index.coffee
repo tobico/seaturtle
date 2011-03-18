@@ -1,10 +1,19 @@
 #require ST/Model
 
 ST.Model.class 'Index', ->
+  @_byModelAttribute = {}
+  
   @initializer 'withModelAttribute', (model, attribute) ->
     @_model = model
     @_attribute = attribute
     @_byValue = {}
+    this
+  
+  @classMethod 'createWithModelAttribute', (model, attribute) ->
+    ST.Model.Index._byModelAttribute[model._name] ||= {}
+    ST.Model.Index._byModelAttribute[model._name][attribute] ||= (new this).initWithModelAttribute(model, attribute)
+    
+  @classMethod 'removeObject', ->
   
   @property 'model'
   @property 'attribute'
