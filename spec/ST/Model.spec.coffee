@@ -247,24 +247,83 @@ $ ->
         it "should test incorrect value", ->
           @condition.test('waffles').should beFalse
     
-    describe ".belongsTo", ->
-      it "should create a Uuid attribute"
-      it "should create a getter method"
-      it "should create a setter method"
-      it "should create an accessor method"
-      it "should apply bindings"
-    
-    describe ".hasMany", ->
-      context "with a foreign key", ->
-        it "should create a getter method for scope"
-        it "should store details of binding"
+    context "with an associated model", ->
+      beforeEach ->
+        ST.class 'OtherModel', 'Model', ->
       
-      context "without a foreign key", ->
-        it "should create a uuids getter method"
-        it "should create a uuids setter method"
-        it "should create a uuids accessor method"
-        it "should create a getter method"
-        it "should create an add method"
+      describe ".belongsTo", ->
+        beforeEach ->
+          ST.TestModel.belongsTo 'other', 'OtherModel'
+        
+        it "should create a Uuid attribute", ->
+          @model.otherUuid.should beAFunction
+        
+        it "should create a getter method", ->
+          @model.getOther.should beAFunction
+        
+        it "should create a setter method", ->
+          @model.setOther.should beAFunction
+        
+        it "should create an accessor method", ->
+          @model.other.should beAFunction
+
+        it "should apply bindings"
+        
+        describe "getter method", ->
+          it "should find object by uuid", ->
+            other = ST.OtherModel.create()
+            @model.otherUuid other.uuid()
+            @model.other().should be(other)
+          
+          it "should be null when no uuid", ->
+            expect(@model.other()).to be(null)
+          
+          it "should be null when no model with uuid", ->
+            @model.otherUuid = 'nothing'
+            expect(@model.other()).to be(null)
+        
+        describe "setter method", ->
+          it "should set uuid", ->
+            other = ST.OtherModel.create()
+            @model.other other
+            @model.otherUuid().should equal(other.uuid())
+    
+      describe ".hasMany", ->
+        context "with a foreign key", ->
+          beforeEach ->
+            ST.OtherModel.belongsTo 'test', 'TestModel'
+            ST.TestModel.hasMany 'others', 'OtherModel', 'test'
+          
+          it "should create a getter method for scope", ->
+            @model.others.should beAFunction
+            
+          it "should store details of binding"
+          
+          describe "getter method", ->
+            it "should return a scope with conditions to match foreign key", ->
+              scope = @model.others()
+              scope._model.should be(ST.OtherModel)
+              scope._conditions.length.should equal(1)
+              scope._conditions[0].attribute.should equal('testUuid')
+      
+        context "without a foreign key", ->
+          beforeEach ->
+            ST.TestModel.hasMany 'others', 'OtherModel'
+          
+          it "should create a uuids getter method", ->
+            @model.getOtherUuids.should beAFunction
+          
+          it "should create a uuids setter method", ->
+            @model.setOtherUuids.should beAFunction
+          
+          it "should create a uuids accessor method", ->
+            @model.otherUuids.should beAFunction
+          
+          it "should create a getter method", ->
+            @model.others.should beAFunction
+          
+          it "should create an add method", ->
+            @model.addOther.should beAFunction
     
     describe ".setStorage", ->
       it "should set the persistant store"

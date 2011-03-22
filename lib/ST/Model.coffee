@@ -1,5 +1,6 @@
 #require ST/Object
 #require ST/Enumerable
+#require ST/Inflector
 #request ST/Model/Scope
 #request ST/Model/Index
 
@@ -301,11 +302,7 @@ ST.class 'Model', ->
     
     @method "get#{ucName}", -> @_attributes[name]
     
-    @method name, (value) ->
-      if value?
-        @["set#{ucName}"](value)
-      else
-        @["get#{ucName}"]()
+    @accessor name
     
     @[name] = {
       equals: (value) ->
@@ -335,11 +332,13 @@ ST.class 'Model', ->
     
     @method "get#{ucName}", ->
       uuid = @get "#{name}Uuid"
-      uuid && ST.Model._byUuid[uuid]
+      ST.Model._byUuid[uuid] || null
     
     @method "set#{ucName}", (value) ->
       ST.error 'Invalid object specified for association' if value && value._class._name != assocModel
-      @set "#{name}Uuid", value && value.uuid
+      @set "#{name}Uuid", value && value.uuid()
+    
+    @accessor name
   
     if options.bind
       setUuidName = "set#{ucName}Uuid"
@@ -358,8 +357,11 @@ ST.class 'Model', ->
   @classMethod 'hasMany', (name, assocModel, foreign=null, options={}) ->
     if foreign
       # One-to-many assocation through a Model and foreign key
-      @method "get#{ST.ucFirst name}", ->
-        this[name] ||= @_namespace.getClass(assocModel).where("#{foreign}Uuid", @uuid)
+      @method name, ->
+        unless this["_#{name}"]
+          model = @_class._namespace.getClass(assocModel)
+          this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
+        this["_#{name}"]
       
       if options && options.bind
         for key of options.bind
@@ -385,12 +387,13 @@ ST.class 'Model', ->
   
       #getCustomerUuids
       @method "get#{ucAttr}", -> @_attributes[attr]
-  
-      ucName = ST.ucFirst name
+      
+      @accessor attr
+
       ucsName = ST.ucFirst ST.singularize(name)
   
-      #getCustomers
-      @method "get#{ucName}", -> @getManyList name
+      #customers
+      @method name, -> @getManyList name
   
       #addCustomer
       @method "add#{ucsName}", (record) ->

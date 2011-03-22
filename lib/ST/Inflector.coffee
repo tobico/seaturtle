@@ -81,7 +81,7 @@ ST.Inflector = {
     result = null
     for match in regexes
       if match[0].test lower
-        result = lower.replace regex, match[1]
+        result = lower.replace match[0], match[1]
         break
         
     result

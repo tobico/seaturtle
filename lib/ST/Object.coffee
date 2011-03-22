@@ -52,6 +52,14 @@ ST.class 'Object', null, ->
   @classMethod 'include', (name) ->
     ST._modules[name].call this
   
+  @classMethod 'accessor', (name) ->
+    ucName = ST.ucFirst name
+    @method name, (value) ->
+      if arguments.length
+        this["set#{ucName}"](value)
+      else
+        this["get#{ucName}"]()
+  
   # Creates getter, setter, and property accessor
   @classMethod 'property', (name, mode) ->
     ucName = ST.ucFirst name
@@ -66,11 +74,7 @@ ST.class 'Object', null, ->
         this["_#{name}"] = newValue
         @_changed name, oldValue, newValue if @_changed
     
-    @method name, (value) ->
-      if arguments.length
-        this["set#{ucName}"](value)
-      else
-        this["get#{ucName}"]()
+    @accessor name
   
   # Generates a "forwarder" method, that acts as a proxy for the
   # given member object.
