@@ -149,12 +149,8 @@ ST.class 'Model', ->
   
   @method 'matches', (conditions) ->
     if @_attributes
-      for key of conditions
-        if conditions.hasOwnProperty key
-          if conditions[key] instanceof Function
-            return false unless conditions[key](@_attributes[key])
-          else
-            return false unless @_attributes[key] == conditions[key]
+      for condition in conditions
+        return false unless condition.test @_attributes[condition.attribute]
       true
     else
       false
@@ -310,12 +306,24 @@ ST.class 'Model', ->
         @["set#{ucName}"](value)
       else
         @["get#{ucName}"]()
+    
+    @[name] = {
+      equals: (value) ->
+        {
+          attribute: name
+          value: value
+          test: (test) -> test == value
+        }
+    }
   
   @classMethod 'string', (name, defaultValue) ->
     @attribute name, 'string', defaultValue
     
-  @classMethod 'number', (name, defaultValue) ->
-    @attribute name, 'number', defaultValue
+  @classMethod 'integer', (name, defaultValue) ->
+    @attribute name, 'integer', defaultValue
+
+  @classMethod 'float', (name, defaultValue) ->
+    @attribute name, 'float', defaultValue
 
   @classMethod 'datetime', (name, defaultValue) ->
     @attribute name, 'datetime', defaultValue

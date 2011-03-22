@@ -115,10 +115,10 @@ $ ->
     
     describe "#matches", ->
       it "should match when meets conditions", ->
-        @model.matches(foo: 'bacon').should beTrue
+        @model.matches([ST.TestModel.foo.equals('bacon')]).should beTrue
 
       it "should not match when fails condition", ->
-        @model.matches(foo: 'waffles').should beFalse
+        @model.matches([ST.TestModel.foo.equals('waffles')]).should beFalse
     
     describe "#getManyList", ->
       it "needs to be tested"
@@ -226,6 +226,26 @@ $ ->
         it "should return attribute value", ->
           @model.bar 'waffles'
           @model.bar().should equal('waffles')
+      
+      it "should create condition generators", ->
+        expect(ST.TestModel.bar).notTo be(null)
+        ST.TestModel.bar.equals.should beAFunction
+        
+      describe "equals condition generator", ->
+        beforeEach ->
+          @condition = ST.TestModel.bar.equals('bacon')
+      
+        it "should have correct attribute name", ->
+          @condition.attribute.should equal('bar')
+          
+        it "should have correct value", ->
+          @condition.value.should equal('bacon')
+        
+        it "should test correct value", ->
+          @condition.test('bacon').should beTrue
+        
+        it "should test incorrect value", ->
+          @condition.test('waffles').should beFalse
     
     describe ".belongsTo", ->
       it "should create a Uuid attribute"

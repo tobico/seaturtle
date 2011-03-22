@@ -10,5 +10,7 @@ $ ->
         ST.toProc(fn).should be(fn)
     
       it 'should call stringToProc on a string', ->
+        stringToProc = ST.stringToProc
         ST.shouldReceive('stringToProc').with('test').andReturn -> null
         ST.toProc('test').should beAFunction
+        ST.stringToProc = stringToProc

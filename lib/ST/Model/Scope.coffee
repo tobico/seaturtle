@@ -12,17 +12,16 @@ ST.Model.class 'Scope', ->
   
   @initializer 'withScope', (scope) ->
     @init()
-    @_model = scope.model()
+    @_model = scope._model
     @_conditions = []
-    for condition in scope.conditions()
+    for condition in scope._conditions
       @_conditions.push condition
-    @_order = scope.order()
-  
-  @property 'model'
+    @_order = scope._order
     
   @method 'fork', (block) ->
     scope = @_class.createWithScope this
-    block.call scope
+    block.call scope if block
+    scope
     
   @method 'where', (conditions...) ->
     @fork ->
@@ -42,17 +41,40 @@ ST.Model.class 'Scope', ->
         index.bind 'itemChanged', this, 'indexItemChanged'
         break
   
-  @method 'each', (yield) ->  
+  @method 'each', (yield) ->
+    self = this
+    yield = ST.toProc yield
+  
     candidates = null
-    for condition in @conditions
+    for condition in @_conditions
       if condition.index
         return unless condition.index.length
         candidates = condition.index.find condition.value
     
-    candidates = @_model.array()
+    candidates ||= @_model._byUuid
+    matches = []
     
-    for candidate in candidates
-      yield candidate if @matches candidate
+    for uuid of candidates
+      if candidates.hasOwnProperty uuid
+        candidate = candidates[uuid]
+        if candidate.matches @_conditions
+          if @_order
+            matches.push candidate
+          else
+            yield candidate
+    
+    if @_order
+      matches.sort (a, b) ->
+        a_value = a.get self._order
+        b_value = b.get self._order
+        if a_value > b_value
+          1
+        else if a_value < b_value
+          -1
+        else
+          0
+      for match in matches
+        yield match
   
   @method 'count', ->
     count = 0
@@ -64,8 +86,12 @@ ST.Model.class 'Scope', ->
     @each 'destroy'
   
   @method 'build', (data) ->
-    data = $.extend {}, @conditions, data
-    @model.createWithData data
+    defaults = {}
+    for condition in @_conditions
+      if condition.attribute && condition.value
+        defaults[condition.attribute] = condition.value
+    $.extend(defaults, data) if data
+    @_model.createWithData defaults
   
   @method 'indexItemAdded', (index, item) ->
     if item.matches @condition
