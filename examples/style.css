@@ -1,0 +1,17 @@
+table.tableView {
+  border-collapse: collapse;
+  width: 100%;
+  border: solid 1px #DDD;
+  border-color: #DDD #555 #555 #DDD;
+}
+table.tableView thead th {
+  background: #BBB;
+  text-align: left;
+  vertical-align: baseline;
+}
+table.tableView th, table.tableView td {
+  padding: 4px;
+}
+table.tableView tbody tr:nth-child(2n) {
+  background: #EEE;
+}

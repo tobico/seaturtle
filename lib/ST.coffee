@@ -103,7 +103,7 @@ window.ST = {
   # Creates an Array.sort compatible callback function from the provided
   #  conversion function.
   makeSortFn: (fn, reverse) ->
-    fn = ST.P fn
+    fn = ST.toProc fn
     (a, b) ->
       if reverse
         ST.compare fn(b), fn(a)

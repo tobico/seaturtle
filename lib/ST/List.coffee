@@ -14,10 +14,16 @@ ST.class 'List', ->
       break if fn.call(item, item) == 'break'
     
   @method 'getAt', (index) ->
-    if index > 0 && index < @_array.length
+    if index >= 0 && index < @_array.length
       @_array[Number(index)]
     else
       null
+  
+  @method 'at', (index, value) ->
+    if arguments.length == 2
+      @setAt index, value
+    else
+      @getAt index
     
   @delegate 'indexOf', 'array'
   @delegate 'length', 'array', 'count'

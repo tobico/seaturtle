@@ -1,339 +1,249 @@
+#require ST/View
+#require Popup
+
 ST.class 'TableView', 'View', ->
   @GroupingEnabled = false
+  @Instances = []
   
-  @constructor 'withCollection', (collection) ->
+  @initializer 'withList', (list) ->
     @init()
-    @columns = []
-    @rows = []
-    @setCollection collection
-    @sortColumn = null
-    @reverseSort = false
-    @mainElement = null
-    @tableElement = null
-    @tbodyElement = null
-    @actionsDisplay = null
-    @showActions = true
-    @groupBy = null
-    @groups = {}
-    @filter = null
-    @ignoreChanges = {}
+    ST.TableView.Instances.push this
+    @_id = ST.TableView.Instances.length - 1
+    @_columns = []
+    @_mapping = []
+    @list list
+    @_sortColumn = null
+    @_reverseSort = false
+    @_tableClass = null
+    @_tableElement = null
+    @_canCustomizeColumns = true
     
-  @destructor ->
-    @releaseMembers 'collection'
-    @_super()
-  
   @property 'columns'
-  @property 'collection', 'retain'
+  @property 'list'
   @property 'sortColumn'
   @property 'reverseSort'
-  @property 'actionsDisplay'
   @property 'tableClass'
-  @property 'mainElement', null, 'readonly'
-  @property 'tableElement', null, 'readonly'
-  @property 'tbodyElement', null, 'readonly'
-  @property 'filter'
-  @property 'showActions'
+  @property 'tableElement'
+  @property 'canCustomizeColumns'
   
-  @method 'setCollection', (newCollection) ->
-    return if newCollection == @collection
+  @destructor ->
+    ST.TableView.Instances[@_id] = null
+    @super()
+  
+  @method 'setList', (newList) ->
+    self = this
+    unless newList == @list    
+      if @_list
+        @_list.unbindAll this
     
-    if @collection
-      @collection.unbindAll this
-      @collection.release()
+      @_list = newList
+      @_mapping = []
     
-    @collection = newCollection
-    
-    if @collection
-      @collection.retain()
-      @collection.bind 'itemAdded', this, 'collectionItemAdded'
-      @collection.bind 'itemChanged', this, 'collectionItemChanged'
-      @collection.bind 'itemRemoved', this, 'collectionItemRemoved'
+      if @_list
+        @_list.bind 'itemAdded', this, 'listItemAdded'
+        @_list.bind 'itemChanged', this, 'listItemChanged'
+        @_list.bind 'itemRemoved', this, 'listItemRemoved'
+        i = 0
+        @_list.each (item) ->
+          self._mapping.push i++
 
   @method 'setColumns', (columns, sortColumnIndex=0) ->
-    @columns = columns
-    @setSortColumn @columns[sortColumnIndex] if @sortColumn == false && @columns.length
-    @refreshHeaders() if @loaded
+    @_columns = columns
+    for column, i in columns
+      column.index = i
+    @sortColumn sortColumnIndex unless @_sortColumn or !columns.length
+    if @_loaded
+      @refreshHeader()
+      @refreshBody()
     
-  @method 'addColumn', (column) ->
-    @columns.push column
-    @refreshHeaders() if @loaded
-  
-  @method 'getSortFunction', (sortColumn) ->
+  @method 'sortFunction', (sortColumn) ->
     self = this
-    column = sortColumn || @sortColumn
+    column = sortColumn || @_sortColumn
     
     if column.sort
-      if @reverseSort
-        (a, b) -> column.sort(b.item, a.item)
+      if @_reverseSort
+        (a, b) -> column.sort self.list.at(b), self.list.at(a)
       else
-        (a, b) -> column.sort(a.item, b.item)
+        (a, b) -> column.sort self.list.at(a), self.list.at(b)
     else
-      ST.makeSortFn (row) ->
-        self.getCellValue column, row.item
-      , @reverseSort
+      ST.makeSortFn (index) ->
+        self.cellValue self._list.at(index), column
+      , @_reverseSort
 
   @method 'setSortColumn', (sortColumn, reverseSort) ->
     self = this
-    oldSortColumn = @sortColumn
+    sortColumn = @_columns[sortColumn] if typeof sortColumn == 'number'
     
-    @reverseSort = reverseSort if reverseSort isnt undefined
+    oldSortColumn = @_sortColumn
+    
+    @_reverseSort = reverseSort if reverseSort isnt undefined
       
     if oldSortColumn == sortColumn
-      @reverseSort = !@reverseSort
+      @_reverseSort = !@_reverseSort
     else
-      @reverseSort = sortColumn.reverse || false
+      @_reverseSort = sortColumn.reverse || false
       
-    @sortColumn = sortColumn
-      
-    @sort()
+    @_sortColumn = sortColumn
     
-    if @groupBy
-      @groupBy = sortColumn
-      @renderMain()
-    else
-      @refreshColumnHeader oldSortColumn
-      @refreshColumnHeader sortColumn
+    @refreshHeader()
+    @sort()
   
   @method 'sort', ->
     self = this
-    @rows.sort @getSortFunction()
-    if @loaded
-      if @groupBy
-      else
-        @rows.each (row) -> self.tbodyElement.append row
+    @_mapping.sort @sortFunction()
+    if @_loaded
+      tbody = $('tbody', @_tableElement)
+      for index in @_mapping
+        tbody.append $('tr.item' + index)
 
-  @method 'sortRow', (row) ->
-    inPlace = false
-    sortFunction = @getSortFunction()
-    startIndex = @rows.indexOf row
-    index = startIndex
-    oldTop = row.offset().top
+  @method 'positionRow', (item) ->
+    # inPlace = false
+    # sortFunction = @getSortFunction()
+    # startIndex = @rows.indexOf row
+    # index = startIndex
+    # oldTop = row.offset().top
+    # 
+    # until inPlace
+    #   if index > 0 && sortFunction(row, @rows[index - 1]) < 0
+    #     @rows[index] = @rows[index - 1]
+    #     @rows[index - 1] = row
+    #     index--
+    #   else if index < (this.rows.length - 1) && sortFunction(row, this.rows[index + 1]) > 0
+    #     @rows[index] = @rows[index + 1]
+    #     @rows[index + 1] = row
+    #     index++
+    #   else
+    #     inPlace = true
+    #     
+    # return if index == startIndex
+    # 
+    # if index > 0
+    #   @rows[index - 1].after row
+    # else
+    #   @tbodyElement.prepend row
     
-    until inPlace
-      if index > 0 && sortFunction(row, @rows[index - 1]) < 0
-        @rows[index] = @rows[index - 1]
-        @rows[index - 1] = row
-        index--
-      else if index < (this.rows.length - 1) && sortFunction(row, this.rows[index + 1]) > 0
-        @rows[index] = @rows[index + 1]
-        @rows[index + 1] = row
-        index++
-      else
-        inPlace = true
-        
-    return if index == startIndex
-    
-    if index > 0
-      @rows[index - 1].after row
-    else
-      @tbodyElement.prepend row
-    
-  @method 'setSort', (id, reverse) ->
-    column = @columns[id];
-    @setSortColumn column, reverse
-  
-  @method 'setFilter', (newFilter) ->
-    return if newFilter == @filter
-    @filter = newFilter
-    @refilter()
-  
-  @method 'refilter', ->
-    return unless @loaded
-    
-    if @filter
-      for row in rows
-        if @filter row.item
-          row.css 'display', 'table-row'
-        else
-          row.hide()
-    else
-      for row in rows
-        row.css 'display', 'table-row'
-  
-  @method 'reload', ->
-    @error 'STTableView reloaded'
-  
   @method 'render', (element) ->
-    @_super element
-    @mainElement = $('<div></div>').appendTo(element)
-    @renderMain()
+    @super element
+    @renderTable()
+    element.append @_tableElement
   
-  @method 'renderMain', ->
+  @method 'renderTable', ->
+    @_tableElement = @helper().tag('table').addClass('tableView')
+    @_tableElement.addClass @_tableClass if @_tableClass
+    html = []
+    @generateHeaderHTML html
+    @generateBodyHTML html
+    @_tableElement.html html.join('')
+    @activateHeader $('thead', @_tableElement)
+  
+  @method 'generateHeaderHTML', (html, media='screen') ->
+    html.push '<thead>'
+    @generateHeaderInnerHTML html, media
+    html.push '</thead>'
+  
+  @method 'generateHeaderInnerHTML', (html, media='screen') ->
+    html.push '<tr>'
+    
+    for column in @_columns
+      unless column.hidden or (column.media and column.media != media)
+        @generateColumnHeaderHTML column, html, media
+      
+    if @_canCustomizeColumns
+      html.push '<th class="actions"><a class="columnsButton" onmouseover="$(this).addClass(\'columnsButtonHover\')" onmouseout="$(this).removeClass(\'columnsButtonHover\')" href="javascript:;">C</a></th>'
+    
+    html.push '</tr>'
+  
+  @method 'activateHeader', (element) ->
+    if @_canCustomizeColumns
+      $('.actions', element).popup @method('generateColumnsPopup')
+  
+  @method 'generateColumnHeaderHTML', (column, html, media='screen') ->
+    html.push '<th style="cursor:pointer" onclick="ST.TableView.Instances[' + @_id + '].setSortColumn(' + column.index + ')">'
+    html.push column.title
+    
+    if column == @_sortColumn
+      html.push '<span class="sortLabel">'
+      if @_reverseSort
+        html.push ' &#x2191;' 
+      else
+        html.push ' &#x2193;'
+      html.push '</span>'
+  
+  @method 'generateBodyHTML', (html, media='screen') ->
+    html.push '<tbody>'
+    @generateBodyInnerHTML html, media
+    html.push '</tbody>'
+  
+  @method 'generateBodyInnerHTML', (html, media='screen') ->
     self = this
+    @_list.each (item) ->
+      self.generateRowHTML item, html, media
   
-    @loadRows()
-    for row in rows
-      row.detach()
-    
-    @mainElement.empty()
-      
-    if @groupBy
-      @getGroupValues().each (value) ->
-        group = {};
-        self.groups[value] = group
-        self.renderTable group
-        self.mainElement.append '<h3>' + value + '</h3>'
-        self.mainElement.append group.tableElement
-      for row in rows
-        value = self.getCellValue self.groupBy, row.item
-        self.groups[value].tbodyElement.append row
+  @method 'generateRowHTML', (item, html, media='screen') ->
+    html.push '<tr class="item'
+    html.push @_list.indexOf(item)
+    html.push '">'
+    @generateRowInnerHTML item, html, media
+    html.push '</tr>'
+
+  @method 'generateRowInnerHTML', (item, html, media='screen') ->
+    for column in @_columns      
+      unless column.hidden or (column.media and column.media != media)
+        @generateCellHTML item, column, html, media
+  
+  @method 'generateCellHTML', (item, column, html, media='screen') ->
+    if column == @_columns[@_columns.length - 1]
+      html.push '<td colspan="2">'
     else
-      this.renderTable this
-      self.mainElement.append this.tableElement
-      for row in rows
-        @tbodyElement.append row
-    
-    @refresh()
+      html.push '<td>'
+    @generateCellInnerHTML item, column, html, media
+    html.push '</td>'
   
-  @method 'renderTable', (object) ->
-    object.tableElement = @helper.tag('table').addClass('tableView')
-    object.tableElement.addClass @tableClass if @tableClass
-    object.tbodyElement = @helper.tag('tbody').appendTo object.tableElement
-    object.tableElement.prepend @helper.tag('thead').append(@renderHeader())
+  @method 'generateCellInnerHTML', (item, column, html, media='screen') ->
+    html.push(
+      if column.html
+        column.html item
+      else
+        @cellValue item, column, media
+    )
   
-  @method 'renderHeader', ->
-    header = @helper.tag('tr')
-    for column in @columns
-      unless column.hidden or column.printOnly
-        header.append @renderHeaderForColumn(column)
-      
-    if @showActions
-      th = @helper.tag 'th'
-      th.addClass 'actions'
-      th.appendTo header
-      a = @helper.tag 'a'
-      a.appendTo th
-      a.addClass 'columnsButton'
-      a.hover -> $(this).addClass 'columnsButtonHover'
-      , -> $(this).removeClass 'columnsButtonHover'
-      a.popup @methodFn('generateColumnsPopup')
-      
-    header
-  
-  @method 'renderRow', (row) ->
-    row.empty()
-    skip = 0
-    for column in columns      
-      unless column.hidden || column.printOnly
-        if skip > 0
-          skip--
-          continue
-        
-        cell = @helper.tag 'td'
-        row.append cell
-        skip += @renderCell cell, column, row
-    if @showActions
-      actionsCell = @helper.tag 'td'
-      actionsCell.appendTo row
-      @actionsDisplay actionsCell, row.item if @actionsDisplay
-      
-  @method 'renderCell', (cell, column, row) ->
-    skip = 0
-    value = @getCellValue column, row.item
-    if column.display
-      column.display cell, row.item, value, row
-      colSpan = cell.attr 'colspan'
-      skip += colSpan - 1 if colSpan > 1
-    else
-      cell.append value
-    skip
-  
-  @method 'getCellValue', (column, item) ->
-    value = false
-    
+  @method 'cellValue', (item, column, media='screen') ->
     if column.value
-      value = column.value item
+      column.value item, media
     else if column.field
       if item && item.get
-        value = item.get column.field
+        item.get column.field
       else if item
-        value = ST.Object.prototype.get.call item, column.field
-    
-    if column.filter
-      value = column.filter value
-    if column.filters
-      for filter in column.filters
-        value = filter(value)
-    
-    return value;
+        ST.Object.prototype.get.call item, column.field
   
-  @method 'getGroupValues', ->
-    values = []
-    for row in @rows
-      value = @getCellValue @groupBy, row
-      values.push value unless values.indexOf(value) >= 0
-    values
-    
-  @method 'loadRows', ->
-    unless @rows.length
-      self = this
-      @collection.each (item) ->
-        self.rows.push self.makeRow(item)
-      @sort()
+  @method 'refreshHeader', ->
+    if @_loaded
+      thead = $ 'thead', @_tableElement
+      html = []
+      @generateHeaderInnerHTML html
+      thead.html html.join('')
+      @activateHeader thead
+
+  @method 'refreshBody', ->
+    if @_loaded
+      tbody = $ 'tbody', @_tableElement
+      html = []
+      @generateBodyInnerHTML html
+      tbody.html html.join('')
   
-  @method 'unloadRows', ->
-    if @rows.length
-      for row in @rows
-        row.remove()
-        row.empty()
-      @itemRows = {}
-  
-  @method 'makeRow', (item) ->
-    row = @helper.tag 'tr'
-    row.item = item
-    @itemRows[item._uid] = row
-    row.hide() if @filter && !@filter(row.item)
-    row
-  
-  @method 'removeRow', (item) ->
-    if @itemRows[item._uid]
-      row = @itemRows[item._uid]
-      delete @itemRows[item._uid]
-      @rows.remove row
-      row.item = null
-      row.remove()
-  
-  @method 'refresh', ->
-    for row in @rows
-      @renderRow row
-  
-  @method 'refreshHeaders', ->
-    self = this
-    $('thead', @element).each ->
-      $(this).empty().append self.renderHeader()
-  
-  @method 'refreshItem', (item) ->
-    if @itemRows[item._uid]
-      @renderRow @itemRows[item._uid]
-   
-  @method 'renderHeaderForColumn', (column) ->
-    self = this
-    
-    cell = @helper.tag('th').css('cursor', 'pointer').click ->
-      self.setSortColumn column
-    column.header = cell
-    
-    self.refreshColumnHeadercolumn
-    
-    cell
-  
-  @method 'refreshColumnHeader', (column) ->
-    if column.header
-      column.header.html column.title
-    
-      if column == @sortColumn
-        span = @helper.tag 'span'
-        if @reverseSort
-          span.html ' &#x2191;' 
-        else
-          span.html ' &#x2193;'
-        span.addClass 'sortLabel'
-        span.appendTo column.header
-  
+  @method 'refreshRow', (item) ->
+    if @_loaded
+      index = @_list.indexOf item
+      row = $('tr.item' + index, @_tableElement)
+      if row.length
+        html = []
+        @generateRowInnerHTML item, html
+        row.html html.join('')
+
   @method 'setColumnHidden', (column, hidden) ->
     column.hidden = hidden
-    @refresh()
-    @renderMain()
+    @refreshHeader()
+    @refreshBody()
   
   @method 'toggleColumn', (column) ->
     @setColumnHidden column, !column.hidden
@@ -347,89 +257,60 @@ ST.class 'TableView', 'View', ->
   @method 'generateColumnsPopup', ->
     self = this
     a = []
-    for column in columns
-      unless column.printOnly
+    for column in @_columns
+      unless column.media && column.media != 'screen'
         data = {
           title:  column.fullTitle || column.title
           action: ((column) -> -> self.toggleColumn column)(column)
         }
         data.title = '&#x2714; ' + data.title unless column.hidden
-    if ST.TableView.GroupingEnabled
-      a.push '-'
-      data = {
-        title:  'grouped'
-        action: ->
-          if self.groupBy
-            self.groupBy = null
-          else
-            self.groupBy = self.getSortColumn()
-          self.renderMain()
-      }
-      data.title = '&#x2714; ' + data.title if @groupBy
+        a.push data
     a
   
-  @method 'collectionItemAdded', (array, item) ->
-    return unless @loaded
+  @method 'listItemAdded', (list, item) ->
+    return unless @_loaded
     
     # Assign UID to non-STObjects
     item._uid ||= ST.Object.UID++
     
-    # Check that item doesn't already have a row
-    return if @itemRows[item._uid] isnt undefined
+    index = @_list.indexOf item
     
-    row = @makeRow item
-    if @groupBy
-      #TODO: Something
-    else if @tbodyElement
-      index = 0
-      sortFn = @getSortFunction()
-      while index < @rows.length && sortFn(row, @rows[index]) >= 0
-        index++
-      
-      if index < @rows.length - 1
-        @rows.insert index + 1, row
-        @rows[index].after row
-      else
-        @rows.push row
-        @tbodyElement.append row
-    @renderRow row
+    insertAt = 0
+    sortFn = @getSortFunction()
+    tbody = $ 'tbody', @_tableElement
+    rows = $ 'tr', tbody
+    while insertBefore < rows.length && sortFn(item, @_list.at(@_mapping[insertBefore])) >= 0
+      insertBefore++
+    
+    html = []
+    @generateRowHTML item, html
+    html = html.join('')
+    
+    if rows[insertBefore]
+      $(rows[insertBefore]).before html
+      @_mapping.splice insertBefore, 0, index
+    else
+      tbody.append html
+      @_mapping.push index
   
-  @method 'collectionItemRemoved', (array, item) ->
-    @removeRow item if @loaded
+  @method 'listItemRemoved', (list, item) ->
+    if @_loaded
+      index = @_list.indexOf Item
+      $('tr.item' + index, @_tableElement).remove()
+      for i, itemIndex in @_mapping
+        @_mapping.splice i, 1 if itemIndex == index
   
-  @method 'collectionItemChanged', (array, item) ->
-    if @itemRows[item._uid]
-      @sortRow @itemRows[item._uid]
-      if @ignoreChanges[item._uid]
-        @ignoreChanges[item._uid]--
-      else
-        @renderRow @itemRows[item._uid]
+  @method 'listItemChanged', (list, item) ->
+    if @_loaded
+      index = @_list.indexOf Item
+      row = $('tr.item' + index, @_tableElement)
+      if row.length
+        @positionRow item
+        @refreshRow item
 
-  @method 'ignoreChange', (item, number) ->
-    @ignoreChanges[item._uid] = (this.ignoreChanges[item._uid] || 0) + (number || 1)
-  
-  @method 'getPrintVersion', (sortColumn) ->
-    self = this
-    
-    html = '<table class="tableView"><thead><tr>'
-    for column in @columns
-      unless column.hidden || column.displayOnly
-        html += '<th>' + column.title + '</th>'
-    
-    printRows = []
-    @collection.each (item) ->
-      printRows.push {item: item}
-    printRows.sort this.getSortFunction(sortColumn || this.sortColumn)
-    for row in printRows
-      html += '<tr>'
-      for column in columns
-        unless column.hidden || column.displayOnly        
-          value = @getCellValue column, row.item
-          value = column.print row.item, value if column.print
-          value ||= '&nbsp;'
-          html += '<td>' + value + '</td>'
-      html += '</tr>'
-    
-    html += '</tr></thead><tbody>'
-    html += '</tbody></table>'
-    html
+  @method 'print', (sortColumn) ->
+    html = ['<table class="tableView">']
+    @generateHeaderHTML html, 'print'
+    @generateBodyHTML html, 'print'
+    html.push '</table>'
+    @helper().print html.join('')

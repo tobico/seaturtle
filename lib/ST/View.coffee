@@ -9,7 +9,7 @@ ST.class 'View', 'Destructable', ->
     view
     
   @initializer ->
-    element = ST.ViewHelper.instance().tag('view')
+    element = ST.ViewHelper.instance().tag('div')
     element.addClass @_class._name
     @initWithElement element
   

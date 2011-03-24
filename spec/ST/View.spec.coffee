@@ -8,9 +8,9 @@ $ ->
         view.shouldReceive 'initWithElement'
         view.init()
       
-      it "should create a view tag", ->
+      it "should create a div tag", ->
         view = ST.View.create()
-        view.element()[0].tagName.should equal('VIEW')
+        view.element()[0].tagName.should equal('DIV')
       
       it "should create a tag with view class name as a CSS class", ->
         view = ST.View.create()
