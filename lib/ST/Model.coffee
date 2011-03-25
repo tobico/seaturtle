@@ -331,7 +331,7 @@ ST.class 'Model', ->
     ucName = ST.ucFirst name
     
     @method "get#{ucName}", ->
-      uuid = @get "#{name}Uuid"
+      uuid = @["#{name}Uuid"]()
       ST.Model._byUuid[uuid] || null
     
     @method "set#{ucName}", (value) ->

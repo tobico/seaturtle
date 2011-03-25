@@ -53,7 +53,7 @@ ST.class 'List', ->
     return false unless @_array.length > index
     object = @_array.splice(index, 1)[0]
     object.unbind 'changed', this if object.unbind
-    @trigger 'itemRemoved', object
+    @trigger 'itemRemoved', object, index
     object.release() if object.release
     true
     

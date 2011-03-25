@@ -29,7 +29,6 @@ $ ->
       
       it "should set defaults", ->
         @view.loaded().should beFalse
-        @view.rendered().should beFalse
     
     context "with a new view", ->
       beforeEach ->
@@ -171,11 +170,6 @@ $ ->
           @view.addChild child
           @view.removeChild child
           @view.element().children().length.should equal(0)
-          
-      describe "#render", ->
-        it "should set rendered to true", ->
-          @view.render()
-          @view.rendered().should beTrue
       
       describe "#load", ->
         it "should trigger 'loading'", ->
@@ -258,10 +252,6 @@ $ ->
           @view.element().append('test')
           @view.unload()
           @view.element().children().length.should equal(0)
-        
-        it "should set rendered to false", ->
-          @view.unload()
-          @view.rendered().should beFalse
           
         it "should set loaded to false", ->
           @view.unload()

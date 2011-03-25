@@ -151,7 +151,7 @@ $ ->
     it "should trigger itemRemoved event", ->
       object = {}
       @list._array = [object]
-      @list.shouldReceive('trigger').with('itemRemoved', object)
+      @list.shouldReceive('trigger').with('itemRemoved', object, 0)
       @list.removeAt 0
     
     it "should release object", ->

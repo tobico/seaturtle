@@ -13,10 +13,9 @@ ST.class 'TabView', 'View', ->
   @property 'truncateLength'
   @property 'canClose'
   
-  @method 'render', (element) ->
+  @method 'render', ->
     self = this
-    @super element
-    element.empty()
+    @element().empty()
     
     for tab, index in @_tabs
       li = @helper().tag 'li'
@@ -34,7 +33,7 @@ ST.class 'TabView', 'View', ->
       @_canClose = @_canClose tab, index if typeof @_canClose == 'function'
       @helper().linkTag('X', -> self.closeTab index).addClass('close').appendTo(li) if @_canClose
       
-      element.append li
+      @element().append li
     
   @method 'closeTab', (index) ->
     tab = @_tabs[index]

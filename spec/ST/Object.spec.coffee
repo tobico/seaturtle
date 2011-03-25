@@ -225,13 +225,13 @@ $ ->
         planet._size.should equal(10000)
     
     describe "#get", ->
-      it "should get attribute", ->
-        @object._foo = 'bacon'
-        @object.get('_foo').should equal('bacon')
+      it "should call getter", ->
+        @object.foo = -> 'bacon'
+        @object.get('foo').should equal('bacon')
       
       it "should get attribute through getter", ->
-        @object.getParent = -> {_foo: 'bacon'}
-        @object.get('parent._foo').should equal('bacon')
+        @object.parent = -> {foo: -> 'bacon'}
+        @object.get('parent.foo').should equal('bacon')
         
     describe "#method", ->
       it "should return encapsulated method", ->

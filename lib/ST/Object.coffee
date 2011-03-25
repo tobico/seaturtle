@@ -150,12 +150,8 @@ ST.class 'Object', null, ->
     a = key.split '.'
     here = a.shift()
     there = a.join '.'
-    ucHere = ST.ucFirst here
   
-    that = if this["get#{ucHere}"]
-      this["get#{ucHere}"]()
-    else
-      this[here]
+    that = this[here] && this[here]()
 
     if there && there.length
       if that == null

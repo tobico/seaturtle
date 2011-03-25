@@ -279,7 +279,7 @@ $ ->
             expect(@model.other()).to be(null)
           
           it "should be null when no model with uuid", ->
-            @model.otherUuid = 'nothing'
+            @model._attributes.otherUuid = 'nothing'
             expect(@model.other()).to be(null)
         
         describe "setter method", ->
