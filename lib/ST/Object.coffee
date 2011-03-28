@@ -72,7 +72,7 @@ ST.class 'Object', null, ->
       @method "set#{ST.ucFirst name}", (newValue) ->
         oldValue = this["_#{name}"]
         this["_#{name}"] = newValue
-        @_changed name, oldValue, newValue if @_changed
+        @_changed name, oldValue, newValue
     
     @accessor name
   

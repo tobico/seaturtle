@@ -104,6 +104,11 @@ $ ->
             @test._foo = 'waffles'
             @test.shouldReceive('_changed').with('foo', 'waffles', 'bacon')
             @test.setFoo 'bacon'
+          
+          it "should call _fooChanged method", ->
+            @test._foo = 'waffles'
+            @test.shouldReceive('_fooChanged').with('waffles', 'bacon')
+            @test.setFoo 'bacon'
       
       describe ".delegate", ->
         beforeEach ->

@@ -51,10 +51,6 @@ $ ->
           @view.destroy()
           children._bindings.itemAdded.length.should equal(0)
         
-        it "should release destructable properties", ->
-          @view.shouldReceive('releaseProperties').with('children', 'header', 'footer')
-          @view.destroy()
-        
         it "should remove element from DOM", ->
           element = @view.element()
           element.shouldReceive 'remove'

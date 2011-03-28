@@ -8,8 +8,36 @@ ST.class 'Destructable', 'Object', ->
 
   @classMethod 'destructor', (fn) ->
     @method 'destroy', fn
+
+  # Creates getter, setter, and property accessor
+  @classMethod 'retainedProperty', (name, mode) ->
+    ucName = ST.ucFirst name
+    
+    (@_retainedProperties ||= []).push name
+
+    unless mode == 'write'
+      @method "get#{ucName}", ->
+        this["_#{name}"]
+
+    unless mode == 'read'
+      @method "set#{ST.ucFirst name}", (newValue) ->
+        oldValue = this["_#{name}"]
+        this["_#{name}"] = newValue
+        @_changed name, oldValue, newValue
+        unless oldValue is newValue
+          newValue.retain() if newValue
+          oldValue.release() if oldValue
+
+    @accessor name
     
   @destructor ->
+    c = @_class
+    while c isnt ST.Destructable
+      if c._retainedProperties
+        for property in c._retainedProperties
+          this[property] null
+      c = c._superclass
+    
     @__proto__ = Object if @__proto__
     for name of this
       delete this[name] unless name == '_class' || name == '_uid'
@@ -22,10 +50,3 @@ ST.class 'Destructable', 'Object', ->
   @method 'release', ->
     @_retainCount--
     @destroy() unless @_retainCount
-  
-  @method 'releaseProperties', (properties...) ->
-    for property in properties
-      name = "_#{property}"
-      if this[name]
-        this[name].release() if this[name].release
-        this[name] = null
