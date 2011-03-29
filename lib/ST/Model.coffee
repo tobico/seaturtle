@@ -357,7 +357,7 @@ ST.class 'Model', ->
             for key of options.bind
               oldValue.bind key, this, options.bind[key]
 
-  @classMethod 'hasMany', (name, assocModel, foreign=null, options={}) ->
+  @classMethod 'hasMany', (name, assocModel, foreign=null, binds={}) ->
     if foreign
       # One-to-many assocation through a Model and foreign key
       @method name, ->
@@ -366,13 +366,13 @@ ST.class 'Model', ->
           this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
         this["_#{name}"]
       
-      if options && options.bind
-        for key of options.bind
+      for key of binds
+        if binds.hasOwnProperty key
           @ManyBinds ||= []
           @ManyBinds.push {
-            assoc:  member
+            assoc:  name
             from:   key
-            to:     options.bind[key]
+            to:     binds[key]
           }
     else
       # One-to-many association using a Uuids attribute

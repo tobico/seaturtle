@@ -297,7 +297,14 @@ $ ->
           it "should create a getter method for scope", ->
             @model.others.should beAFunction
             
-          it "should store details of binding"
+          it "should store details of binding", ->
+            ST.TestModel.hasMany 'boundOthers', 'OtherMode', 'test', {
+              changed: 'otherChanged'
+            }
+            ST.TestModel.ManyBinds.length.should equal(1)
+            ST.TestModel.ManyBinds[0].assoc.should equal('boundOthers')
+            ST.TestModel.ManyBinds[0].from.should equal('changed')
+            ST.TestModel.ManyBinds[0].to.should equal('otherChanged')
           
           describe "getter method", ->
             it "should return a scope with conditions to match foreign key", ->
