@@ -7,6 +7,10 @@ ST.class 'List', ->
   @initializer ->
     @super()
     @_array = []
+  
+  @initializer 'withArray', (array) ->
+    @init()
+    @_array = array
     
   @method 'each', (fn) ->
     fn = ST.toProc fn

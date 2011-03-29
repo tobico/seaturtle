@@ -15,6 +15,12 @@ $ ->
       list._array.should beAnInstanceOf(Array)
       list._array.length.should equal(0)
   
+  describe "initWithArray", ->
+    it "should make list from array", ->
+      array = [1, 2, 3]
+      list = ST.List.createWithArray array
+      list._array.should be(array)
+  
   describe "each", ->
     it "should iterate item", ->
       testItem = {}
