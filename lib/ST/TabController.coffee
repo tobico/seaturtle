@@ -1,142 +1,139 @@
-ST.class 'TabController', 'ViewController', ->
-  @constructor ->
-    @_super()
-    @view = ST.View.create()
-    @view.setDelegate this
+#require ST/Controller
+
+ST.class 'TabController', 'Controller', ->
+  @initializer ->
+    @super()
+    @_view = ST.View.create()
     
-    @tabView = ST.TabView.create()
-    @tabView.bind 'switchedTab', this, 'tabViewSwitchedTab'
-    @tabView.setCanClose @methodFn('canCloseTab')
-    @tabView.setTruncateLength @tabTruncateLength
-    @tabView.bind 'closedTab', this, 'tabViewClosedTab'
-    @view.addChild @tabView
+    @_tabView = ST.TabView.create()
+    @_tabView.bind 'switchedTab', this, 'tabViewSwitchedTab'
+    @_tabView.setCanClose @methodFn('canCloseTab')
+    @_tabView.bind 'closedTab', this, 'tabViewClosedTab'
+    @_view.addChild @_tabView
     
-    @contentView = ST.View.create()
-    @view.addChild @contentView
+    @_contentView = ST.View.create()
+    @_view.addChild @contentView
     
-    @tabControllers = ST.IndexedList.create()
-    @activeTab = null
-    @hideSingleTab = false
-    @tabTruncateLength = false
+    @_tabControllers = ST.List.create()
+    @_activeTab = null
+    @_hideSingleTab = false
   
   @property 'activeTab'
-  @property 'tabView', 'retain', 'readonly'
-  @property 'tabTruncateLength'
   @property 'hideSingleTab'
+  @retainedProperty 'tabView'
   
   @destructor ->
-    @tabView.unbindAll this if @tabView
-    @releaseMembers 'tabView', 'contentView', 'tabControllers'
-    @_super()
+    @_tabView.unbindAll this
+    @super()
   
   @method 'setActiveTab', (newTab) ->
-    if @activeTab
-      @activeTab.view.trigger 'hiding'
-      @contentView.removeChild @activeTab.view
-      @activeTab.view.trigger 'hid'
+    if @_activeTab
+      @_activeTab.view.trigger 'hiding'
+      @_contentView.removeChild @_activeTab.view
+      @_activeTab.view.trigger 'hid'
     
-    return unless @tabControllers.has newTab
+    return unless @_tabControllers.has newTab
     $.scrollTo 0,0
     
-    @activeTab = newTab
+    @_activeTab = newTab
     
-    @activeTab.view.trigger 'showing'
-    @contentView.addChild @activeTab.view
-    @activeTab.view.trigger 'showed'
+    @_activeTab.view.trigger 'showing'
+    @_contentView.addChild @_activeTab.view
+    @_activeTab.view.trigger 'showed'
   
   @method 'viewLoaded', (view) ->
     @updateTabView()
-    if @tabControllers.count()
-      @setActiveTab @tabControllers.first()
+    if @_tabControllers.count()
+      @activeTab @_tabControllers.first()
   
   @method 'canCloseTab', (tab, index) ->
-    controller = @tabControllers.objectAtIndex index
+    controller = @_tabControllers.objectAtIndex index
     !!(controller && controller.closedTab)
 
   @method 'tabViewClosedTab', (tabView, tab, index) ->
-    controller = @tabControllers.objectAtIndex index
+    controller = @_tabControllers.objectAtIndex index
     if controller && controller.closedTab
       controller.closedTab()
   
   @method 'tabViewSwitchedTab', (tabView, oldIndex, newIndex) ->
-    @setActiveTab @tabControllers.objectAtIndex(newIndex)
+    @activeTab @_tabControllers.objectAtIndex(newIndex)
   
   @method 'updateTabView', ->
-    self = this;
+    self = this
     
-    return unless @view.loaded
+    return unless @view.loaded()
     
     if @hideSingleTab && @tabControllers.count() <= 1
-      @tabView.unload() if @tabView.loaded
+      @tabView.unload() if @tabView.loaded()
     else
-      @tabView.load() unless @tabView.loaded
+      @tabView.load() unless @tabView.loaded()
       
       tabs = []
-      @tabControllers.each (controller) ->
+      @_tabControllers.each (controller) ->
         tabs.push self.tabForController(controller)
-      @tabView.setTabs tabs
+      @tabView.tabs tabs
     
-    @tabView.setActiveTab(
-      Math.max(@tabControllers.indexOfObject(@activeTab), 0)
+    @tabView.activeTab(
+      Math.max(@_tabControllers.indexOfObject(@_activeTab), 0)
     )
   
   @method 'tabForController', (controller) ->
     controller.tabTitle || ''
   
   @method 'emptyTabs', ->
-    if @activeTab
-      @view.removeChild @activeTab.view
-      @activeTab = null
-    @tabControllers.empty()
+    if @_activeTab
+      @_view.removeChild @_activeTab.view()
+      @_activeTab = null
+    @_tabControllers.empty()
   
   @method 'addTab', (tab) ->
     tc = this
     
     tab.setTabTitle = (tabTitle) ->
-      @tabTitle = tabTitle
+      @_tabTitle = tabTitle
       tc.updateTabView()
     
-    if !@tabControllers.count() && @view.loaded
-      @setActiveTab tab
+    if !@_tabControllers.count() && @view.loaded
+      @_activeTab tab
     
-    @tabControllers.add tab
-    @updateTabView()
+    @_tabControllers.add tab
+    @_updateTabView()
   
   @method 'addAndReleaseTab', (tab) ->
-    @addTab tab
+    @_addTab tab
     tab.release()
   
   @method 'insertTabAtIndex', (tab, index) ->
     tc = this
     
     tab.setTabTitle = (tabTitle) ->
-      @tabTitle = tabTitle
+      @_tabTitle = tabTitle
       tc.updateTabView()
     
-    @tabControllers.insertAt index, tab
+    @_tabControllers.insertAt index, tab
     
-    this.updateTabView();
+    @updateTabView()
   
   @method 'insertTabBefore', (tab, before) ->
     if before && before.index != null
-      @insertTabAtIndex tab, before.index
+      @_insertTabAtIndex tab, before.index
   
   @method 'insertTabAfter', (tab, after) ->
-    if after && after.index >= 0 && after.index < (this.tabControllers.count() - 1)
-      @insertTabAtIndex tab, after.index + 1
+    if after && after.index >= 0 && after.index < @_tabControllers.count() - 1
+      @_insertTabAtIndex tab, after.index + 1
     else
-      @addTab tab
+      @_addTab tab
   
   @method 'removeTab', (tab) ->
-    if @activeTab == tab
-      @setActiveTab tab.next || tab.prev || null
-    @tabControllers.remove tab
-    @updateTabView()
+    if @_activeTab == tab
+      @activeTab tab.next || tab.prev || null
+    @_tabControllers.remove tab
+    @_updateTabView()
   
   @method 'unloadTabs', ->
-    self = this;
-    activeTab = @activeTab
-    @setActiveTab null
-    @tabControllers.each (controller) ->
+    self = this
+    activeTab = @_activeTab
+    @activeTab null
+    @_tabControllers.each (controller) ->
       controller.view.unload()
-    @setActiveTab activeTab
+    @activeTab activeTab
