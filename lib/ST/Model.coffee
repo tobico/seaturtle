@@ -322,6 +322,9 @@ ST.class 'Model', ->
   @classMethod 'float', (name, defaultValue) ->
     @attribute name, 'float', defaultValue
 
+  @classMethod 'boolean', (name, defaultValue) ->
+    @attribute name, 'boolean', defaultValue
+
   @classMethod 'datetime', (name, defaultValue) ->
     @attribute name, 'datetime', defaultValue
   
