@@ -312,21 +312,10 @@ ST.class 'Model', ->
           test: (test) -> test == value
         }
     }
-  
-  @classMethod 'string', (name, defaultValue) ->
-    @attribute name, 'string', defaultValue
     
-  @classMethod 'integer', (name, defaultValue) ->
-    @attribute name, 'integer', defaultValue
-
-  @classMethod 'float', (name, defaultValue) ->
-    @attribute name, 'float', defaultValue
-
-  @classMethod 'boolean', (name, defaultValue) ->
-    @attribute name, 'boolean', defaultValue
-
-  @classMethod 'datetime', (name, defaultValue) ->
-    @attribute name, 'datetime', defaultValue
+  for dataType in 'string integer float boolean date datetime'.split(' ')
+    @classMethod dataType, (name, defaultValue) ->
+      @attribute name, dataType, defaultValue
   
   @classMethod 'belongsTo', (name, assocModel, options={}) ->
     @attribute "#{name}Uuid"
