@@ -26,11 +26,20 @@ ST.class 'TextFieldView', 'View', ->
     else
       @_inputElement.val @_placeholder
       @_inputElement.css 'color', 'gray'
-    @_inputElement.bind   'keypress change', @method('inputChanged')
+    @_inputElement.bind   'keyup change', @method('inputChanged')
     @_inputElement.focus  @method('inputFocus')
     @_inputElement.blur   @method('inputBlur')
       
     @element().append     @_inputElement
+  
+  @method 'focus', ->
+    if @_loaded
+      @_inputElement[0].focus()
+      @_inputElement[0].select()
+
+  @method 'blur', ->
+    if @_loaded
+      @_inputElement[0].blur()
   
   @method 'inputChanged', (e) ->
     if e && e.which && e.which == 13

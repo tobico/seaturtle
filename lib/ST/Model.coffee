@@ -4,16 +4,23 @@
 #request ST/Model/Scope
 #request ST/Model/Index
 
-ST.class 'Model', ->  
-  @_byUuid       = {}
+ST.class 'Model', ->
+  @_byUuid      = {}
   @NotFound     = {}
-  @GenerateUUID = Math.uuid || (-> null)
+  @GenerateUUID = Math.uuid || (-> @NextUUID ||= 0; @NextUUID++)
   @Storage      = null
   @Debug        = false
   
+  @trigramsFor = (string) ->
+    trigrams = []
+    string = " #{string} ".toLowerCase().replace(/\s+/g, '  ')
+    for i in [0..(string.length - 3)]
+      trigrams.push string.substring(i, i + 3)
+    trigrams
+  
   @classMethod 'fetch', (uuid, yield) ->
     self = this
-            
+    
     if STModel._byUuid[uuid]
       yield STModel._byUuid[uuid]
     else if @FindUrl
@@ -27,10 +34,11 @@ ST.class 'Model', ->
       }
     else
       ST.error "No find URL for model: #{@_name}"
-      
+  
   @classDelegate 'where', 'scoped'
   @classDelegate 'order', 'scoped'
   @classDelegate 'each',  'scoped'
+  @classDelegate 'first', 'scoped'
   
   @classMethod 'scoped', ->
     ST.Model.Scope.createWithModel this
@@ -109,10 +117,14 @@ ST.class 'Model', ->
             new defaultValue()
           else
             defaultValue
-    if @_class.ManyBinds
-      @_class.ManyBinds.each (binding) ->
+    
+    if @_class._manyBinds
+      @_class._manyBinds.each (binding) ->
         self.get(binding.assoc).bind(binding.from, self, binding.to);
-    this
+    
+    if @_class._searchAttributes
+      for attribute in @_class._searchAttributes
+        @indexForKeyword @_attributes[attribute]
   
   # Creates a new object from model data. If the data includes a 
   # property, as with data genereated by #objectify, the specified model
@@ -133,7 +145,9 @@ ST.class 'Model', ->
       object
     # Otherwise, create a new object
     else
-      (new this).initWithData data, options
+      object = new this
+      object.initWithData data, options
+      object
   
   @property 'uuid'
   
@@ -204,7 +218,7 @@ ST.class 'Model', ->
     
     # Rebuild items in list if marked for rebuild
     if this[member + 'NeedsRebuild']
-      uuids = this.attributes[ST.singularize(member) + 'Uuids']
+      uuids = @_attributes[ST.singularize(member) + 'Uuids']
       list = this[member]
       
       # Rebuild by accessing array directly, so that we don't fire off
@@ -220,6 +234,10 @@ ST.class 'Model', ->
   
   @method '_changed', (member, oldValue, newValue) ->
     @super member, oldValue, newValue
+    if @_class._searchAttributes && @_class._searchAttributes.indexOf(member) >= 0
+      @deindexForKeyword oldValue
+      @indexForKeyword newValue
+    
     ST.Model._changes ||= []
     ST.Model._changes.push {
       uuid:       ST.Model.GenerateUUID()
@@ -357,8 +375,8 @@ ST.class 'Model', ->
       
       for key of binds
         if binds.hasOwnProperty key
-          @ManyBinds ||= []
-          @ManyBinds.push {
+          @_manyBinds ||= []
+          @_manyBinds.push {
             assoc:  name
             from:   key
             to:     binds[key]
@@ -391,7 +409,44 @@ ST.class 'Model', ->
       @method "add#{ucsName}", (record) ->
         @getManyList(name).add record
         this
-    
+  
+  @classMethod 'searchesOn', (attributes...) ->
+    @_searchAttributes = attributes
+    @_trigrams = {}
+  
+  @classMethod 'search', (keywords) ->
+    trigrams = ST.Model.trigramsFor(keywords)
+    uuids = {}
+    for trigram in trigrams
+      if @_trigrams[trigram]
+        for uuid, count of @_trigrams[trigram]
+          uuids[uuid] ||= 0
+          uuids[uuid]++
+    matches = []
+    for uuid, score of uuids
+      matches.push [ST.Model._byUuid[uuid], score]
+    matches.sort (a, b) ->
+      if a[1] < b[1]
+        1
+      else if a[1] > b[1]
+        -1
+      else
+        0
+    matches
+  
+  @method 'indexForKeyword', (keyword) ->
+    trigrams = ST.Model.trigramsFor keyword
+    for trigram in trigrams
+      @_class._trigrams[trigram] ||= {}
+      @_class._trigrams[trigram][@_uuid] ||= 0
+      @_class._trigrams[trigram][@_uuid]++ 
+
+  @method 'deindexForKeyword', (keyword) ->
+    trigrams = ST.Model.trigramsFor keyword
+    for trigram in trigrams      
+      if (@_class._trigrams[trigram][@_uuid] -= 1) == 0
+        delete @_class._trigrams[trigram][@_uuid]
+  
   @classMethod 'setStorage', (storage) ->
     ST.Model.Storage = storage;
     

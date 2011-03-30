@@ -301,10 +301,10 @@ $ ->
             ST.TestModel.hasMany 'boundOthers', 'OtherMode', 'test', {
               changed: 'otherChanged'
             }
-            ST.TestModel.ManyBinds.length.should equal(1)
-            ST.TestModel.ManyBinds[0].assoc.should equal('boundOthers')
-            ST.TestModel.ManyBinds[0].from.should equal('changed')
-            ST.TestModel.ManyBinds[0].to.should equal('otherChanged')
+            ST.TestModel._manyBinds.length.should equal(1)
+            ST.TestModel._manyBinds[0].assoc.should equal('boundOthers')
+            ST.TestModel._manyBinds[0].from.should equal('changed')
+            ST.TestModel._manyBinds[0].to.should equal('otherChanged')
           
           describe "getter method", ->
             it "should return a scope with conditions to match foreign key", ->

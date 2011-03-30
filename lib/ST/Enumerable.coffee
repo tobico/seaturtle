@@ -31,6 +31,14 @@ ST.module 'Enumerable', ->
       else if options.done
         setTimeout options.done, 1
     setTimeout step, 1
+  
+  # Returns first item in collection
+  @method 'first', ->
+    value = null
+    @each (item) ->
+      value = item
+      return 'break'
+    value
 
   # Returns true if this contains the specified item.
   @method 'has', (target) ->
