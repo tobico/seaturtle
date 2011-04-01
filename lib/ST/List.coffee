@@ -33,7 +33,10 @@ ST.class 'List', ->
   @delegate 'length', 'array', 'count'
   
   @method 'isEmpty', -> !@_array.length
-    
+  
+  @method 'count', ->
+    return @_array.length
+  
   @method 'last', ->
     if @_array.length
       @_array[@_array.length - 1]
