@@ -33,24 +33,9 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     
     self = this
     
-    id = 'ModelFieldViewInput' + @_uid
-    @_inputElement.detach()
-    @_inputElement.attr {
-        id:             id
-        autocomplete:   'off'
-    }
-    @_inputElement.addClass 'text'
-    @_inputElement.css      'width', '100%'
+    @_inputElement.attr 'autocomplete', 'off'
     @_inputElement.keydown  @method('inputKeyDown')
     
-    div = @helper().tag 'div'
-    div.append @_inputElement
-    div.css {
-      overflow:         'hidden'
-      'padding-right':  '6px'
-    }
-    @element().append div
-        
     @_resultListElement = $ '<div class="ModelFieldViewResults"></div>'
     @_resultListElement.hide()
     @_resultListElement.mouseout ->
@@ -59,9 +44,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'inputFocus', ->
     @super()
-    unless @_inputElement.val() == ''
-      @_inputElement.select() if @_value
-      @performSearch @_inputElement.val()
+    @_inputElement.select() if @_value
+    @performSearch @_inputElement.val()
   
   @method 'inputBlur', ->
     @_hiding = true
@@ -152,10 +136,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       
       @selectedResult -1
 
-      @_resultListElement.css {
-        left:     0
-        top:      @_inputElement.height() + 5
-      }
+      @_resultListElement.css 'top', @_inputElement.height() + 5
       @_resultListElement.show()
     else
       @_resultListElement.hide()
@@ -165,11 +146,3 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @_inputValue = result[0].toFieldText()
       @_inputElement.val @_inputValue
       @value result[0]
-  
-  @method 'chooseResultWithText', (text) ->
-    if @results
-      for result in results
-        if result.label.indexOf(text) >= 0
-          @chooseResult result
-          return result
-    null

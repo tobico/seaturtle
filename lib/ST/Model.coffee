@@ -420,11 +420,13 @@ ST.class 'Model', ->
     for trigram in trigrams
       if @_trigrams[trigram]
         for uuid, count of @_trigrams[trigram]
-          uuids[uuid] ||= 0
-          uuids[uuid]++
+          if @_trigrams[trigram].hasOwnProperty uuid
+            uuids[uuid] ||= 0
+            uuids[uuid]++
     matches = []
     for uuid, score of uuids
-      matches.push [ST.Model._byUuid[uuid], score]
+      if uuids.hasOwnProperty uuid
+        matches.push [ST.Model._byUuid[uuid], score]
     matches.sort (a, b) ->
       if a[1] < b[1]
         1

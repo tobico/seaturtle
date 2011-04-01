@@ -44,6 +44,11 @@ table.tableView tbody tr:nth-child(2n) {
   background: #EEEEF3;
 }
 
+/** TextFieldView **/
+.TextFieldView input, .ModelFieldView input {
+  width: 300px;
+}
+
 /** Popup menu and ModelFieldView results **/
 ul.popupMenu, .ModelFieldViewResults {
   background: #F8F8FC;
@@ -75,6 +80,7 @@ ul.popupMenu a:hover, .ModelFieldViewResults tr.selected td {
 }
 .ModelFieldViewResults {
   position: absolute;
+  left: 0;
 }
 .ModelFieldViewResults table {
   border-collapse: collapse;
