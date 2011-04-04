@@ -271,3 +271,17 @@ $ ->
           @view.shouldReceive 'unload'
           @view.shouldReceive 'load'
           @view.reload()
+      
+      describe "#show", ->
+        it "should load view if not loaded", ->
+          @view.show()
+          @view.loaded().should beTrue
+        
+        it "should show view", ->
+          @view.show()
+          @view.element().is(':hidden').should beFalse
+      
+      describe "#hide", ->
+        it "should hide view", ->
+          @view.hide()
+          @view.element().is(':hidden').should beTrue

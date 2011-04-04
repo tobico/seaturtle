@@ -1,139 +1,60 @@
 #require ST/Controller
+#require ST/TabView
 
 ST.class 'TabController', 'Controller', ->
   @initializer ->
     @super()
-    @_view = ST.View.create()
     
-    @_tabView = ST.TabView.create()
-    @_tabView.bind 'switchedTab', this, 'tabViewSwitchedTab'
-    @_tabView.setCanClose @methodFn('canCloseTab')
-    @_tabView.bind 'closedTab', this, 'tabViewClosedTab'
-    @_view.addChild @_tabView
+    view = ST.TabView.create()
+    @view view
+    view.bind 'switchedTab', this, 'viewSwitchedTab'
+    view.release()
     
-    @_contentView = ST.View.create()
-    @_view.addChild @contentView
-    
-    @_tabControllers = ST.List.create()
+    @_tabs = ST.List.create()
+    @_tabs.bind 'itemAdded',   this, 'tabAdded'
+    @_tabs.bind 'itemChanged', this, 'tabChanged'
+    @_tabs.bind 'itemRemoved', this, 'tabRemoved'
     @_activeTab = null
     @_hideSingleTab = false
   
+  @property 'tabs'
   @property 'activeTab'
   @property 'hideSingleTab'
-  @retainedProperty 'tabView'
   
   @destructor ->
-    @_tabView.unbindAll this
+    @_tabs.empty()
+    @_tabs.unbindAll this
     @super()
-  
-  @method 'setActiveTab', (newTab) ->
-    if @_activeTab
-      @_activeTab.view.trigger 'hiding'
-      @_contentView.removeChild @_activeTab.view
-      @_activeTab.view.trigger 'hid'
-    
-    return unless @_tabControllers.has newTab
-    $.scrollTo 0,0
-    
-    @_activeTab = newTab
-    
-    @_activeTab.view.trigger 'showing'
-    @_contentView.addChild @_activeTab.view
-    @_activeTab.view.trigger 'showed'
   
   @method 'viewLoaded', (view) ->
     @updateTabView()
-    if @_tabControllers.count()
-      @activeTab @_tabControllers.first()
+    @activeTab @_tabs.first()
   
-  @method 'canCloseTab', (tab, index) ->
-    controller = @_tabControllers.objectAtIndex index
-    !!(controller && controller.closedTab)
-
-  @method 'tabViewClosedTab', (tabView, tab, index) ->
-    controller = @_tabControllers.objectAtIndex index
-    if controller && controller.closedTab
-      controller.closedTab()
-  
-  @method 'tabViewSwitchedTab', (tabView, oldIndex, newIndex) ->
-    @activeTab @_tabControllers.objectAtIndex(newIndex)
+  @method 'viewSwitchedTab', (view, oldIndex, newIndex) ->
+    @activeTab @_tabs.at(newIndex)
   
   @method 'updateTabView', ->
-    self = this
-    
-    return unless @view.loaded()
-    
-    if @hideSingleTab && @tabControllers.count() <= 1
-      @tabView.unload() if @tabView.loaded()
-    else
-      @tabView.load() unless @tabView.loaded()
-      
-      tabs = []
-      @_tabControllers.each (controller) ->
-        tabs.push self.tabForController(controller)
-      @tabView.tabs tabs
-    
-    @tabView.activeTab(
-      Math.max(@_tabControllers.indexOfObject(@_activeTab), 0)
-    )
+    if @_view.loaded()
+      if @_hideSingleTab && @_tabs.count() == 1
+        @_view.hide()
+      else
+        @_view.show()
+        @_view.tabs @_tabs.mapArray((tab) -> if tab.tabTitle then tab.tabTitle() else 'Untitled')
+        @_view.tabIndex Math.max(@_tabs.indexOf(@_activeTab), 0)
   
-  @method 'tabForController', (controller) ->
-    controller.tabTitle || ''
-  
-  @method 'emptyTabs', ->
-    if @_activeTab
-      @_view.removeChild @_activeTab.view()
-      @_activeTab = null
-    @_tabControllers.empty()
-  
-  @method 'addTab', (tab) ->
-    tc = this
-    
-    tab.setTabTitle = (tabTitle) ->
-      @_tabTitle = tabTitle
-      tc.updateTabView()
-    
-    if !@_tabControllers.count() && @view.loaded
-      @_activeTab tab
-    
-    @_tabControllers.add tab
-    @_updateTabView()
-  
-  @method 'addAndReleaseTab', (tab) ->
-    @_addTab tab
-    tab.release()
-  
-  @method 'insertTabAtIndex', (tab, index) ->
-    tc = this
-    
-    tab.setTabTitle = (tabTitle) ->
-      @_tabTitle = tabTitle
-      tc.updateTabView()
-    
-    @_tabControllers.insertAt index, tab
-    
+  @method 'tabAdded', (tabs, tab) ->
+    @activeTab tab if tabs.count() == 1
     @updateTabView()
   
-  @method 'insertTabBefore', (tab, before) ->
-    if before && before.index != null
-      @_insertTabAtIndex tab, before.index
+  @method 'tabRemoved', (tabs, tab, index) ->
+    @activeTab tabs.at(index) || tabs.at(index - 1) || null
+    @updateTabView()
+
+  @method 'tabChanged', (tabs, tab, attribute, oldValue, newValue) ->
+    @updateTabView() if attribute == 'tabTitle'
   
-  @method 'insertTabAfter', (tab, after) ->
-    if after && after.index >= 0 && after.index < @_tabControllers.count() - 1
-      @_insertTabAtIndex tab, after.index + 1
+  @method '_activeTabChanged', (oldTab, newTab) ->
+    if newTab
+      @_view.footer newTab.view()
     else
-      @_addTab tab
-  
-  @method 'removeTab', (tab) ->
-    if @_activeTab == tab
-      @activeTab tab.next || tab.prev || null
-    @_tabControllers.remove tab
-    @_updateTabView()
-  
-  @method 'unloadTabs', ->
-    self = this
-    activeTab = @_activeTab
-    @activeTab null
-    @_tabControllers.each (controller) ->
-      controller.view.unload()
-    @activeTab activeTab
+      @_view.footer null

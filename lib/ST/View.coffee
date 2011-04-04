@@ -25,7 +25,7 @@ ST.class 'View', 'Destructable', ->
   @property 'children', 'read'
   @property 'element',  'read'
   @property 'loaded',   'read'
-
+  
   @retainedProperty 'header'
   @retainedProperty 'footer'
   
@@ -107,6 +107,13 @@ ST.class 'View', 'Destructable', ->
   @method 'reload', ->
     @unload()
     @load()
+  
+  @method 'show', ->
+    @load() unless @_loaded
+    @element().show()
+  
+  @method 'hide', ->
+    @element().hide()
         
   @method 'scrollTo', -> $.scrollTo @_element
   

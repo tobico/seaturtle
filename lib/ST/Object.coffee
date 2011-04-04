@@ -73,6 +73,7 @@ ST.class 'Object', null, ->
         oldValue = this["_#{name}"]
         this["_#{name}"] = newValue
         @_changed name, oldValue, newValue
+        @trigger 'changed', name, oldValue, newValue
     
     @accessor name
   

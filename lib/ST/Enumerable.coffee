@@ -76,6 +76,7 @@ ST.module 'Enumerable', ->
   @method 'map', (fn=null) ->
     fn = ST.toProc fn if fn
     list = ST.List.create()
+    list.retains false
     @each (item) ->
       item = fn item if fn
       list.add item

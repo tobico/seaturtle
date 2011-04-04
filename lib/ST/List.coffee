@@ -7,10 +7,13 @@ ST.class 'List', ->
   @initializer ->
     @super()
     @_array = []
+    @_retains = true
   
   @initializer 'withArray', (array) ->
     @init()
     @_array = array
+  
+  @property 'retains'
     
   @method 'each', (fn) ->
     fn = ST.toProc fn
@@ -47,21 +50,21 @@ ST.class 'List', ->
     @insertAt @_array.length, object
   
   @method 'insertAt', (index, object) ->
-    object.retain() if object.retain
+    object.retain() if object && object.retain && @_retains
     @_array.splice index, 0, object
-    object.bind 'changed', this, 'itemChanged' if object.bind
+    object.bind 'changed', this, 'itemChanged' if object && object.bind
     @trigger 'itemAdded', object
   
   @method 'addAndRelease', (object) ->
     @add object
-    object.release() if object.release
+    object.release() if object && object.release && @_retains
   
   @method 'removeAt', (index) ->
     return false unless @_array.length > index
     object = @_array.splice(index, 1)[0]
-    object.unbind 'changed', this if object.unbind
+    object.unbind 'changed', this if object && object.unbind
     @trigger 'itemRemoved', object, index
-    object.release() if object.release
+    object.release() if object && object.release && @_retains
     true
     
   @method 'removeLast', ->

@@ -109,6 +109,11 @@ $ ->
             @test._foo = 'waffles'
             @test.shouldReceive('_fooChanged').with('waffles', 'bacon')
             @test.setFoo 'bacon'
+          
+          it "should trigger changed event", ->
+            @test._foo = 'waffles'
+            @test.shouldReceive('trigger').with('changed', 'foo', 'waffles', 'bacon')
+            @test.setFoo 'bacon'
       
       describe ".delegate", ->
         beforeEach ->

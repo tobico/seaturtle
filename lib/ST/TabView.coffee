@@ -39,15 +39,15 @@ ST.class 'TabView', 'View', ->
     tab = @_tabs[index]
     @_tabs.splice index, 1
     @trigger 'closedTab', tab, index
-    @reload()
+    @render()
     
   @method 'setTabs', (newTabs) ->
     @_tabs = newTabs
-    @reload() if @_loaded
+    @render() if @_loaded
   
   @method 'setTabIndex', (index) ->
     @_tabIndex = index
-    @reload() if @_loaded
+    @render() if @_loaded
   
   @method 'switchToTab', (index) ->
     oldIndex = @_tabIndex

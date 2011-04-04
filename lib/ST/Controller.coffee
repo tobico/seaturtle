@@ -5,7 +5,8 @@ ST.class 'Controller', 'Destructable', ->
   
   @method '_viewChanged', (oldValue, newValue) ->
     oldValue.unbindAll this if oldValue
-    newValue.bind 'showing', this, 'viewShowing' if newValue
+    newValue.bind 'loaded', this, 'viewLoaded' if newValue
+    newValue.bind 'unloaded', this, 'viewUnloaded' if newValue
   
-  @method 'viewShowing', (view) ->
-    view.load()
+  @method 'viewLoaded', ->
+  @method 'viewUnloaded', ->

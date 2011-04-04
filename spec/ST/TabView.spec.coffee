@@ -41,3 +41,10 @@ $ ->
         @view.load()
         @view.shouldReceive('switchToTab').with(1)
         $('span.inactive_title', @view.element()).mousedown()
+    
+    describe "#setTabs", ->
+      it "should update tabs", ->
+        @view.tabs ['Test']
+        @view.load()
+        @view.tabs ['Waffles']
+        @view.element().html().should equal('<li class="hl"><span class="title active_title">Waffles</span></li>')
