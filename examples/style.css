@@ -88,3 +88,12 @@ ul.popupMenu a:hover, .ModelFieldViewResults tr.selected td {
 .ModelFieldViewResults td {
   padding: 6px;
 }
+
+/** FormView **/
+table.formView th.label, table.formView td.field {
+  padding: 6px 0;
+}
+table.formView th.label {
+  width: 100px;
+  text-align: left;
+}

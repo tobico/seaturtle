@@ -7,12 +7,14 @@ ST.class 'TextFieldView', 'View', ->
     @_autoTrim = true
     @_placeholder = ''
     @_inputElement = null
+    @_id = null
   
   @property 'value'
   @property 'autoTrim'
   @property 'placeholder'
   @property 'inputElement'
-  
+  @property 'id'
+
   @method 'setValue', (newValue) ->
     oldValue = @_value
     @_value = newValue
@@ -21,6 +23,7 @@ ST.class 'TextFieldView', 'View', ->
   
   @method 'render', ->
     @_inputElement = $ '<input type="text" class="text" />'
+    @_inputElement.attr 'id', @_id if @_id
     if @_value && @_value.length
       @_inputElement.val @_value
     else
@@ -66,3 +69,6 @@ ST.class 'TextFieldView', 'View', ->
     if @_loaded && @_inputElement.val() == oldPlaceholder
       @_inputElement.val newPlaceholder
       @_inputElement.css 'color', 'gray'
+  
+  @method '_idChanged', (oldValue, newValue) ->
+    @_inputElement.attr 'id', newValue if @_loaded

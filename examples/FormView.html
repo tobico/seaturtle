@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="../vendor/jquery/jquery.js"></script>
+    <script src="../compiled/ST.js"></script>
+    <script src="../compiled/ST/Object.js"></script>
+    <script src="../compiled/ST/Enumerable.js"></script>
+    <script src="../compiled/ST/Destructable.js"></script>
+    <script src="../compiled/ST/List.js"></script>
+    <script src="../compiled/ST/Model.js"></script>
+    <script src="../compiled/ST/Model/Index.js"></script>
+    <script src="../compiled/ST/Model/Scope.js"></script>
+    <script src="../compiled/ST/ViewHelper.js"></script>
+    <script src="../compiled/ST/View.js"></script>
+    <script src="../compiled/ST/TextFieldView.js"></script>
+    <script src="../compiled/ST/EnumFieldView.js"></script>
+    <script src="../compiled/ST/ModelFieldView.js"></script>
+    <script src="../compiled/ST/FormView.js"></script>
+    <script>
+        $(function() {
+            ST.class('Author', 'Model', function() {
+                this.string('firstName');
+                this.string('lastName');
+                this.datetime('dateOfBirth');
+                this.searchesOn('firstName', 'lastName');
+                this['method']('birthYear', function() {
+                    var dob = this.dateOfBirth();
+                    if (dob) {
+                        return dob.getFullYear()
+                    } else {
+                        return null;
+                    }
+                });
+                this['method']('toFieldText', function() {
+                    return this.firstName() + ' ' + this.lastName() + ' [' + this.birthYear() + ']';
+                });
+                this['method']('toListItem', function() {
+                    return [this.firstName(), this.lastName(), this.birthYear()];
+                })
+            });
+            
+            ST.Author.createWithData({
+                firstName:      'Charles',
+                lastName:       'Dickens',
+                dateOfBirth:    '1870-06-09'
+            });
+            ST.Author.createWithData({
+                firstName:      'Orson',
+                lastName:       'Scott Card',
+                dateOfBirth:    '1951-08-24'
+            });
+            ST.Author.createWithData({
+                firstName:      'Joanne',
+                lastName:       'Rowling',
+                dateOfBirth:    '1965-07-31'
+            });
+            
+            ST.class('Book', 'Model', function() {
+                this.string('title');
+                this.enum('format', 'paper', { hard: 'Hardcover', paper: 'Paperback', 'ebook': 'Electronic' });
+                this.belongsTo('author', 'Author');
+            });
+            var formView = ST.FormView.createWithModelAttributes(ST.Book, ['title', 'author', 'format']);
+            formView.load();
+            $('#form').append(formView.element());
+            
+            $('#save').click(function() {
+                var book = formView.save()
+                if (window.console) console.log(book);
+                alert(book.serialize());
+            });
+        });
+    </script>
+</head>
+<body>
+    <h2>Form View</h2>
+    <div id="form"></div>
+    <p><button id="save">Save</button></p>
+</body>

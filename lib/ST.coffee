@@ -40,7 +40,7 @@ window.ST = {
     null
   
   # Creates a new class in this namespace
-  class: (className, superClass, definition) ->
+  makeClass: (className, superClass, definition) ->
     # If superclass parameter omitted, use 'Object' as superclass
     unless definition
       definition = superClass
@@ -71,11 +71,18 @@ window.ST = {
     newClass._namespace = this
     
     # Allow new class to function as a namespace
-    newClass.class = @class
-    newClass.getClass = @getClass
+    newClass.getClass   = @getClass
+    newClass.makeClass  = @makeClass
+    newClass.class      = @class
     
     # Run class definition
     definition.call newClass
+  
+  class: (className, superClass, definition) ->
+    if arguments.length > 1
+      @makeClass className, superClass, definition
+    else
+      @getClass className
   
   _modules: {}
   

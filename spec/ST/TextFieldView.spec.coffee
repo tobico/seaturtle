@@ -31,6 +31,11 @@ $ ->
         @textField.render()
         @textField.inputElement().shouldNot be(null)
       
+      it "should set ID for input element", ->
+        @textField.id 'foo'
+        @textField.render()
+        @textField.inputElement().attr('id').should equal('foo')
+      
       it "should put value into input element", ->
         @textField.value 'bacon'
         @textField.render()
@@ -85,3 +90,10 @@ $ ->
         @textField.load()
         @textField.placeholder 'waffles'
         @textField.inputElement().val().should equal('waffles')
+    
+    describe "#_idChanged", ->
+      it "should update ID for input element", ->
+        @textField.id 'foo'
+        @textField.load()
+        @textField.id 'bar'
+        @textField.inputElement().attr('id').should equal('bar')

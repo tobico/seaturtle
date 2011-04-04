@@ -104,19 +104,18 @@ ST.class 'Model', ->
     self = this
     
     ST.Object.prototype.init.call this
-    
+
     @uuid data.uuid || ST.Model.GenerateUUID()
+    @_creating = true
     @_attributes = {}
-    for attribute of @_class.Attributes
-      if @_class.Attributes.hasOwnProperty attribute
-        @_attributes[attribute] = if data[attribute]?
-          data[attribute]
-        else
-          defaultValue = @_class.Attributes[attribute]
-          if typeof defaultValue == 'function'
-            new defaultValue()
+    for attribute, details of @_class.Attributes
+      if @_class.Attributes.hasOwnProperty(attribute) && !details.virtual
+        @[attribute](
+          if data[attribute]?
+            data[attribute]
           else
-            defaultValue
+            details.default
+        )
     
     if @_class._manyBinds
       @_class._manyBinds.each (binding) ->
@@ -125,6 +124,8 @@ ST.class 'Model', ->
     if @_class._searchAttributes
       for attribute in @_class._searchAttributes
         @indexForKeyword @_attributes[attribute]
+
+    @_creating = false
   
   # Creates a new object from model data. If the data includes a 
   # property, as with data genereated by #objectify, the specified model
@@ -139,8 +140,9 @@ ST.class 'Model', ->
     # If object with uuid already exists, update object and return it
     else if data.uuid && ST.Model._byUuid[data.uuid]
       object = ST.Model._byUuid[data.uuid]
-      for attribute of object._attributes
-        if object._attributes.hasOwnProperty attribute
+      attributes = object._class.Attributes
+      for attribute, details of attributes
+        if attributes.hasOwnProperty attribute
           object.set attribute, data[attribute] if data[attribute]?
       object
     # Otherwise, create a new object
@@ -297,24 +299,44 @@ ST.class 'Model', ->
     ucName = ST.ucFirst name
     
     @Attributes ||= {}
-    @Attributes[name] = defaultValue
+    @Attributes[name] = {
+      default:  defaultValue,
+      type:     type,
+      virtual:  false
+    }
     
-    @method "set#{ucName}", (newValue) ->
+    @method "set#{ucName}", (rawValue) ->
       oldValue = @_attributes[name]
   
+      # Convert new value to correct type
+      details = @_class.Attributes[name]
+      newValue = switch details.type
+        when 'string'
+          String rawValue
+        when 'float'
+          Number rawValue
+        when 'integer'
+          Math.round Number(rawValue)
+        when 'datetime'
+          date = new Date(rawValue)
+          if isNaN(date.getTime()) then null else date
+        else
+          rawValue
+      
       # Set new value
       @_attributes[name] = newValue
   
       # Update index
       if @_class["Index#{ucName}"]
         index = @_class["Index#{ucName}"];
-        index[oldValue].remove this if index[oldValue]
-        index[newValue] ||= ST.List.create()
-        index[newValue].add this
+        index[String(oldValue)].remove this if index[oldValue]
+        index[String(newValue)] ||= ST.List.create()
+        index[String(newValue)].add this
   
       # Trigger changed event
-      @_changed name, oldValue, newValue if @_changed
-      @trigger 'changed', name, oldValue, newValue
+      unless @_creating
+        @_changed name, oldValue, newValue if @_changed
+        @trigger 'changed', name, oldValue, newValue
       
       @persist()
     
@@ -330,10 +352,25 @@ ST.class 'Model', ->
           test: (test) -> test == value
         }
     }
-    
-  for dataType in 'string integer float boolean date datetime'.split(' ')
-    @classMethod dataType, (name, defaultValue) ->
-      @attribute name, dataType, defaultValue
+  
+  # In the following methods, “def” stands for “default”
+  @classMethod 'string', (name, def) -> @attribute name, 'string', def
+  @classMethod 'integer', (name, def) -> @attribute name, 'integer', def
+  @classMethod 'float', (name, def) -> @attribute name, 'float', def
+  @classMethod 'boolean', (name, def) -> @attribute name, 'boolean', def
+  @classMethod 'datetime', (name, def) -> @attribute name, 'datetime', def
+  @classMethod 'enum', (name, def, values) ->
+    @attribute name, 'enum', def
+    @Attributes[name].values = values
+  
+  @classMethod 'virtual', (name, type, defaultValue) ->
+    @accessor name
+    @Attributes ||= {}
+    @Attributes[name] = {
+      default:  defaultValue,
+      type:     type,
+      virtual:  true
+    }
   
   @classMethod 'belongsTo', (name, assocModel, options={}) ->
     @attribute "#{name}Uuid"
@@ -346,9 +383,9 @@ ST.class 'Model', ->
     
     @method "set#{ucName}", (value) ->
       ST.error 'Invalid object specified for association' if value && value._class._name != assocModel
-      @set "#{name}Uuid", value && value.uuid()
+      @["#{name}Uuid"](value && value.uuid())
     
-    @accessor name
+    @virtual(name, 'belongsTo', null).model = assocModel
   
     if options.bind
       setUuidName = "set#{ucName}Uuid"
@@ -369,7 +406,7 @@ ST.class 'Model', ->
       # One-to-many assocation through a Model and foreign key
       @method name, ->
         unless this["_#{name}"]
-          model = @_class._namespace.getClass(assocModel)
+          model = @_class._namespace.class assocModel
           this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
         this["_#{name}"]
       

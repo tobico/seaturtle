@@ -1,11 +1,13 @@
 #require ST/View
 #require ST/TextFieldView
+#require ST/ModelFieldView
 
 ST.class 'FormView', 'View', ->
   @initializer 'withModelAttributes', (model, attributes) ->
     @init()
     @_model = model
     @_attributes = attributes
+    @_fields = {}
     
   @initializer 'withItemAttributes', (item, attributes) ->
     @initWithModelAttributes item._class, attributes
@@ -14,10 +16,16 @@ ST.class 'FormView', 'View', ->
   @property 'model'
   @property 'item'
   
+  @destructor ->
+    for attribute, fields of @_fields
+       if @_fields.hasOwnProperty attribute
+         field.release()
+    @super()
+  
   @method 'render', ->
     html = ['<table class="formView">']
     for attribute in @_attributes
-      html.push '<tr><td><label for="', attribute, '">', attribute, '</label></td><td class="field" data-attribute="', attribute, '"></td></tr>'
+      html.push '<tr><th class="label"><label for="', attribute, '">', @labelForAttribute(attribute), '</label></th><td class="field" data-attribute="', attribute, '"></td></tr>'
     html.push '</table>'
     
     @_element.html html.join('')
@@ -25,35 +33,35 @@ ST.class 'FormView', 'View', ->
     cells = $ 'td.field', @_element
     for cell in cells
       attribute = $(cell).attr 'data-attribute'
-      field = ST.TextFieldView.create()
-      field.value @_item[attribute]() if @_item
+      details = @_model.Attributes[attribute]
+      field = switch details.type
+        when 'belongsTo'
+          ST.ModelFieldView.createWithModel @_model._namespace.class(details.model)
+        when 'enum'
+          ST.EnumFieldView.createWithValues details.values
+        else
+          ST.TextFieldView.create()
+      field.id attribute
+      @_fields[attribute] = field
+      field.value(if @_item then @_item[attribute]() else details.default)
       field.load()
-      @_children.add field
       $(cell).append field.element()
-      field.release()
+  
+  @method 'labelForAttribute', (attribute) ->
+    ST.ucFirst(attribute) + ':'
+  
+  @method 'data', ->
+    data = {}
+    for attribute in @_attributes
+      field = @_fields[attribute]
+      data[attribute] = field.value()
+    data
   
   @method 'save', ->
-    self = this
-    
-    return if @saved
-    
-    # Check if all fields are valid
-    if @fields.all 'isValid'
-      # Save values in fields to record
-      @fields.each (field) ->
-        (self.record.set || STObject.prototype.set).call self.record, field.member, field.getValue() if field.member
-      @saved = true
-      
-      # Trigger saved event
-      @trigger 'saved'
-      Dialog.hide()
+    if @_item
+      @_item.set @data()
     else
-      # Hilight invalid fields
-      @fields.each 'validate'
-      
-      # Focus on first invalid field
-      invalid = $('input.invalid, select.invalid', @getElement())
-      invalid[0].focus() if invalid.length
+      @_model.createWithData @data()
   
   @method 'showDialog', (events) ->
     events ||= {}

@@ -199,7 +199,10 @@ $ ->
         ST.TestModel.attribute 'bar', 'string', 'bacon'
       
       it "should register default value for attribute", ->
-        ST.TestModel.Attributes['bar'].should equal('bacon')
+        ST.TestModel.Attributes['bar'].default.should equal('bacon')
+      
+      it "should register type for attribute", ->
+        ST.TestModel.Attributes['bar'].type.should equal('string')
       
       it "should create a getter method", ->
         @model.getBar.should beAFunction
@@ -221,6 +224,28 @@ $ ->
           @model.bar 'bacon'
           @model.shouldReceive('_changed').with('bar', 'bacon', 'waffles')
           @model.bar 'waffles'
+        
+        it "should convert to string", ->
+          @model.bar 10
+          (typeof @model.bar()).should equal('string')
+        
+        it "should convert to float", ->
+          ST.TestModel.float 'zap'
+          @model.zap '5.5'
+          (typeof @model.zap()).should equal('number')
+          @model.zap().should equal(5.5)
+        
+        it "should convert to integer", ->
+          ST.TestModel.integer 'zap'
+          @model.zap '5.3'
+          (typeof @model.zap()).should equal('number')
+          @model.zap().should equal(5)
+
+        it "should convert to datetime", ->
+          ST.TestModel.datetime 'zap'
+          @model.zap '01 Jan 2010 12:15:00'
+          @model.zap().should beAnInstanceOf(Date)
+          @model.zap().getTime().should equal(1262308500000)
       
       describe "#get(Attribute)", ->
         it "should return attribute value", ->
@@ -266,6 +291,12 @@ $ ->
         
         it "should create an accessor method", ->
           @model.other.should beAFunction
+        
+        it "should register virtual attribute", ->
+          attr = ST.TestModel.Attributes['other']
+          attr.virtual.should beTrue
+          attr.type.should equal('belongsTo')
+          attr.model.should equal('OtherModel')
 
         it "should apply bindings"
         
