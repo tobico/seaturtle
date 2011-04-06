@@ -1,46 +1,46 @@
+#require ST/Object
+
 ST.class 'Storage', ->
-  @NONE = 0
-  @DATABASE = 1
-  @LOCAL = 2
-  
-  @Supported = -> window.openDatabase || window.localStorage
-  
   @singleton()
   
-  @constructor ->
-    self = this
-    
-    @storageType = ST.Storage.NONE
+  @classMethod 'supported', ->
+    window.openDatabase || window.localStorage
+  
+  @initializer ->
+    @super()
+    @_storageType = 'none'
     
     if window.openDatabase
       try
-        @database = window.openDatabase 'ststorage', '1.0', 'STStorage Data Store', 10485760
-        @database.transaction (transaction) ->
+        @_database = window.openDatabase 'ststorage', '1.0', 'STStorage Data Store', 10485760
+        @_database.transaction (transaction) ->
           transaction.executeSql 'create table data(`key` text not null primary key, `value` text not null)'
-        @storageType = ST.Storage.DATABASE
+        @_storageType = 'database'
       catch e
-        @storageType = ST.Storage.NONE
+        @_storageType = 'none'
     else if window.localStorage
-      @storageType = ST.Storage.LOCAL
+      @_storageType = 'local'
     
     if window.localStorage
       $ ->
         if $.browser.safari
-          window.addEventListener 'storage', self.methodFn('storageEvent'), false
+          window.addEventListener 'storage', @method('storageEvent'), false
         else
-          $(document).bind 'storage', self.methodFn('storageEvent')
-      @changesMade = 1;
+          $(document).bind 'storage', @method('storageEvent')
+      @_changesMade = 1
       
       # Make a dummy change, to catch out any other instances of
       # ST.Storage on the same data store
-      window.localStorage.removeItem 'storageTest'
+      localStorage.removeItem 'storageTest'
+  
+  @property 'storageType'
   
   @method 'isActive', ->
-    @storageType != STStorage.NONE
+    @_storageType != 'none'
   
   @method 'storageEvent', (evt) ->
-    if @changesMade > 0
-      @changesMade--
+    if @_changesMade > 0
+      @_changesMade--
     else
       @trigger 'externalChange', evt
   
@@ -49,21 +49,21 @@ ST.class 'Storage', ->
     
     json = JSON.stringify value
     
-    switch @storageType
-      when ST.Storage.DATABASE
-        @database.transaction (transaction) ->
+    switch @_storageType
+      when 'database'
+        @_database.transaction (transaction) ->
           transaction.executeSql 'insert into data (key, value) values (?, ?)', [key, json]
         , ->
-          self.database.transaction (transaction) ->
+          self._database.transaction (transaction) ->
             transaction.executeSql 'update data set value = ? where key = ?', [json, key]
-      when ST.Storage.LOCAL
-        @changesMade++
-        window.localStorage.setItem key, json
+      when 'local'
+        @_changesMade++
+        localStorage.setItem key, json
   
   @method 'fetch', (key, callback) ->
-    switch @storageType
-      when ST.Storage.DATABASE
-        @database.transaction (transaction) ->
+    switch @_storageType
+      when 'database'
+        @_database.transaction (transaction) ->
           transaction.executeSql 'select value from data where key = ?', [key], (transaction, results) ->
             if results.rows.length
               row = results.rows.item 0
@@ -72,8 +72,8 @@ ST.class 'Storage', ->
               callback null
           , (error) ->
             callback null
-      when ST.Storage.LOCAL
-        value = window.localStorage[key]
+      when 'local'
+        value = localStorage[key]
         if value
           callback JSON.parse(value)
         else
@@ -82,9 +82,9 @@ ST.class 'Storage', ->
         callback null
   
   @method 'each', (callback) ->
-    switch @storageType
-      when ST.Storage.DATABASE
-        @database.transaction (transaction) ->
+    switch @_storageType
+      when 'database'
+        @_database.transaction (transaction) ->
           transaction.executeSql 'select key, value from data', null, (transaction, results) ->
             if results.rows.length
               for row in rows
@@ -93,9 +93,9 @@ ST.class 'Storage', ->
                   callback row.key, json
                 catch e
                   callback row.key, null
-      when ST.Storage.LOCAL
-        if window.localStorage.length
-          for key, value in window.localStorage
+      when 'local'
+        if localStorage.length
+          for key, value in localStorage
             try
               json = JSON.parse value
               callback key, json
@@ -103,19 +103,19 @@ ST.class 'Storage', ->
               callback key, null
   
   @method 'remove', (key) ->
-    switch @storageType
-      when ST.Storage.DATABASE
-        @database.transaction (transaction) ->
+    switch @_storageType
+      when 'database'
+        @_database.transaction (transaction) ->
           transaction.executeSql 'delete from data where key = ?', [key]
-      when ST.Storage.LOCAL
-        @changesMade++
-        delete window.localStorage[key]
+      when 'local'
+        @_changesMade++
+        delete localStorage[key]
   
   @method 'removeAll', ->
-    switch @storageType
-      when ST.Storage.DATABASE
-        @database.transaction (transaction) ->
+    switch @_storageType
+      when 'database'
+        @_database.transaction (transaction) ->
           transaction.executeSql 'delete from data'
-      when ST.Storage.LOCAL
-        @changesMade++;
-        window.localStorage.clear()
+      when 'local'
+        @_changesMade++
+        localStorage.clear()
