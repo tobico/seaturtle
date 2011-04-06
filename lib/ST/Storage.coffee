@@ -4,13 +4,12 @@ ST.class 'Storage', ->
   @singleton()
   
   @classMethod 'supported', ->
-    window.openDatabase || window.localStorage
+    !!(window.openDatabase || window.localStorage)
   
-  @initializer ->
+  @initializer (storage='auto') ->
     @super()
-    @_storageType = 'none'
-    
-    if window.openDatabase
+
+    if storage == 'database' || (storage == 'auto' && window.openDatabase)
       try
         @_database = window.openDatabase 'ststorage', '1.0', 'STStorage Data Store', 10485760
         @_database.transaction (transaction) ->
@@ -18,20 +17,22 @@ ST.class 'Storage', ->
         @_storageType = 'database'
       catch e
         @_storageType = 'none'
-    else if window.localStorage
+    else if storage == 'local' || (storage == 'auto' && window.localStorage)
       @_storageType = 'local'
-    
-    if window.localStorage
+      
+      storageEvent = @method 'storageEvent'
       $ ->
         if $.browser.safari
-          window.addEventListener 'storage', @method('storageEvent'), false
+          window.addEventListener 'storage', storageEvent, false
         else
-          $(document).bind 'storage', @method('storageEvent')
+          $(document).bind 'storage', storageEvent
       @_changesMade = 1
       
       # Make a dummy change, to catch out any other instances of
       # ST.Storage on the same data store
       localStorage.removeItem 'storageTest'
+    else
+      @_storageType = 'none'
   
   @property 'storageType'
   
@@ -86,21 +87,22 @@ ST.class 'Storage', ->
       when 'database'
         @_database.transaction (transaction) ->
           transaction.executeSql 'select key, value from data', null, (transaction, results) ->
-            if results.rows.length
-              for row in rows
-                try
-                  json = JSON.parse row.value
-                  callback row.key, json
-                catch e
-                  callback row.key, null
+            index = 0
+            while index < results.rows.length
+              row = results.rows.item index++
+              try
+                json = JSON.parse row.value
+                callback row.key, json
+              catch e
+                callback row.key, null
       when 'local'
-        if localStorage.length
-          for key, value in localStorage
-            try
-              json = JSON.parse value
-              callback key, json
-            catch e
-              callback key, null
+        for key in localStorage
+          value = localStorage[key]
+          try
+            json = JSON.parse value
+            callback key, json
+          catch e
+            callback key, null
   
   @method 'remove', (key) ->
     switch @_storageType

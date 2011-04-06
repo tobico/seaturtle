@@ -229,8 +229,8 @@ $ ->
           @model.bar 10
           (typeof @model.bar()).should equal('string')
         
-        it "should convert to float", ->
-          ST.TestModel.float 'zap'
+        it "should convert to real", ->
+          ST.TestModel.real 'zap'
           @model.zap '5.5'
           (typeof @model.zap()).should equal('number')
           @model.zap().should equal(5.5)
@@ -246,6 +246,11 @@ $ ->
           @model.zap '01 Jan 2010 12:15:00'
           @model.zap().should beAnInstanceOf(Date)
           @model.zap().getTime().should equal(1262308500000)
+        
+        it "should convert to bool", ->
+          ST.TestModel.bool 'zap'
+          @model.zap 17
+          @model.zap().should equal(true)
       
       describe "#get(Attribute)", ->
         it "should return attribute value", ->
