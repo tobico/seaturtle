@@ -313,10 +313,12 @@ ST.class 'Model', ->
       newValue = switch details.type
         when 'string'
           String rawValue
-        when 'float'
+        when 'real'
           Number rawValue
         when 'integer'
           Math.round Number(rawValue)
+        when 'bool'
+          !!rawValue
         when 'datetime'
           date = new Date(rawValue)
           if isNaN(date.getTime()) then null else date
@@ -356,8 +358,8 @@ ST.class 'Model', ->
   # In the following methods, “def” stands for “default”
   @classMethod 'string', (name, def) -> @attribute name, 'string', def
   @classMethod 'integer', (name, def) -> @attribute name, 'integer', def
-  @classMethod 'float', (name, def) -> @attribute name, 'float', def
-  @classMethod 'boolean', (name, def) -> @attribute name, 'boolean', def
+  @classMethod 'real', (name, def) -> @attribute name, 'real', def
+  @classMethod 'bool', (name, def) -> @attribute name, 'bool', def
   @classMethod 'datetime', (name, def) -> @attribute name, 'datetime', def
   @classMethod 'enum', (name, def, values) ->
     @attribute name, 'enum', def
