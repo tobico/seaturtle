@@ -283,13 +283,13 @@ $ ->
       it "should wrap row innerHTML in a <tr> tag", ->
         html = []
         @tableView.shouldReceive 'generateRowInnerHTML'
-        @tableView.generateRowHTML @tableView.list().at(0), html
+        @tableView.generateRowHTML @tableView.list().at(0), 0, html
         html[0].should equal('<tr class="item')
         html[html.length-1].should equal('</tr>')
       
       it "should include item index as a CSS class", ->
         html = []
-        @tableView.generateRowHTML @tableView.list().at(0), html
+        @tableView.generateRowHTML @tableView.list().at(0), 0, html
         html.join('').indexOf('class="item0"').shouldNot equal(-1)
     
     describe '#generateRowInnerHTML', ->
@@ -371,7 +371,7 @@ $ ->
       it "should reactivate row", ->
         @tableView.load()
         item = @tableView.list().at(0)
-        @tableView.shouldReceive('activateRow').with(item)
+        @tableView.shouldReceive('activateRow').with(item, 0)
         @tableView.refreshRow item
     
     describe '#toggleColumn', ->
@@ -429,7 +429,7 @@ $ ->
       
       it "should activate row", ->
         item = {}
-        @tableView.shouldReceive('activateRow').with(item)
+        @tableView.shouldReceive('activateRow').with(item, 4)
         @list.add item
       
       it "should add _mapping for new item", ->

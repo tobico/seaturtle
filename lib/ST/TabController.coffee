@@ -4,20 +4,19 @@
 ST.class 'TabController', 'Controller', ->
   @initializer ->
     @super()
-    
-    view = ST.TabView.create()
+    view = ST.View.create()
     @view view
-    view.bind 'switchedTab', this, 'viewSwitchedTab'
     view.release()
-    
     @_tabs = ST.List.create()
     @_tabs.bind 'itemAdded',   this, 'tabAdded'
     @_tabs.bind 'itemChanged', this, 'tabChanged'
     @_tabs.bind 'itemRemoved', this, 'tabRemoved'
+    @_tabView = null
     @_activeTab = null
     @_hideSingleTab = false
   
   @property 'tabs'
+  @retainedProperty 'tabView'
   @property 'activeTab'
   @property 'hideSingleTab'
   
@@ -27,6 +26,11 @@ ST.class 'TabController', 'Controller', ->
     @super()
   
   @method 'viewLoaded', (view) ->
+    tabView = ST.TabView.create()
+    @tabView tabView
+    @_view.addChild tabView
+    tabView.bind 'switchedTab', this, 'viewSwitchedTab'
+    tabView.release()
     @updateTabView()
     @activeTab @_tabs.first()
   
@@ -34,13 +38,13 @@ ST.class 'TabController', 'Controller', ->
     @activeTab @_tabs.at(newIndex)
   
   @method 'updateTabView', ->
-    if @_view.loaded()
+    if @_tabView
       if @_hideSingleTab && @_tabs.count() == 1
-        @_view.hide()
+        @_tabView.hide()
       else
-        @_view.show()
-        @_view.tabs @_tabs.mapArray((tab) -> if tab.tabTitle then tab.tabTitle() else 'Untitled')
-        @_view.tabIndex Math.max(@_tabs.indexOf(@_activeTab), 0)
+        @_tabView.show()
+        @_tabView.tabs @_tabs.mapArray((tab) -> if tab.tabTitle then tab.tabTitle() else 'Untitled')
+        @_tabView.tabIndex Math.max(@_tabs.indexOf(@_activeTab), 0)
   
   @method 'tabAdded', (tabs, tab) ->
     @activeTab tab if tabs.count() == 1
@@ -54,7 +58,5 @@ ST.class 'TabController', 'Controller', ->
     @updateTabView() if attribute == 'tabTitle'
   
   @method '_activeTabChanged', (oldTab, newTab) ->
-    if newTab
-      @_view.footer newTab.view()
-    else
-      @_view.footer null
+    @_view.removeChild oldTab.view() if oldTab
+    @_view.addChild newTab.view() if newTab

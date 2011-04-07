@@ -7,7 +7,7 @@ $ ->
     
     describe "#initialize", ->
       it "should create view", ->
-        @tabController.view().should beAnInstanceOf(ST.TabView)
+        @tabController.view().should beAnInstanceOf(ST.View)
       
       it "should create tabs list", ->
         @tabController.tabs().should beAnInstanceOf(ST.List)
@@ -26,21 +26,25 @@ $ ->
         @tabController.destroy()
     
     describe "#viewLoaded", ->
+      it "should create tab view", ->
+        @tabController.view().load()
+        @tabController.tabView().should beAnInstanceOf(ST.TabView)
+      
       it "should update tab view", ->
         @tabController.shouldReceive 'updateTabView'
         @tabController.view().load()
       
       it "should activate first tab", ->
-        tab = ST.Controller.create()
+        tab = ST.TabController.create()
         @tabController.tabs().add tab
         @tabController.view().load()
         @tabController.activeTab().should be(tab)
     
     describe "#viewSwitchedTab", ->
       it "should activate new tab", ->
-        tab1 = ST.Controller.create()
+        tab1 = ST.TabController.create()
         @tabController.tabs().add tab1
-        tab2 = ST.Controller.create()
+        tab2 = ST.TabController.create()
         @tabController.tabs().add tab2
         @tabController.viewSwitchedTab @tabController.view(), 0, 1
         @tabController.activeTab().should be(tab2)
@@ -49,75 +53,76 @@ $ ->
     
     describe "#updateTabView", ->
       it "should hide tab view for single tab", ->
-        @tabController.hideSingleTab true
-        tab = ST.Controller.create()
-        @tabController.tabs().add tab
-        @tabController.view().shouldReceive 'hide'
         @tabController.view().load()
+        @tabController.hideSingleTab true
+        tab = ST.TabController.create()
+        @tabController.tabs().add tab
+        @tabController.tabView().shouldReceive 'hide'
+        @tabController.updateTabView()
       
       it "should show single tab", ->
-        tab = ST.Controller.create()
+        tab = ST.TabController.create()
         tab.tabTitle = -> 'Test'
         @tabController.tabs().add tab
         @tabController.view().load()
-        @tabController.view().element().html().should equal('<li class="hl"><span class="title active_title">Test</span></li>')
+        @tabController.tabView().element().html().should equal('<li class="hl"><span class="title active_title">Test</span></li>')
       
       it "should show multiple tabs", ->
-        tab1 = ST.Controller.create()
+        tab1 = ST.TabController.create()
         tab1.tabTitle = -> 'Foo'
         @tabController.tabs().add tab1
-        tab2 = ST.Controller.create()
+        tab2 = ST.TabController.create()
         tab2.tabTitle = -> 'Bar'
         @tabController.tabs().add tab2
         @tabController.activeTab tab2
         @tabController.view().load()
-        @tabController.view().element().html().should equal('<li><span class="title inactive_title">Foo</span></li><li class="hl"><span class="title active_title">Bar</span></li>')
+        @tabController.tabView().element().html().should equal('<li><span class="title inactive_title">Foo</span></li><li class="hl"><span class="title active_title">Bar</span></li>')
     
     describe "#tabAdded", ->
       it "should set as active tab if only item", ->
-        tab = ST.Controller.create()
+        tab = ST.TabController.create()
         @tabController.tabs().add tab
         @tabController.activeTab().should be(tab)
         
       it "should update tab view", ->
         @tabController.shouldReceive 'updateTabView'
-        tab = ST.Controller.create()
+        tab = ST.TabController.create()
         @tabController.tabs().add tab
     
     describe "#tabRemoved", ->
       it "should set active tab to next tab", ->
-        tab1 = ST.Controller.create()
+        tab1 = ST.TabController.create()
         @tabController.tabs().add tab1
-        tab2 = ST.Controller.create()
+        tab2 = ST.TabController.create()
         @tabController.tabs().add tab2
         @tabController.activeTab tab1
         @tabController.tabs().remove tab1
         @tabController.activeTab().should be(tab2)
       
       it "should set active tab to previous tab if there is no next tab", ->
-        tab1 = ST.Controller.create()
+        tab1 = ST.TabController.create()
         @tabController.tabs().add tab1
-        tab2 = ST.Controller.create()
+        tab2 = ST.TabController.create()
         @tabController.tabs().add tab2
         @tabController.activeTab tab2
         @tabController.tabs().remove tab2
         @tabController.activeTab().should be(tab1)
       
       it "should set active tab to null if no tabs", ->
-        tab = ST.Controller.create()
+        tab = ST.TabController.create()
         @tabController.tabs().add tab
         @tabController.tabs().remove tab
         expect(@tabController.activeTab()).to be(null)
       
       it "should update tab view", ->
-        tab = ST.Controller.create()
+        tab = ST.TabController.create()
         @tabController.tabs().add tab
         @tabController.shouldReceive 'updateTabView'
         @tabController.tabs().removeAt 0
     
     describe "#tabChanged", ->
       it "should update tab view when tab title changed", ->
-        ST.class 'TestController', 'Controller', ->
+        ST.class 'TestController', 'TabController', ->
           @property 'tabTitle'
         tab = ST.TestController.create()
         @tabController.tabs().add tab
@@ -125,17 +130,17 @@ $ ->
         tab.tabTitle 'Waffles'
     
     describe "#_activeTabChanged", ->
-      it "should set tab view as view footer", ->
+      it "should add tab view as child", ->
         tab = ST.Controller.create()
         view = ST.View.create()
         tab._view = view
         @tabController.tabs().add tab
-        @tabController.view().footer().should be(view)
+        @tabController.view().children().first().should be(view)
       
-      it "should remove view footer when no tab", ->
+      it "should remove child view for old tab", ->
         tab = ST.Controller.create()
         view = ST.View.create()
         tab._view = view
         @tabController.tabs().add tab
         @tabController.activeTab null
-        expect(@tabController.view().footer()).to be(null)
+        @tabController.view().children().count().should equal(0)

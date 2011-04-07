@@ -57,6 +57,7 @@ ST.class 'View', 'Destructable', ->
   @method 'childAdded', (children, child) ->
     child.parent this
     if @_loaded
+      child.load()
       if @_footer
         @_footer.element().before child.element()
       else

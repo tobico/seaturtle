@@ -153,17 +153,16 @@ ST.class 'TableView', 'View', ->
   @method 'generateBodyInnerHTML', (html, media='screen') ->
     self = this
     for index in @_mapping
-      self.generateRowHTML @_list.at(index), html, media
+      self.generateRowHTML @_list.at(index), index, html, media
   
   @method 'activateBody', ->
     self = this
+    index = 0
     @_list.each (item) ->
-      self.activateRow item
+      self.activateRow item, index++
   
-  @method 'generateRowHTML', (item, html, media='screen') ->
-    html.push '<tr class="item'
-    html.push @_list.indexOf(item)
-    html.push '">'
+  @method 'generateRowHTML', (item, index, html, media='screen') ->
+    html.push '<tr class="item', index, '">'
     @generateRowInnerHTML item, html, media
     html.push '</tr>'
 
@@ -172,8 +171,7 @@ ST.class 'TableView', 'View', ->
       unless column.hidden or (column.media and column.media != media)
         @generateCellHTML item, column, html, media
   
-  @method 'activateRow', (item) ->
-    index = @_list.indexOf item
+  @method 'activateRow', (item, index) ->
     cells = $("tr.item#{index} td", @_tableElement)
     i = 0
     for column in @_columns      
@@ -225,7 +223,7 @@ ST.class 'TableView', 'View', ->
         html = []
         @generateRowInnerHTML item, html
         row.html html.join('')
-        @activateRow item
+        @activateRow item, index
   
   @method 'toggleColumn', (column) ->
     column.hidden = !column.hidden
@@ -245,18 +243,16 @@ ST.class 'TableView', 'View', ->
         a.push data
     a
   
-  @method 'listItemAdded', (list, item) ->
+  @method 'listItemAdded', (list, item, index) ->
     return unless @_loaded
-    
-    index = @_list.indexOf item
     
     insertBefore = 0
     sortFn = @sortFunction()
     tbody = $ 'tbody', @_tableElement
     html = []
-    @generateRowHTML item, html
+    @generateRowHTML item, index, html
     tbody.append html.join('')
-    @activateRow item
+    @activateRow item, index
     @_mapping.push index
     @sort()
   
