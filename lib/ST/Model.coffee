@@ -21,16 +21,16 @@ ST.class 'Model', ->
   @classMethod 'fetch', (uuid, yield) ->
     self = this
     
-    if STModel._byUuid[uuid]
-      yield STModel._byUuid[uuid]
-    else if @FindUrl
+    if ST.Model._byUuid[uuid]
+      yield ST.Model._byUuid[uuid] if yield
+    else if @FETCH_URL
       $.ajax {
-        url:      @FindUrl.replace('?', uuid)
+        url:      @FETCH_URL.replace('?', uuid)
         type:     'get'
-        data:     @FindData || {}
+        data:     @FETCH_DATA || {}
         success:  (data) ->
           model = ST.Model.createWithData data
-          yield model
+          yield model if yield
       }
     else
       ST.error "No find URL for model: #{@_name}"
