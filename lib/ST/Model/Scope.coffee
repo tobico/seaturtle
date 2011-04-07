@@ -1,14 +1,13 @@
 #require ST/Model
 #require ST/Enumerable
 
-ST.Model.class 'Scope', ->
-  @include 'Enumerable'
-  
+ST.Model.class 'Scope', 'List', ->
   @initializer 'withModel', (model) ->
     @init()
     @_model = model
     @_conditions = []
     @_order = null
+    @_populated = false
   
   @initializer 'withScope', (scope) ->
     @init()
@@ -17,6 +16,7 @@ ST.Model.class 'Scope', ->
     for condition in scope._conditions
       @_conditions.push condition
     @_order = scope._order
+    @_populated = false
     
   @method 'fork', (block) ->
     scope = @_class.createWithScope this
@@ -52,53 +52,50 @@ ST.Model.class 'Scope', ->
     @_bindingsAdded = false
   
   @method 'bind', (trigger, receiver, selector) ->
+    @populate()
     @addBindings() unless @_bindingsAdded
     @super trigger, receiver, selector
   
   @method 'unbindAll', (receiver) ->
     @super receiver
     @removeBindings() if @_bindingsAdded && !@isBound()
-  
+
   @method 'each', (yield) ->
-    self = this
-    yield = ST.toProc yield
-  
-    candidates = null
-    for condition in @_conditions
-      if condition.index
-        return unless condition.index.length
-        candidates = condition.index.find condition.value
-    
-    candidates ||= @_model._byUuid
-    matches = []
-    
-    for uuid of candidates
-      if candidates.hasOwnProperty uuid
-        candidate = candidates[uuid]
-        if candidate.matches @_conditions
-          if @_order
-            matches.push candidate
-          else
-            yield candidate
-    
-    if @_order
-      matches.sort (a, b) ->
-        a_value = a.get self._order
-        b_value = b.get self._order
-        if a_value > b_value
-          1
-        else if a_value < b_value
-          -1
-        else
-          0
-      for match in matches
-        yield match
-  
+    @populate()
+    @super yield
+
   @method 'count', ->
-    count = 0
-    @each (item) ->
-      count++
-    count
+    @populate()
+    @super()
+  
+  @method 'populate', ->
+    unless @_populated
+      candidates = null
+      for condition in @_conditions
+        if condition.index
+          return unless condition.index.length
+          candidates = condition.index.find condition.value
+
+      candidates ||= @_model._byUuid
+
+      for uuid of candidates
+        if candidates.hasOwnProperty uuid
+          candidate = candidates[uuid]
+          if candidate.matches @_conditions
+            @_array.push candidate
+
+      if @_order
+        order = @_order
+        @_array.sort (a, b) ->
+          a_value = a.get order
+          b_value = b.get order
+          if a_value > b_value
+            1
+          else if a_value < b_value
+            -1
+          else
+            0
+      @_populated = true
   
   @method 'destroyAll', ->
     @each 'destroy'
@@ -112,10 +109,10 @@ ST.Model.class 'Scope', ->
     @_model.createWithData defaults
   
   @method 'itemAdded', (index, item) ->
-    @trigger 'itemAdded', item if item.matches @_conditions
+    @add item if item.matches @_conditions
 
   @method 'itemRemoved', (index, item) ->  
-    @trigger 'itemRemoved', item if item.destroyed || !item.matches(@_conditions)
+    @remove item if item.destroyed || !item.matches(@_conditions)
   
   @method 'itemChanged', (index, item) ->
     @trigger 'itemChanged', item if item.matches @_conditions
