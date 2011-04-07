@@ -39,6 +39,7 @@ ST.class 'Model', ->
   @classDelegate 'order', 'scoped'
   @classDelegate 'each',  'scoped'
   @classDelegate 'first', 'scoped'
+  @classDelegate 'all',   'scoped'
   
   @classMethod 'scoped', ->
     ST.Model.Scope.createWithModel this
@@ -56,7 +57,7 @@ ST.class 'Model', ->
       return if ST.Model._byUuid[data.uuid]
       @createWithData data
   
-  @classMethod 'getIndex', (attribute) ->
+  @classMethod 'index', (attribute) ->
     @_indexes ||= {}
     @_indexes[attribute] ||= ST.Model.Index.createWithModelAttribute(this, attribute)
     
@@ -126,6 +127,7 @@ ST.class 'Model', ->
         @indexForKeyword @_attributes[attribute]
 
     @_creating = false
+    @_class.trigger 'itemAdded', this
   
   # Creates a new object from model data. If the data includes a 
   # property, as with data genereated by #objectify, the specified model
@@ -171,71 +173,10 @@ ST.class 'Model', ->
       true
     else
       false
-
-  # Returns (and creates if needed) a STList to contain objects from
-  # a corresponsing one-to-many relationship using a plain array of UUIDs.
-  # 
-  # When list is created, triggers are bounds so that items added or
-  # removed from the list are reflected in the UUIDs array.
-  @method 'getManyList', (member) ->
-    # Create list if it doesn't already exist
-    unless this[member]
-      s = ST.singularize member
-  
-      # Create a new list, with bindings for itemAdded and itemRemoved
-      this[member] = ST.List.create()
-      this[member].bind 'itemAdded', this, s + 'Added'
-      this[member].bind 'itemRemoved', this, s + 'Removed'
-  
-      # Create new method to update UUIDs on added events
-      this[s + 'Added'] = (list, item) ->
-        this[s + 'Uuids'].push item
-        @persist()
-  
-      # Create new method to update UUIDs on removed events
-      this[s + 'Removed'] = (list, item) ->
-        this[s + 'Uuids'].remove item
-        @persist()
-      
-      this[member].find = (mode, options) ->
-        if mode == 'first' || mode == 'all'
-          all = mode == 'all';
-          if options && options.conditions
-            filter = (o) -> o.matches options.conditions
-            return if all @array.collect filter
-            else @array.find filter
-          else
-            return if all then this; else @objectAtIndex(0)
-        else if mode == 'by' || mode == 'all_by'
-          conditions = {}
-          conditions[arguments[1]] = arguments[2]
-          return @find(
-            (if mode == 'by' then 'first'; else 'all'),
-            {conditions: conditions}
-          )
-        else
-          return this.array.find.apply(this.array, arguments);
-      
-      this[member + 'NeedsRebuild'] = true
-    
-    # Rebuild items in list if marked for rebuild
-    if this[member + 'NeedsRebuild']
-      uuids = @_attributes[ST.singularize(member) + 'Uuids']
-      list = this[member]
-      
-      # Rebuild by accessing array directly, so that we don't fire off
-      # our own triggers
-      list.array.empty()
-      for uuid in uuids
-        object = ST.Model._byUuid[uuid]
-        list.array.push object if object
-      
-      this[member + 'NeedsRebuild'] = false
-    
-    this[member]
   
   @method '_changed', (member, oldValue, newValue) ->
     @super member, oldValue, newValue
+    @_class.trigger 'itemChanged', this
     if @_class._searchAttributes && @_class._searchAttributes.indexOf(member) >= 0
       @deindexForKeyword oldValue
       @indexForKeyword newValue
@@ -254,8 +195,8 @@ ST.class 'Model', ->
   # Returns saveable object containing model data.
   @method 'serialize', ->
     output = {
-      model: @_class._name
-      uuid:   @getUuid()
+      model:  @_class._name
+      uuid:   @uuid()
     }
     for attribute of @_attributes
       if @_attributes.hasOwnProperty attribute
@@ -278,10 +219,14 @@ ST.class 'Model', ->
     delete @_class._byUuid[@_uuid]
     
     # Remove from attribute indexes
-    ST.Model.Index.removeObject this
-
+    if @_class._indexes
+      for attribute, index of @_class._indexes
+        index.remove @_attributes[attribute], this if index.remove
+    
     # Remove from persistant storage
     ST.Model.Storage.remove @_uuid if ST.Model.Storage
+    
+    @_class.trigger 'itemRemoved', this
 
   # Marks model as destroyed, destroy to be propagated to server when 
   # possible.
@@ -294,6 +239,22 @@ ST.class 'Model', ->
       objectUuid: @_uuid
     }
     @forget()
+  
+  @classMethod 'convertValueToType', (value, type) ->
+    switch type
+      when 'string'
+        String value
+      when 'real'
+        Number value
+      when 'integer'
+        Math.round Number(value)
+      when 'bool'
+        !!value
+      when 'datetime'
+        date = new Date(value)
+        if isNaN(date.getTime()) then null else date
+      else
+        value
 
   @classMethod 'attribute', (name, type, defaultValue) ->
     ucName = ST.ucFirst name
@@ -310,37 +271,21 @@ ST.class 'Model', ->
   
       # Convert new value to correct type
       details = @_class.Attributes[name]
-      newValue = switch details.type
-        when 'string'
-          String rawValue
-        when 'real'
-          Number rawValue
-        when 'integer'
-          Math.round Number(rawValue)
-        when 'bool'
-          !!rawValue
-        when 'datetime'
-          date = new Date(rawValue)
-          if isNaN(date.getTime()) then null else date
-        else
-          rawValue
+      newValue = ST.Model.convertValueToType rawValue, details.type
       
       # Set new value
       @_attributes[name] = newValue
   
       # Update index
-      if @_class["Index#{ucName}"]
-        index = @_class["Index#{ucName}"];
-        index[String(oldValue)].remove this if index[oldValue]
-        index[String(newValue)] ||= ST.List.create()
-        index[String(newValue)].add this
+      if @_class._indexes
+        if index = @_class._indexes[name]
+          index.remove  oldValue, this
+          index.add     newValue, this
   
       # Trigger changed event
       unless @_creating
         @_changed name, oldValue, newValue if @_changed
         @trigger 'changed', name, oldValue, newValue
-      
-      @persist()
     
     @method "get#{ucName}", -> @_attributes[name]
     
@@ -349,9 +294,10 @@ ST.class 'Model', ->
     @[name] = {
       equals: (value) ->
         {
-          attribute: name
-          value: value
-          test: (test) -> test == value
+          type:       'equals'
+          attribute:  name
+          value:      value
+          test:       (test) -> test == value
         }
     }
   
@@ -375,7 +321,7 @@ ST.class 'Model', ->
     }
   
   @classMethod 'belongsTo', (name, assocModel, options={}) ->
-    @attribute "#{name}Uuid"
+    @string "#{name}Uuid"
     
     ucName = ST.ucFirst name
     
@@ -404,50 +350,21 @@ ST.class 'Model', ->
               oldValue.bind key, this, options.bind[key]
 
   @classMethod 'hasMany', (name, assocModel, foreign=null, binds={}) ->
-    if foreign
-      # One-to-many assocation through a Model and foreign key
-      @method name, ->
-        unless this["_#{name}"]
-          model = @_class._namespace.class assocModel
-          this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
-        this["_#{name}"]
-      
-      for key of binds
-        if binds.hasOwnProperty key
-          @_manyBinds ||= []
-          @_manyBinds.push {
-            assoc:  name
-            from:   key
-            to:     binds[key]
-          }
-    else
-      # One-to-many association using a Uuids attribute
-      attr = "#{ST.singularize name}Uuids"
-      ucAttr = ST.ucFirst attr
-  
-      @Attributes ||= {}
-      @Attributes[attr] = Array
-  
-      #setCustomerUuids
-      @method "set#{ucAttr}", (value) ->
-        @_attributes[attr] = value
-        this["#{name}NeedsRebuild"] = true
-        @persist()
-  
-      #getCustomerUuids
-      @method "get#{ucAttr}", -> @_attributes[attr]
-      
-      @accessor attr
-
-      ucsName = ST.ucFirst ST.singularize(name)
-  
-      #customers
-      @method name, -> @getManyList name
-  
-      #addCustomer
-      @method "add#{ucsName}", (record) ->
-        @getManyList(name).add record
-        this
+    # One-to-many assocation through a Model and foreign key
+    @method name, ->
+      unless this["_#{name}"]
+        model = @_class._namespace.class assocModel
+        this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
+      this["_#{name}"]
+    
+    for key of binds
+      if binds.hasOwnProperty key
+        @_manyBinds ||= []
+        @_manyBinds.push {
+          assoc:  name
+          from:   key
+          to:     binds[key]
+        }
   
   @classMethod 'searchesOn', (attributes...) ->
     @_searchAttributes = attributes

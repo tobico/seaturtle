@@ -7,31 +7,58 @@ $ ->
       
     describe "#createWithModelAttribute", ->
       it "should set model", ->
-        @index.model().should be(ST.Model)
+        @index._model.should be(ST.Model)
       
       it "should set attribute", ->
-        @index.attribute().should equal('test')
+        @index._attribute.should equal('test')
       
-      it "should create empty byValue object", ->
-        @index._byValue.should beAnInstanceOf(Object)
-    
-    describe "#id", ->
-      it "should return unique ID for index", ->
-        @index.id().should equal('Model#test')
-    
-    describe "#modelCreated", ->
-      it "should create index for model", ->
-        @index.modelCreated {test: -> 'bacon'}
-        @index._byValue.bacon.shouldNot be(undefined)
+      it "should create empty values hash", ->
+        @index._values.should beAnInstanceOf(Object)
       
-      it "should add object to index", ->
-        object = {test: -> 'bacon'}
-        @index.modelCreated object
-        @index._byValue.bacon[0].should be(object)
+      it "should set default cardinality", ->
+        @index.cardinality().should equal(0)
     
-    describe "#modelDestroyed", ->
-      it "should remove object from index", ->
-        object = {test: -> 'bacon'}
-        @index.modelCreated object
-        @index.modelDestroyed object
-        @index._byValue.bacon.length.should equal(0)
+    describe "#get", ->
+      it "should create a new list", ->
+        @index.get('banana').should beAnInstanceOf(ST.List)
+      
+      it "should return an existing list", ->
+        list = @index.get('banana')
+        @index.get('banana').should be(list)
+      
+      it "should update cardinality", ->
+        @index.get 'banana'
+        @index.cardinality().should equal(1)
+    
+    describe "#add", ->
+      it "should add item to list", ->
+        object = {}
+        @index.add 'banana', object
+        @index.get('banana').indexOf(object).should equal(0)
+    
+    describe "#remove", ->
+      it "should remove item from list", ->
+        object = {}
+        @index.add 'banana', object
+        @index.add 'banana', 'Test'
+        @index.remove 'banana', object
+        @index.get('banana').indexOf(object).should equal(-1)
+      
+      it "should remove list with last item", ->
+        object = {}
+        @index.add 'banana', object
+        @index.remove 'banana', object
+        expect(@index._values['banana']).to be(undefined)
+      
+      it "should not remove list if bound", ->
+        object = {}
+        @index.add 'banana', object
+        @index.get('banana').bind 'itemAdded', object, 'itemAdded'
+        @index.remove 'banana', object
+        expect(@index._values['banana']).to beAnInstanceOf(ST.List)
+      
+      it "should update cardinality when removing list", ->
+        object = {}
+        @index.add 'banana', object
+        @index.remove 'banana', object
+        @index.cardinality().should equal(0)

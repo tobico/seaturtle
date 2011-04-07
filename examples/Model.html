@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="../vendor/jquery/jquery.js"></script>
+    <script src="../compiled/Popup.js"></script>
+    <script src="../compiled/ST.js"></script>
+    <script src="../compiled/ST/Object.js"></script>
+    <script src="../compiled/ST/Enumerable.js"></script>
+    <script src="../compiled/ST/Destructable.js"></script>
+    <script src="../compiled/ST/List.js"></script>
+    <script src="../compiled/ST/Model.js"></script>
+    <script src="../compiled/ST/Model/Scope.js"></script>
+    <script src="../compiled/ST/Model/Index.js"></script>
+    <script>
+        $(function() {
+            ST['class']('Person', 'Model', function() {
+                this.string('name');
+                this.integer('age');
+                this.index('age');
+            });
+            
+            ST['class']('MyObserver', 'Object', function() {
+                this.initializer(function() {
+                    this['super']();
+                    var scope = ST.Person.scoped();
+                    scope.bind('itemAdded', this, 'personAdded');
+                    
+                    scope = ST.Person.where(ST.Person.age.equals(20));
+                    scope.bind('itemAdded', this, 'age20PersonAdded');
+                });
+                
+                this['method']('personAdded', function(list, person) {
+                    $('#people').append('<li>' + person.name() + ', ' + person.age() + '</li>');
+                });
+
+                this['method']('age20PersonAdded', function(list, person) {
+                    $('#people_aged_20').append('<li>' + person.name() + ', ' + person.age() + '</li>');
+                });
+            });
+            
+            var observer = ST.MyObserver.create();
+            
+            $('#add').click(function() {
+                var name = $('#name').val();
+                var age = $('#age').val();
+                ST.Person.createWithData({name: name, age: age});
+            });
+        });
+    </script>
+</head>
+<body>
+    <h2>Models</h2>
+    <h3>Create Person</h3>
+    <p>
+        <label for="name">Name: </label><input id="name" value="Bob Smith" />
+        <label for="age">Age: </label><input id="age" value="20" />
+        <button id="add">Add</button>
+    </p>
+    <h3>People</h3>
+    <ul id="people"></ul>
+    <h3>People Aged 20</h3>
+    <ul id="people_aged_20"></ul>
+</body>

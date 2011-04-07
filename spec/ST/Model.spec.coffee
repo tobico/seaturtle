@@ -8,6 +8,7 @@ $ ->
     beforeEach ->
       ST.class 'TestModel', 'Model', ->
         @string 'foo', 'bacon'
+        @index 'foo'
       @model = ST.TestModel.create()
       
     describe ".scoped", ->
@@ -33,14 +34,14 @@ $ ->
         ST.TestModel.find('test-1').shouldNot be(null)
         ST.TestModel.find('test-2').shouldNot be(null)
     
-    describe ".getIndex", ->
+    describe ".index", ->
       it "should create an index", ->
-        index = ST.TestModel.getIndex 'foo'
+        index = ST.TestModel.index 'foo'
         index.should beAnInstanceOf(ST.Model.Index)
       
       it "should return existing index", ->
-        index = ST.TestModel.getIndex 'foo'
-        ST.TestModel.getIndex('foo').should be(index)
+        index = ST.TestModel.index 'foo'
+        ST.TestModel.index('foo').should be(index)
     
     describe ".changes", ->
       it "should return an array", ->
@@ -136,10 +137,6 @@ $ ->
         change.attribute.should equal('foo')
         change.oldValue.should equal('bacon')
         change.newValue.should equal('waffles')
-      
-      it "should update persistant storage", ->
-        @model.shouldReceive('persist')
-        @model.foo 'waffles'
     
     describe "#serialize", ->
       it "should return a text representation of object", ->
@@ -166,10 +163,8 @@ $ ->
         expect(ST.TestModel._byUuid[uuid]).to be(undefined)
       
       it "should remove object from attribute indexes", ->
-        method = ST.Model.Index.removeObject
-        ST.Model.Index.shouldReceive 'removeObject'
+        ST.TestModel.index('foo').shouldReceive('remove').with 'bacon', @model
         @model.forget()
-        ST.Model.Index.removeObject = method
         
       it "should remove from persistant storage", ->
         ST.Model.Storage = {}
@@ -193,6 +188,30 @@ $ ->
       it "should forget object", ->
         @model.shouldReceive 'forget'
         @model.destroy()
+    
+    describe ".convertValueToType", ->
+      it "should convert to string", ->
+        value = ST.Model.convertValueToType 10, 'string'
+        (typeof value).should equal('string')
+    
+      it "should convert to real", ->
+        value = ST.Model.convertValueToType '5.5', 'real'
+        (typeof value).should equal('number')
+        value.should equal(5.5)
+    
+      it "should convert to integer", ->
+        value = ST.Model.convertValueToType '5.3', 'integer'
+        (typeof value).should equal('number')
+        value.should equal(5)
+
+      it "should convert to datetime", ->
+        value = ST.Model.convertValueToType '01 Jan 2010 12:15:00', 'datetime'
+        value.should beAnInstanceOf(Date)
+        value.getTime().should equal(1262308500000)
+    
+      it "should convert to bool", ->
+        value = ST.Model.convertValueToType 17, 'bool'
+        value.should equal(true)
     
     describe ".attribute", ->
       beforeEach ->
@@ -218,39 +237,17 @@ $ ->
           @model.bar 'waffles'
           @model.bar().should equal('waffles')
           
-        it "should update an attribute index"
+        it "should update attribute index", ->
+          index = ST.TestModel.index 'bar'
+          @model.bar 'bacon'
+          index.shouldReceive('remove').with('bacon', @model)
+          index.shouldReceive('add').with('waffles', @model)
+          @model.bar 'waffles'
           
         it "should trigger _changed event", ->
           @model.bar 'bacon'
           @model.shouldReceive('_changed').with('bar', 'bacon', 'waffles')
           @model.bar 'waffles'
-        
-        it "should convert to string", ->
-          @model.bar 10
-          (typeof @model.bar()).should equal('string')
-        
-        it "should convert to real", ->
-          ST.TestModel.real 'zap'
-          @model.zap '5.5'
-          (typeof @model.zap()).should equal('number')
-          @model.zap().should equal(5.5)
-        
-        it "should convert to integer", ->
-          ST.TestModel.integer 'zap'
-          @model.zap '5.3'
-          (typeof @model.zap()).should equal('number')
-          @model.zap().should equal(5)
-
-        it "should convert to datetime", ->
-          ST.TestModel.datetime 'zap'
-          @model.zap '01 Jan 2010 12:15:00'
-          @model.zap().should beAnInstanceOf(Date)
-          @model.zap().getTime().should equal(1262308500000)
-        
-        it "should convert to bool", ->
-          ST.TestModel.bool 'zap'
-          @model.zap 17
-          @model.zap().should equal(true)
       
       describe "#get(Attribute)", ->
         it "should return attribute value", ->
@@ -325,48 +322,28 @@ $ ->
             @model.otherUuid().should equal(other.uuid())
     
       describe ".hasMany", ->
-        context "with a foreign key", ->
-          beforeEach ->
-            ST.OtherModel.belongsTo 'test', 'TestModel'
-            ST.TestModel.hasMany 'others', 'OtherModel', 'test'
+        beforeEach ->
+          ST.OtherModel.belongsTo 'test', 'TestModel'
+          ST.TestModel.hasMany 'others', 'OtherModel', 'test'
+        
+        it "should create a getter method for scope", ->
+          @model.others.should beAFunction
           
-          it "should create a getter method for scope", ->
-            @model.others.should beAFunction
-            
-          it "should store details of binding", ->
-            ST.TestModel.hasMany 'boundOthers', 'OtherMode', 'test', {
-              changed: 'otherChanged'
-            }
-            ST.TestModel._manyBinds.length.should equal(1)
-            ST.TestModel._manyBinds[0].assoc.should equal('boundOthers')
-            ST.TestModel._manyBinds[0].from.should equal('changed')
-            ST.TestModel._manyBinds[0].to.should equal('otherChanged')
-          
-          describe "getter method", ->
-            it "should return a scope with conditions to match foreign key", ->
-              scope = @model.others()
-              scope._model.should be(ST.OtherModel)
-              scope._conditions.length.should equal(1)
-              scope._conditions[0].attribute.should equal('testUuid')
-      
-        context "without a foreign key", ->
-          beforeEach ->
-            ST.TestModel.hasMany 'others', 'OtherModel'
-          
-          it "should create a uuids getter method", ->
-            @model.getOtherUuids.should beAFunction
-          
-          it "should create a uuids setter method", ->
-            @model.setOtherUuids.should beAFunction
-          
-          it "should create a uuids accessor method", ->
-            @model.otherUuids.should beAFunction
-          
-          it "should create a getter method", ->
-            @model.others.should beAFunction
-          
-          it "should create an add method", ->
-            @model.addOther.should beAFunction
+        it "should store details of binding", ->
+          ST.TestModel.hasMany 'boundOthers', 'OtherMode', 'test', {
+            changed: 'otherChanged'
+          }
+          ST.TestModel._manyBinds.length.should equal(1)
+          ST.TestModel._manyBinds[0].assoc.should equal('boundOthers')
+          ST.TestModel._manyBinds[0].from.should equal('changed')
+          ST.TestModel._manyBinds[0].to.should equal('otherChanged')
+        
+        describe "getter method", ->
+          it "should return a scope with conditions to match foreign key", ->
+            scope = @model.others()
+            scope._model.should be(ST.OtherModel)
+            scope._conditions.length.should equal(1)
+            scope._conditions[0].attribute.should equal('testUuid')
     
     describe ".setStorage", ->
       it "should set the persistant store"

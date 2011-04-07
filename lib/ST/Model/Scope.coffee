@@ -31,15 +31,33 @@ ST.Model.class 'Scope', ->
   @method 'order', (order) ->
     @fork ->
       @_order = order
+  
+  @method 'bindTarget', ->
+    unless @_bindTarget
+      @_bindTarget = @_model
+      for condition in @_conditions
+        if condition.type == 'equals' && @_model._indexes && @_model._indexes[condition.attribute]
+          @_bindTarget = @_model._indexes[condition.attribute].get condition.value
+    @_bindTarget
 
-  @method 'enableBindings', ->
-    for attribute, value of @conditions
-      index = @_model.getValueIndex attribute, value
-      if index
-        index.bind 'itemAdded', this, 'indexItemAdded'
-        index.bind 'itemRemoved', this, 'indexItemRemoved'
-        index.bind 'itemChanged', this, 'indexItemChanged'
-        break
+  @method 'addBindings', ->
+    target = @bindTarget()
+    target.bind 'itemAdded',   this, 'itemAdded'
+    target.bind 'itemRemoved', this, 'itemRemoved'
+    target.bind 'itemChanged', this, 'itemChanged'
+    @_bindingsAdded = true
+  
+  @method 'removeBindings', ->
+    @bindTarget().unbindAll(this)
+    @_bindingsAdded = false
+  
+  @method 'bind', (trigger, receiver, selector) ->
+    @addBindings() unless @_bindingsAdded
+    @super trigger, receiver, selector
+  
+  @method 'unbindAll', (receiver) ->
+    @super receiver
+    @removeBindings() if @_bindingsAdded && !@isBound()
   
   @method 'each', (yield) ->
     self = this
@@ -93,14 +111,11 @@ ST.Model.class 'Scope', ->
     $.extend(defaults, data) if data
     @_model.createWithData defaults
   
-  @method 'indexItemAdded', (index, item) ->
-    if item.matches @_conditions
-      @trigger 'itemAdded', item
+  @method 'itemAdded', (index, item) ->
+    @trigger 'itemAdded', item if item.matches @_conditions
 
-  @method 'indexItemRemoved', (index, item) ->  
-    if item.destroyed || !item.matches(@_conditions)
-      @trigger 'itemRemoved', item
+  @method 'itemRemoved', (index, item) ->  
+    @trigger 'itemRemoved', item if item.destroyed || !item.matches(@_conditions)
   
-  @method 'indexItemChanged', (index, item) ->
-    if item.matches @_conditions
-      @trigger 'itemChanged', item
+  @method 'itemChanged', (index, item) ->
+    @trigger 'itemChanged', item if item.matches @_conditions
