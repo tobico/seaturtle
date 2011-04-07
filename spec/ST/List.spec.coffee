@@ -123,7 +123,7 @@ $ ->
 
     it "should trigger itemAdded event", ->
       object = {}
-      @list.shouldReceive('trigger').with('itemAdded', object)
+      @list.shouldReceive('trigger').with('itemAdded', object, 0)
       @list.insertAt 0, object
       
   describe "addAndRelease", ->

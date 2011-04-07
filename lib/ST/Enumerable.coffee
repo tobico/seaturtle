@@ -1,37 +1,4 @@
 ST.module 'Enumerable', ->
-
-  # Runs the specified callback function for each item, in an
-  # asynchronous manner.
-  #
-  # Options:
-  #   done:           callback to call when all complete
-  #   steps:          total number of synchronous steps to take       
-  #   or  iteration:  number of items to process in each iteration
-  @method 'eachAsync', (fn, options={}) ->
-    self  = this
-    fn    = ST.P fn
-  
-    iteration = 1
-    iteration = Math.round(@length / options.steps) if options.steps
-    iteration = options.iteration if options.iteration
-    iteration = 1 if iteration < 1
-  
-    i = 0
-    _loop = iteration - 1
-    step = ->
-      fn.call options.object || null, self[i], i
-      i++
-      if i < self.length
-        if _loop > 0
-          _loop--
-          step()
-        else
-          _loop = iteration - 1
-          setTimeout step, 1
-      else if options.done
-        setTimeout options.done, 1
-    setTimeout step, 1
-  
   # Returns first item in collection
   @method 'first', ->
     value = null
@@ -39,15 +6,33 @@ ST.module 'Enumerable', ->
       value = item
       return 'break'
     value
-
-  # Returns true if this contains the specified item.
-  @method 'has', (target) ->
-    found = false
+  
+  @method 'at', (index) ->
+    i = 0
+    found = null
+    @each (item) ->
+      if i == index
+        found = item
+        'break'
+      else
+        i++
+    found
+  
+  # Returns the index of specified item, or -1 if not found
+  @method 'indexOf', (target) ->
+    found = -1
+    index = 0
     @each (item) ->
       if item == target
-        found = true
+        found = index
         'break'
+      else
+        index++
     found
+  
+  # Returns true if this contains the specified item.
+  @method 'has', (target) ->
+    @indexOf(target) > -1
 
   # Returns true if callback function for at least one array member returns
   # true.
