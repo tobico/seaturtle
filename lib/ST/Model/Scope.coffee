@@ -94,13 +94,13 @@ ST.Model.class 'Scope', ->
     @_model.createWithData defaults
   
   @method 'indexItemAdded', (index, item) ->
-    if item.matches @condition
+    if item.matches @_conditions
       @trigger 'itemAdded', item
 
   @method 'indexItemRemoved', (index, item) ->  
-    if item.destroyed || !item.matches(@conditions)
+    if item.destroyed || !item.matches(@_conditions)
       @trigger 'itemRemoved', item
   
   @method 'indexItemChanged', (index, item) ->
-    if item.matches @conditions
+    if item.matches @_conditions
       @trigger 'itemChanged', item
