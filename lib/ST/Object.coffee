@@ -34,6 +34,11 @@ ST.class 'Object', null, ->
     else
       @prototype[name]
   
+  # Creates a method defined at both class and instance level
+  @classMethod 'hybridMethod', (name, fn) ->
+    @classMethod name, fn
+    @method name, fn
+  
   # Create matching init (instance) and create (class) constructor methods
   @classMethod 'initializer', (name, fn) ->
     if fn
@@ -151,9 +156,9 @@ ST.class 'Object', null, ->
     a = key.split '.'
     here = a.shift()
     there = a.join '.'
-  
+    
     that = this[here] && this[here]()
-
+    
     if there && there.length
       if that == null
         null
@@ -164,11 +169,12 @@ ST.class 'Object', null, ->
     else
       that
   
+  # Produces a function that calls the named method on this object
   @method 'method', (name) ->
     self = this
     -> self[name].apply self, arguments
     
-  @method 'bind', (trigger, receiver, selector) ->
+  @hybridMethod 'bind', (trigger, receiver, selector) ->
     @_bindings ||= {}
     @_bindings[trigger] ||= []
     @_bindings[trigger].push {
@@ -176,7 +182,7 @@ ST.class 'Object', null, ->
       selector: selector || trigger
     }
   
-  @method 'unbindOne', (trigger, receiver) ->
+  @hybridMethod 'unbindOne', (trigger, receiver) ->
     if @_bindings && @_bindings[trigger]
       bindings = @_bindings[trigger]
       i = 0
@@ -184,18 +190,25 @@ ST.class 'Object', null, ->
         bindings.splice i, 1 if bindings[i].receiver == receiver
         i++
   
-  @method 'unbindAll', (receiver) ->
+  @hybridMethod 'unbindAll', (receiver) ->
     if @_bindings
       for trigger of @_bindings
         @unbindOne trigger, receiver
   
-  @method 'unbind', (trigger, receiver) ->
+  @hybridMethod 'unbind', (trigger, receiver) ->
     if receiver?
       @unbindOne trigger, receiver
     else
       @unbindAll trigger
   
-  @method 'trigger', (trigger, passArgs...) ->
+  @hybridMethod 'isBound', ->
+    if @_bindings
+      for trigger of @_bindings
+        if @_bindings.hasOwnProperty trigger
+          return true
+    false
+  
+  @hybridMethod 'trigger', (trigger, passArgs...) ->
     if @_bindings && @_bindings[trigger]
       for target in @_bindings[trigger]
         if target.receiver[target.selector]

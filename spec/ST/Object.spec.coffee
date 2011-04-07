@@ -47,6 +47,17 @@ $ ->
           test = -> false
           ST.Test.method 'test', test
           ST.Test.method('test').should be(test)
+
+      describe ".hybridMethod", ->
+        it "should define a class method", ->
+          fn = -> null
+          ST.Test.shouldReceive('classMethod').with('test', fn)
+          ST.Test.hybridMethod 'test', fn
+
+        it "should define an instance method", ->
+          fn = -> null
+          ST.Test.shouldReceive('method').with('test', fn)
+          ST.Test.hybridMethod 'test', fn
       
       describe ".initializer", ->
         it "should override an init method", ->
@@ -291,6 +302,15 @@ $ ->
         @object.unbindAll bound
         @object._bindings.foo.length.should equal(0)
         @object._bindings.bar.length.should equal(0)
+    
+    describe "#isBound", ->
+      it "should return false when no bindings", ->
+        @object.isBound().should beFalse
+      
+      it "should return true when there is a binding", ->
+        bound = {}
+        @object.bind 'foo', bound
+        @object.isBound().should beTrue
         
     describe "#trigger", ->
       it "should trigger matching bindings", ->
