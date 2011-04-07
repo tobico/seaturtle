@@ -29,7 +29,7 @@ ST.class 'Model', ->
         type:     'get'
         data:     @FETCH_DATA || {}
         success:  (data) ->
-          model = ST.Model.createWithData data
+          model = self.createWithData data
           yield model if yield
       }
     else
@@ -39,7 +39,6 @@ ST.class 'Model', ->
   @classDelegate 'order', 'scoped'
   @classDelegate 'each',  'scoped'
   @classDelegate 'first', 'scoped'
-  @classDelegate 'all',   'scoped'
   
   @classMethod 'scoped', ->
     ST.Model.Scope.createWithModel this
@@ -119,8 +118,8 @@ ST.class 'Model', ->
         )
     
     if @_class._manyBinds
-      @_class._manyBinds.each (binding) ->
-        self.get(binding.assoc).bind(binding.from, self, binding.to);
+      for binding in @_class._manyBinds
+        @get(binding.assoc).bind binding.from, self, binding.to
     
     if @_class._searchAttributes
       for attribute in @_class._searchAttributes
@@ -290,7 +289,7 @@ ST.class 'Model', ->
     @method "get#{ucName}", -> @_attributes[name]
     
     @accessor name
-    
+
     @[name] = {
       equals: (value) ->
         {
@@ -298,6 +297,30 @@ ST.class 'Model', ->
           attribute:  name
           value:      value
           test:       (test) -> test == value
+        }
+      lessThan: (value) ->
+        {
+          attribute:  name
+          value:      value
+          test:       (test) -> test < value
+        }
+      lessThanOrEquals: (value) ->
+        {
+          attribute:  name
+          value:      value
+          test:       (test) -> test <= value
+        }
+      greaterThan: (value) ->
+        {
+          attribute:  name
+          value:      value
+          test:       (test) -> test > value
+        }
+      greaterThanOrEquals: (value) ->
+        {
+          attribute:  name
+          value:      value
+          test:       (test) -> test >= value
         }
     }
   
@@ -335,17 +358,28 @@ ST.class 'Model', ->
     
     @virtual(name, 'belongsTo', null).model = assocModel
   
+    @[name] = {
+      is: (value) ->
+        uuid = value && value.uuid()
+        {
+          type:       'equals'
+          attribute:  name + "Uuid"
+          value:      uuid
+          test:       (test) -> test == uuid
+        }
+    }
+
     if options.bind
       setUuidName = "set#{ucName}Uuid"
       oldSet = @prototype[setUuidName]
-      @method setUuidName, (value) ->
+      @method setUuidName, (newValue) ->
         oldValue = @_attributes[name]
-        unless oldValue == value
-          if oldValue.unbind
+        unless oldValue == newValue
+          if oldValue && oldValue.unbind
             for key of options.bind
               oldValue.unbind key, this
-          oldSet.call this, value
-          if newValue.bind
+          oldSet.call this, newValue
+          if newValue && newValue.bind
             for key of options.bind
               oldValue.bind key, this, options.bind[key]
 
