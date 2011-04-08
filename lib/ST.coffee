@@ -122,6 +122,13 @@ window.ST = {
       console.error message
     else
       alert message
+  
+  template: (template, values) ->
+    s = template
+    for key, value of values
+      if values.hasOwnProperty key
+        s = s.replace ":#{key}", value
+    s
 }
 
 unless Array.prototype.indexOf
