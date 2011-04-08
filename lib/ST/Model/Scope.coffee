@@ -42,9 +42,8 @@ ST.Model.class 'Scope', 'List', ->
 
   @method 'addBindings', ->
     target = @bindTarget()
-    target.bind 'itemAdded',   this, 'itemAdded'
-    target.bind 'itemRemoved', this, 'itemRemoved'
-    target.bind 'itemChanged', this, 'itemChanged'
+    target.bind 'itemAdded',   this, 'targetItemAdded'
+    target.bind 'itemRemoved', this, 'targetItemRemoved'
     @_bindingsAdded = true
   
   @method 'removeBindings', ->
@@ -108,11 +107,8 @@ ST.Model.class 'Scope', 'List', ->
     $.extend(defaults, data) if data
     @_model.createWithData defaults
   
-  @method 'itemAdded', (index, item) ->
+  @method 'targetItemAdded', (target, item) ->
     @add item if item.matches @_conditions
 
-  @method 'itemRemoved', (index, item) ->  
+  @method 'targetItemRemoved', (target, item) ->  
     @remove item if item.destroyed || !item.matches(@_conditions)
-  
-  @method 'itemChanged', (index, item) ->
-    @trigger 'itemChanged', item if item.matches @_conditions
