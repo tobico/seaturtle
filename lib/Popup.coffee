@@ -35,11 +35,12 @@ window.popup = (element, id, items, options={}) ->
 
   offset = element.offset()
   
-  ul = $('<ul>').attr('id', 'popup').addClass('popupMenu')
-      .css({
-        left: Math.round(offset.left) + 'px',
-        top: Math.floor(offset.top + element.height()) + 'px'
-      }).hide()
+  style = if offset.left < $(window).width() - 150
+    "left: #{Math.round offset.left}px"
+  else
+    "right: #{Math.round($(window).width() - offset.left - element.outerWidth())}px"
+  
+  ul = $ "<ul id=\"popup\" class=\"popupMenu\" style=\"#{style}; top: #{Math.floor(offset.top + element.outerHeight())}px; display: none\"></ul>"
   
   for item in items
     if (item == '-')
@@ -52,7 +53,7 @@ window.popup = (element, id, items, options={}) ->
           item.action() if item.action
           item[1]() if item[1]
           options.close() if options.close
-          closePopup();
+          closePopup()
         li.append a
         ul.append li
   
