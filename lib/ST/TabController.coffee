@@ -31,7 +31,6 @@ ST.class 'TabController', 'Controller', ->
     @_view.addChild tabView
     tabView.bind 'switchedTab', this, 'viewSwitchedTab'
     tabView.release()
-    @updateTabView()
     @activeTab @_tabs.first()
   
   @method 'viewSwitchedTab', (view, oldIndex, newIndex) ->
@@ -47,16 +46,27 @@ ST.class 'TabController', 'Controller', ->
         @_tabView.tabIndex Math.max(@_tabs.indexOf(@_activeTab), 0)
   
   @method 'tabAdded', (tabs, tab) ->
-    @activeTab tab if tabs.count() == 1
-    @updateTabView()
+    if tabs.count() == 1
+      @activeTab tab
+    else
+      @updateTabView()
   
   @method 'tabRemoved', (tabs, tab, index) ->
     @activeTab tabs.at(index) || tabs.at(index - 1) || null
-    @updateTabView()
 
   @method 'tabChanged', (tabs, tab, attribute, oldValue, newValue) ->
     @updateTabView() if attribute == 'tabTitle'
   
   @method '_activeTabChanged', (oldTab, newTab) ->
-    @_view.removeChild oldTab.view() if oldTab
-    @_view.addChild newTab.view() if newTab
+    self = this
+    @updateTabView()
+    switchViews = ->
+      self._view.removeChild oldTab.view() if oldTab
+      self._view.addChild newTab.view() if newTab
+    
+    if newTab && !newTab.view().loaded()
+      # Switch child views asynchronously, so that user gets response
+      # instantly, even if the new view takes a while to load
+      setTimeout switchViews, 1
+    else
+      switchViews()

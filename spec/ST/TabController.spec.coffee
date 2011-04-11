@@ -74,8 +74,8 @@ $ ->
         tab2 = ST.TabController.create()
         tab2.tabTitle = -> 'Bar'
         @tabController.tabs().add tab2
-        @tabController.activeTab tab2
         @tabController.view().load()
+        @tabController.activeTab tab2
         @tabController.tabView().element().html().should equal('<li><span class="title inactive_title">Foo</span></li><li class="hl"><span class="title active_title">Bar</span></li>')
     
     describe "#tabAdded", ->
@@ -83,11 +83,6 @@ $ ->
         tab = ST.TabController.create()
         @tabController.tabs().add tab
         @tabController.activeTab().should be(tab)
-        
-      it "should update tab view", ->
-        @tabController.shouldReceive 'updateTabView'
-        tab = ST.TabController.create()
-        @tabController.tabs().add tab
     
     describe "#tabRemoved", ->
       it "should set active tab to next tab", ->
@@ -113,12 +108,6 @@ $ ->
         @tabController.tabs().add tab
         @tabController.tabs().remove tab
         expect(@tabController.activeTab()).to be(null)
-      
-      it "should update tab view", ->
-        tab = ST.TabController.create()
-        @tabController.tabs().add tab
-        @tabController.shouldReceive 'updateTabView'
-        @tabController.tabs().removeAt 0
     
     describe "#tabChanged", ->
       it "should update tab view when tab title changed", ->
@@ -130,14 +119,21 @@ $ ->
         tab.tabTitle 'Waffles'
     
     describe "#_activeTabChanged", ->
-      it "should add tab view as child", ->
+      it "should update tab view", ->
+        tab = ST.TabController.create()
+        @tabController.tabs().add tab
+        @tabController.shouldReceive 'updateTabView'
+        @tabController.tabs().removeAt 0
+      
+      it "should add active tab's view as child", ->
         tab = ST.Controller.create()
         view = ST.View.create()
+        view.load()
         tab._view = view
         @tabController.tabs().add tab
         @tabController.view().children().first().should be(view)
       
-      it "should remove child view for old tab", ->
+      it "should remove child view for old active tab", ->
         tab = ST.Controller.create()
         view = ST.View.create()
         tab._view = view
