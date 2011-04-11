@@ -118,6 +118,13 @@ ST.class 'TableView', 'View', ->
   @method 'renderColumnsButton', ->
     @element().append '<a class="columnsButton" onmouseover="$(this).addClass(\'columnsButtonHover\')" onmouseout="$(this).removeClass(\'columnsButtonHover\')" href="javascript:;">C</a>'
     $('.columnsButton', @element()).popup @method('generateColumnsPopup')
+  
+  @method 'positionColumnsButton', ->
+    if @_loaded
+      self = this
+      setTimeout(->
+        $('.columnsButton', self._element).css 'top', self._tableElement.position().top
+      , 1)
 
   @method 'generateHeaderHTML', (html, media='screen') ->
     html.push '<thead>'
@@ -158,8 +165,9 @@ ST.class 'TableView', 'View', ->
   @method 'activateBody', ->
     self = this
     index = 0
-    @_list.each (item) ->
+    @_list.eachAsync((item) ->
       self.activateRow item, index++
+    , {iteration: 5})
   
   @method 'generateRowHTML', (item, index, html, media='screen') ->
     html.push '<tr class="item', index, '">'
@@ -278,3 +286,7 @@ ST.class 'TableView', 'View', ->
     @generateBodyHTML html, 'print'
     html.push '</table>'
     @helper().print html.join('')
+  
+  @method '_headerChanged', (oldValue, newValue) ->
+    @super oldValue, newValue
+    @positionColumnsButton() if @_loaded
