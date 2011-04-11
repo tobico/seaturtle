@@ -8,6 +8,7 @@ $ ->
     beforeEach ->
       ST.class 'Author', 'Model', ->
         @string 'name'
+        @method 'toFieldText', -> @name()
       @author = ST.Author.createWithData {name: 'Charles Dickens'}
       ST.class 'Book', 'Model', ->
         @string 'title'
