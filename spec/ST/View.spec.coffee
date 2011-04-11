@@ -78,7 +78,12 @@ $ ->
           it "should retain header", ->
             @header.shouldReceive 'retain'
             @view.header @header
-        
+          
+          it "should load header if view loaded", ->
+            @header.shouldReceive 'load'
+            @view.load()
+            @view.header @header
+          
           it "should add element at top of view if loaded", ->
             @view.load()
             @view.element().append '<br />'
@@ -110,6 +115,11 @@ $ ->
 
           it "should retain footer", ->
             @footer.shouldReceive 'retain'
+            @view.footer @footer
+
+          it "should load footer if view loaded", ->
+            @footer.shouldReceive 'load'
+            @view.load()
             @view.footer @footer
 
           it "should add element at bottom of view if loaded", ->
@@ -278,8 +288,9 @@ $ ->
           @view.loaded().should beTrue
         
         it "should show view", ->
+          @view.hide()
           @view.show()
-          @view.element().is(':hidden').should beFalse
+          @view.element()[0].style.display.shouldNot equal('none')
       
       describe "#hide", ->
         it "should hide view", ->

@@ -46,13 +46,17 @@ ST.class 'View', 'Destructable', ->
   # any content and all child views for a view.
   @method '_headerChanged', (oldHeader, newHeader) ->
     oldHeader.element().detach() if oldHeader
-    @_element.prepend newHeader.element() if newHeader && @_loaded
+    if newHeader && @_loaded
+      newHeader.load()
+      @_element.prepend newHeader.element()
   
   # Sets a view as the footer for this view. Footers always remain below
   # any content and all child views for a view.
   @method '_footerChanged', (oldFooter, newFooter) ->
     oldFooter.element().detach() if oldFooter
-    @_element.append newFooter.element() if newFooter && @_loaded
+    if newFooter && @_loaded
+      newFooter.load()
+      @_element.append newFooter.element()
   
   @method 'childAdded', (children, child) ->
     child.parent this
