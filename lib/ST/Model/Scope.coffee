@@ -71,14 +71,13 @@ ST.Model.class 'Scope', 'List', ->
   
   @method 'populate', ->
     unless @_populated
-      candidates = null
+      candidates = @_model._byUuid
+      cardinality = 1
       for condition in @_conditions
-        if condition.index
-          return unless condition.index.length
+        if condition.index && condition.index.cardinality() > cardinality
           candidates = condition.index.find condition.value
-
-      candidates ||= @_model._byUuid
-
+          cardinality = condition.index.cardinality()        
+      
       for uuid of candidates
         if candidates.hasOwnProperty uuid
           candidate = candidates[uuid]
