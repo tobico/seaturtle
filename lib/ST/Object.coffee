@@ -60,7 +60,7 @@ ST.class 'Object', null, ->
   @classMethod 'accessor', (name) ->
     ucName = ST.ucFirst name
     @method name, (value) ->
-      if arguments.length
+      if value isnt undefined
         this["set#{ucName}"](value)
       else
         this["get#{ucName}"]()

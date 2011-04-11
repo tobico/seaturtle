@@ -12,12 +12,18 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @initializer 'withModel', (model) ->
     @init()
     @_model = model
+    @_scope = null
     @_value = null
     @_inputValue = null
     @_searching = false
     @_searchValue = ''
     @_results = null
     @_canCreate = false
+    @_focused = false
+  
+  @initializer 'withScope', (scope) ->
+    @initWithModel scope.model()
+    @_scope = scope
   
   @property 'value'
   @property 'inputValue'
@@ -35,6 +41,12 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     
     @_inputElement.attr 'autocomplete', 'off'
     @_inputElement.keydown  @method('inputKeyDown')
+    if @_inputValue && @_inputValue.length
+      @_inputElement.val @_inputValue
+      @_inputElement.css 'color', 'inherit'
+    else
+      @_inputElement.val @_placeholder
+      @_inputElement.css 'color', 'gray'
     
     @_resultListElement = $ '<div class="ModelFieldViewResults"></div>'
     @_resultListElement.hide()
@@ -43,11 +55,13 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @element().append @_resultListElement
   
   @method 'inputFocus', ->
-    @super()
+    @super()  
+    @_focused = true
     @_inputElement.select() if @_value
     @performSearch @_inputElement.val()
   
   @method 'inputBlur', ->
+    @_focused = false
     @_hiding = true
     if @_inputElement.val() == ''
       @value null
@@ -61,12 +75,13 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @super()
     @_resultListElement.hide()
     @_hiding = false
+    @trigger 'blurred'
   
   @method 'inputChanged', ->
     @inputValue @_inputElement.val()
   
   @method '_inputValueChanged', (oldValue, newValue) ->
-    if oldValue != newValue
+    if @_focused && oldValue != newValue
       @performSearch newValue
   
   @method '_selectedResultChanged', (oldValue, newValue) ->
@@ -74,6 +89,10 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       rows = $ 'tr', @_resultListElement
       $(rows[oldValue]).removeClass 'selected' if oldValue >= 0
       $(rows[newValue]).addClass 'selected' if newValue >= 0
+  
+  @method '_valueChanged', (oldValue, newValue) ->
+    @trigger 'valueChosen', newValue
+    @inputValue if newValue then newValue.toFieldText() else ''
     
   @method 'inputKeyDown', (event) ->
     event.stopPropagation()
@@ -108,7 +127,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'performSearch', (search) ->
     if search.length
-      @_results = @_model.search search
+      @_results = (@_scope || @_model).search search
       @showResults()
     else
       @_resultListElement.hide()
@@ -143,6 +162,4 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'chooseResult', (result) ->
     if result && result[0]
-      @_inputValue = result[0].toFieldText()
-      @_inputElement.val @_inputValue
       @value result[0]

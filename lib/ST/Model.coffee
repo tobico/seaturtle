@@ -240,20 +240,23 @@ ST.class 'Model', ->
     @forget()
   
   @classMethod 'convertValueToType', (value, type) ->
-    switch type
-      when 'string'
-        String value
-      when 'real'
-        Number value
-      when 'integer'
-        Math.round Number(value)
-      when 'bool'
-        !!value
-      when 'datetime'
-        date = new Date(value)
-        if isNaN(date.getTime()) then null else date
-      else
-        value
+    if value is null
+      null
+    else
+      switch type
+        when 'string'
+          String value
+        when 'real'
+          Number value
+        when 'integer'
+          Math.round Number(value)
+        when 'bool'
+          !!value
+        when 'datetime'
+          date = new Date(value)
+          if isNaN(date.getTime()) then null else date
+        else
+          value
 
   @classMethod 'attribute', (name, type, defaultValue) ->
     ucName = ST.ucFirst name
@@ -404,7 +407,7 @@ ST.class 'Model', ->
     @_searchAttributes = attributes
     @_trigrams = {}
   
-  @classMethod 'search', (keywords) ->
+  @classMethod 'search', (keywords, limit=10, conditions) ->
     trigrams = ST.Model.trigramsFor(keywords)
     uuids = {}
     for trigram in trigrams
@@ -424,7 +427,15 @@ ST.class 'Model', ->
         -1
       else
         0
-    matches
+    if conditions
+      found = []
+      for match in matches
+        if match[0].matches conditions
+          found.push match
+          break if found.length >= limit
+      found
+    else
+      matches
   
   @method 'indexForKeyword', (keyword) ->
     trigrams = ST.Model.trigramsFor keyword

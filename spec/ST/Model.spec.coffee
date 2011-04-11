@@ -212,6 +212,10 @@ $ ->
       it "should convert to bool", ->
         value = ST.Model.convertValueToType 17, 'bool'
         value.should equal(true)
+      
+      it "should not convert null", ->
+        value = ST.Model.convertValueToType null, 'integer'
+        expect(value).to be(null)
     
     describe ".attribute", ->
       beforeEach ->

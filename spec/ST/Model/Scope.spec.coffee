@@ -34,6 +34,10 @@ $ ->
       it "should copy scope order", ->
         @copy._order.should equal('foo')
     
+    describe "#model", ->
+      it "should return model", ->
+        @scope.model().should be(ST.Model)
+    
     describe "#fork", ->
       it "should copy scope", ->
         copy = @scope.fork()

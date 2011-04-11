@@ -17,7 +17,9 @@ ST.Model.class 'Scope', 'List', ->
       @_conditions.push condition
     @_order = scope._order
     @_populated = false
-    
+  
+  @property 'model', 'read'
+  
   @method 'fork', (block) ->
     scope = @_class.createWithScope this
     block.call scope if block
@@ -106,6 +108,9 @@ ST.Model.class 'Scope', 'List', ->
         defaults[condition.attribute] = condition.value
     $.extend(defaults, data) if data
     @_model.createWithData defaults
+  
+  @method 'search', (keywords, limit) ->
+    @_model.search keywords, limit, @_conditions
   
   @method 'targetItemAdded', (target, item) ->
     @add item if item.matches @_conditions

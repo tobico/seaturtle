@@ -25,7 +25,25 @@ $ ->
         expect(@modelField._results).to be(null)
         @modelField._canCreate.should beFalse
     
+    describe "#initWithScope", ->
+      beforeEach ->
+        @field = new ST.ModelFieldView()
+        @scope = ST.TestModel.where(ST.TestModel.title.equals('bananas'))
+      
+      it "should call initWithModel", ->
+        @field.shouldReceive('initWithModel').with(ST.TestModel)
+        @field.initWithScope @scope
+      
+      it "should set scope", ->
+        @field.initWithScope @scope
+        @field._scope.should be(@scope)
+    
     describe "#render", ->
+      it "should put current value in field", ->
+        @modelField.value @item
+        @modelField.render()
+        @modelField.inputElement().val().should equal('test')
+      
       it "should create result list element", ->
         @modelField.render()
         @modelField._resultListElement.should beAnInstanceOf(jQuery)
@@ -78,6 +96,12 @@ $ ->
       it "should perform serach", ->
         @modelField.shouldReceive 'performSearch'
         @modelField._inputValueChanged 'bacon', 'waffles'
+    
+    describe "#_valueChanged", ->
+      it "should display value in field", ->
+        @modelField.load()
+        @modelField.value @item
+        @modelField.inputValue().should equal('test')
     
     describe "#_selectedResultChanged", ->
       it "should add 'selected' class to selected row"
