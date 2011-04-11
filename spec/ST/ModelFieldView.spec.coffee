@@ -50,7 +50,7 @@ $ ->
     
     describe "#inputFocus", ->
       it "should perform search when field has text", ->
-        @modelField.render()
+        @modelField.load()
         @modelField.inputElement().val 'test'
         @modelField.shouldReceive 'performSearch'
         @modelField.inputFocus()
@@ -94,6 +94,8 @@ $ ->
     
     describe "#_inputValueChanged", ->
       it "should perform serach", ->
+        @modelField.load()
+        @modelField._focused = true
         @modelField.shouldReceive 'performSearch'
         @modelField._inputValueChanged 'bacon', 'waffles'
     

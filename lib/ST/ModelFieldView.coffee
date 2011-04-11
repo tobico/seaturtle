@@ -155,7 +155,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       
       @selectedResult -1
 
-      @_resultListElement.css 'top', @_inputElement.height() + 5
+      @_resultListElement.css 'top', @_inputElement.outerHeight()
       @_resultListElement.show()
     else
       @_resultListElement.hide()
