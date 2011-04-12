@@ -82,7 +82,7 @@ ST.Model.class 'Scope', 'List', ->
         if candidates.hasOwnProperty uuid
           candidate = candidates[uuid]
           if candidate.matches @_conditions
-            @_array.push candidate
+            @add candidate
 
       if @_order
         order = @_order
@@ -115,4 +115,4 @@ ST.Model.class 'Scope', 'List', ->
     @add item if item.matches @_conditions
 
   @method 'targetItemRemoved', (target, item) ->  
-    @remove item if item.destroyed || !item.matches(@_conditions)
+    @remove item
