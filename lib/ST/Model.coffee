@@ -292,38 +292,56 @@ ST.class 'Model', ->
     @method "get#{ucName}", -> @_attributes[name]
     
     @accessor name
-
+    
+    _not = ->
+      oldTest = @test
+      {
+        attribute: @attribute
+        test:      (test) -> !oldTest(test)
+      }
+    
     @[name] = {
+      null: () ->
+        {
+          attribute:  name
+          test:       (test) -> test is null
+          not:        _not
+        }
       equals: (value) ->
         {
           type:       'equals'
           attribute:  name
           value:      value
           test:       (test) -> test == value
+          not:        _not
         }
       lessThan: (value) ->
         {
           attribute:  name
           value:      value
           test:       (test) -> test < value
+          not:        _not
         }
       lessThanOrEquals: (value) ->
         {
           attribute:  name
           value:      value
           test:       (test) -> test <= value
+          not:        _not
         }
       greaterThan: (value) ->
         {
           attribute:  name
           value:      value
           test:       (test) -> test > value
+          not:        _not
         }
       greaterThanOrEquals: (value) ->
         {
           attribute:  name
           value:      value
           test:       (test) -> test >= value
+          not:        _not
         }
     }
   
@@ -346,20 +364,21 @@ ST.class 'Model', ->
       virtual:  true
     }
   
-  @classMethod 'belongsTo', (name, assocModel, options={}) ->
+  @classMethod 'belongsTo', (name, options={}) ->
     @string "#{name}Uuid"
     
     ucName = ST.ucFirst name
+    modelName = options.model || ucName
     
     @method "get#{ucName}", ->
       uuid = @["#{name}Uuid"]()
       ST.Model._byUuid[uuid] || null
     
     @method "set#{ucName}", (value) ->
-      ST.error 'Invalid object specified for association' if value && value._class._name != assocModel
+      ST.error 'Invalid object specified for association' if value && value._class._name != modelName
       @["#{name}Uuid"](value && value.uuid())
     
-    @virtual(name, 'belongsTo', null).model = assocModel
+    @virtual(name, 'belongsTo', null).model = modelName
   
     @[name] = {
       is: (value) ->
@@ -386,22 +405,30 @@ ST.class 'Model', ->
             for key of options.bind
               oldValue.bind key, this, options.bind[key]
 
-  @classMethod 'hasMany', (name, assocModel, foreign=null, binds={}) ->
+  @classMethod 'hasMany', (name, options={}) ->
+    foreign = options.foreign || @_name.toLowerCase()
+    modelName = options.model || ST.ucFirst(ST.singularize(name))
+    
     # One-to-many assocation through a Model and foreign key
     @method name, ->
       unless this["_#{name}"]
-        model = @_class._namespace.class assocModel
+        model = @_class._namespace.class modelName
         this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
       this["_#{name}"]
     
-    for key of binds
-      if binds.hasOwnProperty key
-        @_manyBinds ||= []
-        @_manyBinds.push {
-          assoc:  name
-          from:   key
-          to:     binds[key]
-        }
+    if options.bind
+      for key of options.bind
+        if options.bind.hasOwnProperty key
+          @_manyBinds ||= []
+          @_manyBinds.push {
+            assoc:  name
+            from:   key
+            to:     options.bind[key]
+          }
+    
+    if options.dependent
+      @_dependent ||= []
+      @_dependent.push name
   
   @classMethod 'searchesOn', (attributes...) ->
     @_searchAttributes = attributes

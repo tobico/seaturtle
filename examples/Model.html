@@ -24,17 +24,27 @@
                     this['super']();
                     var scope = ST.Person.scoped();
                     scope.bind('itemAdded', this, 'personAdded');
+                    scope.bind('itemChanged', this, 'personChanged');
                     
                     scope = ST.Person.where(ST.Person.age.equals(20));
                     scope.bind('itemAdded', this, 'age20PersonAdded');
+                    scope.bind('itemRemoved', this, 'age20PersonRemoved');
                 });
                 
                 this['method']('personAdded', function(list, person) {
-                    $('#people').append('<li>' + person.name() + ', ' + person.age() + '</li>');
+                    $('#people').append('<li id="person' + person.uuid() + '">' + person.name() + ', ' + person.age() + '</li>');
                 });
 
                 this['method']('age20PersonAdded', function(list, person) {
-                    $('#people_aged_20').append('<li>' + person.name() + ', ' + person.age() + '</li>');
+                    $('#people_aged_20').append('<li id="aged_20_' + person.uuid() + '">' + person.name() + ', ' + person.age() + '</li>');
+                });
+                
+                this['method']('personChanged', function(list, person) {
+                    $('#person' + person.uuid()).html(person.name() + ', ' + person.age());
+                });
+
+                this['method']('age20PersonRemoved', function(list, person) {
+                    $('#aged_20_' + person.uuid()).remove();
                 });
             });
             
@@ -44,6 +54,12 @@
                 var name = $('#name').val();
                 var age = $('#age').val();
                 ST.Person.createWithData({name: name, age: age});
+            });
+            $('#change_ages').click(function() {
+                var age = $('#change_age').val();
+                ST.Person.each(function(person) {
+                    person.age(age);
+                });
             });
         });
     </script>
@@ -55,6 +71,11 @@
         <label for="name">Name: </label><input id="name" value="Bob Smith" />
         <label for="age">Age: </label><input id="age" value="20" />
         <button id="add">Add</button>
+    </p>
+    <h3>Change Ages</h3>
+    <p>
+        <label for="change_age">Age: </label><input id="change_age" value="20" />
+        <button id="change_ages">Change</button>
     </p>
     <h3>People</h3>
     <ul id="people"></ul>

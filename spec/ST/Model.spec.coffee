@@ -284,7 +284,7 @@ $ ->
       
       describe ".belongsTo", ->
         beforeEach ->
-          ST.TestModel.belongsTo 'other', 'OtherModel'
+          ST.TestModel.belongsTo 'other', {model: 'OtherModel'}
         
         it "should create a Uuid attribute", ->
           @model.otherUuid.should beAFunction
@@ -327,15 +327,17 @@ $ ->
     
       describe ".hasMany", ->
         beforeEach ->
-          ST.OtherModel.belongsTo 'test', 'TestModel'
-          ST.TestModel.hasMany 'others', 'OtherModel', 'test'
+          ST.OtherModel.belongsTo 'test', {model: 'TestModel'}
+          ST.TestModel.hasMany 'others', {model: 'OtherModel', foreign: 'test'}
         
         it "should create a getter method for scope", ->
           @model.others.should beAFunction
           
         it "should store details of binding", ->
-          ST.TestModel.hasMany 'boundOthers', 'OtherMode', 'test', {
-            changed: 'otherChanged'
+          ST.TestModel.hasMany 'boundOthers', {
+            model:    'OtherModel'
+            foreign:  'test'
+            bind:     { changed: 'otherChanged' }
           }
           ST.TestModel._manyBinds.length.should equal(1)
           ST.TestModel._manyBinds[0].assoc.should equal('boundOthers')
