@@ -64,11 +64,15 @@ ST.class 'TableView', 'View', ->
     self = this
     column = sortColumn || @_sortColumn
     
-    if column.sort
+    sortFn = null
+    sortFn ||= column.sort
+    sortFn = ST.makeSortFn column.sortBy if column.sortBy
+    
+    if sortFn
       if @_reverseSort
-        (a, b) -> column.sort self._list.at(b), self._list.at(a)
+        (a, b) -> sortFn self._list.at(b), self._list.at(a)
       else
-        (a, b) -> column.sort self._list.at(a), self._list.at(b)
+        (a, b) -> sortFn self._list.at(a), self._list.at(b)
     else
       ST.makeSortFn (index) ->
         self.cellValue self._list.at(index), column
