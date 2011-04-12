@@ -122,4 +122,4 @@ ST.class 'View', 'Destructable', ->
         
   @method 'scrollTo', -> $.scrollTo @_element
   
-  @method 'showDialog', (events) -> ST.Dialog.showView this, events
+  @method 'showDialog', (events) -> Dialog.showView this, events

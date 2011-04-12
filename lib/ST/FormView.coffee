@@ -8,7 +8,11 @@ ST.class 'FormView', 'View', ->
     @_model = model
     @_attributes = attributes
     @_fields = {}
-    
+  
+  @initializer 'withScopeAttributes', (scope, attributes) ->
+    @initWithModelAttributes scope.model(), attributes
+    @_scope = scope
+  
   @initializer 'withItemAttributes', (item, attributes) ->
     @initWithModelAttributes item._class, attributes
     @_item = item
@@ -17,9 +21,9 @@ ST.class 'FormView', 'View', ->
   @property 'item'
   
   @destructor ->
-    for attribute, fields of @_fields
-       if @_fields.hasOwnProperty attribute
-         field.release()
+    for attribute, field of @_fields
+      if @_fields.hasOwnProperty attribute
+        field.release()
     @super()
   
   @method 'render', ->
@@ -48,7 +52,7 @@ ST.class 'FormView', 'View', ->
       $(cell).append field.element()
   
   @method 'labelForAttribute', (attribute) ->
-    ST.ucFirst(attribute) + ':'
+    ST.ucFirst(attribute.replace /([A-Z])/g, " $1") + ':'
   
   @method 'data', ->
     data = {}
@@ -60,10 +64,15 @@ ST.class 'FormView', 'View', ->
   @method 'save', ->
     if @_item
       @_item.set @data()
+    else if @_scope
+      @_scope.build @data()
     else
       @_model.createWithData @data()
   
-  @method 'showDialog', (events) ->
-    events ||= {}
-    events.onCancel ||= Dialog.hide
-    @super events
+  @method 'dialogButtons', (dialog, buttonbar) ->
+    self = this
+    buttonbar.button '&nbsp;&nbsp;OK&nbsp;&nbsp;', ->
+      self.save()
+      dialog.close()
+    buttonbar.button 'Cancel', ->
+      dialog.close()
