@@ -125,8 +125,10 @@ ST.module 'Enumerable', ->
     value
     
   # Returns highest value
-  @method 'max', ->
+  @method 'max', (fn) ->
+    fn = fn && ST.toProc fn
     value = null
     @each (item) ->
-      value = item if item > value || value == null
+      item = fn item if fn
+      value = item if value is null || item > value
     value
