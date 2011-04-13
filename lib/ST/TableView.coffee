@@ -226,16 +226,20 @@ ST.class 'TableView', 'View', ->
       html = []
       @generateBodyInnerHTML html
       tbody.html html.join('')
+      @activateBody()
   
   @method 'refreshRow', (item) ->
     if @_loaded
-      index = @_list.indexOf item
-      row = $('tr.item' + index, @_tableElement)
+      row = @row item
       if row.length
         html = []
         @generateRowInnerHTML item, html
         row.html html.join('')
-        @activateRow item, index
+        @activateRow item, @_list.indexOf(item)
+  
+  @method 'row', (item) ->
+    index = @_list.indexOf item
+    row = $('tr.item' + index, @_tableElement)
   
   @method 'toggleColumn', (column) ->
     column.hidden = !column.hidden
