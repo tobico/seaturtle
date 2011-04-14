@@ -227,6 +227,7 @@ ST.module 'Model', ->
         objectUuid: @_uuid
       }
       @forget()
+      @_destroyed = true
   
     @classMethod 'convertValueToType', (value, type) ->
       if value is null
