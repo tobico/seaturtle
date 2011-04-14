@@ -103,7 +103,7 @@ ST.class 'TableView', 'View', ->
     if @_loaded
       tbody = $('tbody', @_tableElement)
       for index in @_mapping
-        tbody.append $('tr.item' + index)
+        tbody.append $('tr.item' + index, @_tableElement)
     
   @method 'render', ->
     @renderTable()
