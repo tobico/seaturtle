@@ -97,8 +97,7 @@ ST.module 'Enumerable', ->
   @method 'unique', ->
     list = ST.List.create()
     @each (item) ->
-      unless list.array.indexOf(item) >= 0
-        list.add item
+      list.add item unless list.has item
     list
   
   # Returns a new list containing only items where callback returns true
@@ -118,9 +117,11 @@ ST.module 'Enumerable', ->
     list
 
   # Returns lowest value
-  @method 'min', ->
+  @method 'min', (fn) ->
+    fn = fn && ST.toProc fn
     value = null
     @each (item) ->
+      item = fn item if fn
       value = item if item < value || value == null
     value
     
