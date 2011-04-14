@@ -33,23 +33,28 @@ ST.module 'Model', ->
     @method 'order', (order) ->
       @fork ->
         @_order = order
-  
-    @method 'bindTarget', ->
-      unless @_bindTarget
-        @_bindTarget = @_model
-        for condition in @_conditions
-          if condition.type == 'equals' && @_model._indexes && @_model._indexes[condition.attribute]
-            @_bindTarget = @_model._indexes[condition.attribute].get condition.value
-      @_bindTarget
+    
+    @method 'index', ->
+      unless @_index
+        @_index = @_model.master()
+        
+        if @_model._indexes
+          cardinality = 0
+          for condition in @_conditions
+            if condition.type == 'equals'
+              if index = @_model._indexes[condition.attribute]
+                if index.cardinality() > cardinality
+                  @_index = index.get condition.value
+                  cardinality = index.cardinality()
+      @_index
 
     @method 'addBindings', ->
-      target = @bindTarget()
-      target.bind 'itemAdded',   this, 'targetItemAdded'
-      target.bind 'itemRemoved', this, 'targetItemRemoved'
+      @index().bind 'itemAdded',   this, 'targetItemAdded'
+      @index().bind 'itemRemoved', this, 'targetItemRemoved'
       @_bindingsAdded = true
   
     @method 'removeBindings', ->
-      @bindTarget().unbindAll(this)
+      @index().unbindAll(this)
       @_bindingsAdded = false
   
     @method 'bind', (trigger, receiver, selector) ->
@@ -71,19 +76,11 @@ ST.module 'Model', ->
   
     @method 'populate', ->
       unless @_populated
-        candidates = @_model._byUuid
-        cardinality = 1
-        for condition in @_conditions
-          if condition.index && condition.index.cardinality() > cardinality
-            candidates = condition.index.find condition.value
-            cardinality = condition.index.cardinality()        
-      
-        for uuid of candidates
-          if candidates.hasOwnProperty uuid
-            candidate = candidates[uuid]
-            if candidate.matches @_conditions
-              @add candidate
-
+        self = this
+        
+        @index().each (candidate) ->
+          self.add candidate if candidate.matches self._conditions
+        
         if @_order
           order = @_order
           @_array.sort (a, b) ->
@@ -95,6 +92,7 @@ ST.module 'Model', ->
               -1
             else
               0
+        
         @_populated = true
   
     @method 'destroyAll', ->
