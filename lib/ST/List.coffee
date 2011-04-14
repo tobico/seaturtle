@@ -64,8 +64,9 @@ ST.class 'List', ->
     else
       @getAt index
     
-  @delegate 'indexOf', 'array'
-  @delegate 'length', 'array', 'count'
+  @delegate 'indexOf',  'array'
+  @delegate 'sort',     'array'
+  @delegate 'length',   'array', 'count'
   
   @method 'isEmpty', -> !@_array.length
   
@@ -124,6 +125,9 @@ ST.class 'List', ->
   @method 'empty', ->
     while @_array.length
       @removeLast()
-      
+  
+  @method 'sortBy', (fn) ->
+    @sort ST.makeSortFn(ST.toProc(fn))
+  
   @method 'itemChanged', (item, attr, oldValue, newValue) ->
     @trigger 'itemChanged', item, attr, oldValue, newValue
