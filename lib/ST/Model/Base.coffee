@@ -41,7 +41,10 @@ ST.module 'Model', ->
         return unless data && data.uuid
         return if ST.Model._byUuid[data.uuid]
         @createWithData data
-  
+    
+    @classMethod 'master', ->
+      @_master ||= ST.List.create()
+    
     @classMethod 'index', (attribute) ->
       @_indexes ||= {}
       @_indexes[attribute] ||= ST.Model.Index.createWithModelAttribute(this, attribute)
@@ -95,13 +98,11 @@ ST.module 'Model', ->
       @_creating = true
       @_attributes = {}
       for attribute, details of @_class._attributes
-        if @_class._attributes.hasOwnProperty(attribute) && !details.virtual
-          @[attribute](
-            if data[attribute]?
-              data[attribute]
-            else
-              details.default
-          )
+        if @_class._attributes.hasOwnProperty(attribute)
+          if data[attribute]?
+            @[attribute] data[attribute]
+          else if !details.virtual
+            @[attribute] details.default
     
       if @_class._manyBinds
         for binding in @_class._manyBinds
@@ -112,7 +113,7 @@ ST.module 'Model', ->
           @indexForKeyword @_attributes[attribute]
 
       @_creating = false
-      @_class.trigger 'itemAdded', this
+      @_class.master().add this
   
     # Creates a new object from model data. If the data includes a 
     # property, as with data genereated by #objectify, the specified model
@@ -141,7 +142,9 @@ ST.module 'Model', ->
     @property 'uuid'
   
     @method 'setUuid', (newUuid) ->
-      unless @_uuid    
+      unless @_uuid
+        newUuid = String newUuid
+        
         # Insert object in global index
         ST.Model._byUuid[newUuid] = this
     
@@ -211,7 +214,7 @@ ST.module 'Model', ->
       # Remove from persistant storage
       ST.Model._storage.remove @_uuid if ST.Model._storage
     
-      @_class.trigger 'itemRemoved', this
+      @_class.master().remove this
 
     # Marks model as destroyed, destroy to be propagated to server when 
     # possible.
@@ -294,39 +297,44 @@ ST.module 'Model', ->
             not:        _not
           }
         equals: (value) ->
+          value = String value
           {
             type:       'equals'
             attribute:  name
             value:      value
-            test:       (test) -> test == value
+            test:       (test) -> String(test) == value
             not:        _not
           }
         lessThan: (value) ->
+          value = Number value
           {
             attribute:  name
             value:      value
-            test:       (test) -> test < value
+            test:       (test) -> Number(test) < value
             not:        _not
           }
         lessThanOrEquals: (value) ->
+          value = Number value
           {
             attribute:  name
             value:      value
-            test:       (test) -> test <= value
+            test:       (test) -> Number(test) <= value
             not:        _not
           }
         greaterThan: (value) ->
+          value = Number value
           {
             attribute:  name
             value:      value
-            test:       (test) -> test > value
+            test:       (test) -> Number(test) > value
             not:        _not
           }
         greaterThanOrEquals: (value) ->
+          value = Number value
           {
             attribute:  name
             value:      value
-            test:       (test) -> test >= value
+            test:       (test) -> Number(test) >= value
             not:        _not
           }
       }
@@ -368,12 +376,12 @@ ST.module 'Model', ->
   
       @[name] = {
         is: (value) ->
-          uuid = value && value.uuid()
+          uuid = value && String(value.uuid())
           {
             type:       'equals'
             attribute:  name + "Uuid"
             value:      uuid
-            test:       (test) -> test == uuid
+            test:       (test) -> String(test) == uuid
           }
       }
 
