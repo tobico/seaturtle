@@ -4,7 +4,7 @@
 $ ->
   Spec.describe 'ModelFieldView', ->
     beforeEach ->
-      ST.class 'TestModel', 'Model', ->
+      ST.class 'TestModel', ST.Model.Base, ->
         @string 'title'
         @searchesOn 'title'
         @method 'toListItem', -> [@title()]

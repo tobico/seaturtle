@@ -46,4 +46,4 @@ $ ->
         @view.button 'test', -> null
         @view.alternative 'foo', -> null
         @view.render()
-        @view.element().html().should equal('<span class="alt_button"><a href="javascript:;" class="button alt_button_main" data-index="0">test</a><a href="javascript:;" class="button alt_button_more popup" data-index="0"><span class="dropdown">V</span></a></span>')
+        @view.element().html().should equal('<span class="alt_button"><a href="javascript:;" class="button alt_button_main" data-index="0">test</a><a href="javascript:;" class="button alt_button_more" data-index="0"><span class="dropdown">V</span></a></span>')

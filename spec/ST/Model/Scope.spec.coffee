@@ -3,7 +3,7 @@
 $ ->
   Spec.describe "Model/Scope", ->
     beforeEach ->
-      @scope = ST.Model.scoped()
+      @scope = ST.Model.Base.scoped()
       
     describe "#initWithModel", ->
       beforeEach ->
@@ -36,12 +36,12 @@ $ ->
     
     describe "#model", ->
       it "should return model", ->
-        @scope.model().should be(ST.Model)
+        @scope.model().should be(ST.Model.Base)
     
     describe "#fork", ->
       it "should copy scope", ->
         copy = @scope.fork()
-        copy._model.should be(ST.Model)
+        copy._model.should be(ST.Model.Base)
       
       it "should run block on new scope", ->
         exp = expectation('run block')
@@ -71,9 +71,9 @@ $ ->
     context "with a test model", ->
       beforeEach ->
         uuid = 1
-        ST.Model.GenerateUUID = -> uuid++
+        ST.Model._generateUUID = -> uuid++
       
-        ST.class 'TestModel', 'Model', ->
+        ST.class 'TestModel', ST.Model.Base, ->
           @string 'foo', 'bacon'
           @integer 'cost', 1
     

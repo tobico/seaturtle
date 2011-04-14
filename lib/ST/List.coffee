@@ -2,7 +2,7 @@
 #require ST/Enumerable
 
 ST.class 'List', ->
-  @include 'Enumerable'
+  @include ST.Enumerable
 
   @initializer ->
     @super()

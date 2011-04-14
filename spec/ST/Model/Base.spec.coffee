@@ -1,12 +1,12 @@
 #require ST/Model
 
 NextUUID = 0
-ST.Model.GenerateUUID = -> NextUUID++
+ST.Model._generateUUID = -> NextUUID++
 
 $ ->
-  Spec.describe "Model", ->
+  Spec.describe "Model/Base", ->
     beforeEach ->
-      ST.class 'TestModel', 'Model', ->
+      ST.class 'TestModel', ST.Model.Base, ->
         @string 'foo', 'bacon'
         @index 'foo'
       @model = ST.TestModel.create()
@@ -61,7 +61,7 @@ $ ->
         @model = new ST.TestModel()
       
       it "should generate a new UUID", ->
-        ST.Model.GenerateUUID = -> 'foo'
+        ST.Model._generateUUID = -> 'foo'
         @model.initWithData {}
         @model.uuid().should equal('foo')
         
@@ -81,11 +81,11 @@ $ ->
     
     describe ".createWithData", ->
       it "should create using correct model type if specified", ->
-        model = ST.Model.createWithData {model: 'TestModel'}
+        model = ST.Model.Base.createWithData {model: 'TestModel'}
         model.should beAnInstanceOf(ST.TestModel)
       
       it "should not create if specified model type is not found", ->
-        model = ST.Model.createWithData {model: 'Bacon'}
+        model = ST.Model.Base.createWithData {model: 'Bacon'}
         expect(model).to be(null)
       
       it "should update an existing object with same ID", ->
@@ -145,11 +145,11 @@ $ ->
     
     describe "#persist", ->
       it "should save object in persistant storage", ->
-        ST.Model.Storage = {}
+        ST.Model._storage = {}
         @model._uuid = 'test'
-        ST.Model.Storage.shouldReceive('set').with('test', @model.serialize())
+        ST.Model._storage.shouldReceive('set').with('test', @model.serialize())
         @model.persist()
-        delete ST.Model.Storage
+        delete ST.Model._storage
     
     describe "#forget", ->
       it "should remove object from global index", ->
@@ -167,11 +167,11 @@ $ ->
         @model.forget()
         
       it "should remove from persistant storage", ->
-        ST.Model.Storage = {}
+        ST.Model._storage = {}
         @model._uuid = 'test'
-        ST.Model.Storage.shouldReceive('remove').with('test')
+        ST.Model._storage.shouldReceive('remove').with('test')
         @model.forget()
-        delete ST.Model.Storage
+        delete ST.Model._storage
 
     describe "#destroy", ->
       it "should store destruction in change list", ->
@@ -191,30 +191,30 @@ $ ->
     
     describe ".convertValueToType", ->
       it "should convert to string", ->
-        value = ST.Model.convertValueToType 10, 'string'
+        value = ST.Model.Base.convertValueToType 10, 'string'
         (typeof value).should equal('string')
     
       it "should convert to real", ->
-        value = ST.Model.convertValueToType '5.5', 'real'
+        value = ST.Model.Base.convertValueToType '5.5', 'real'
         (typeof value).should equal('number')
         value.should equal(5.5)
     
       it "should convert to integer", ->
-        value = ST.Model.convertValueToType '5.3', 'integer'
+        value = ST.Model.Base.convertValueToType '5.3', 'integer'
         (typeof value).should equal('number')
         value.should equal(5)
 
       it "should convert to datetime", ->
-        value = ST.Model.convertValueToType '01 Jan 2010 12:15:00', 'datetime'
+        value = ST.Model.Base.convertValueToType '01 Jan 2010 12:15:00', 'datetime'
         value.should beAnInstanceOf(Date)
         value.getTime().should equal(1262308500000)
     
       it "should convert to bool", ->
-        value = ST.Model.convertValueToType 17, 'bool'
+        value = ST.Model.Base.convertValueToType 17, 'bool'
         value.should equal(true)
       
       it "should not convert null", ->
-        value = ST.Model.convertValueToType null, 'integer'
+        value = ST.Model.Base.convertValueToType null, 'integer'
         expect(value).to be(null)
     
     describe ".attribute", ->
@@ -222,10 +222,10 @@ $ ->
         ST.TestModel.attribute 'bar', 'string', 'bacon'
       
       it "should register default value for attribute", ->
-        ST.TestModel.Attributes['bar'].default.should equal('bacon')
+        ST.TestModel._attributes['bar'].default.should equal('bacon')
       
       it "should register type for attribute", ->
-        ST.TestModel.Attributes['bar'].type.should equal('string')
+        ST.TestModel._attributes['bar'].type.should equal('string')
       
       it "should create a getter method", ->
         @model.getBar.should beAFunction
@@ -280,7 +280,7 @@ $ ->
     
     context "with an associated model", ->
       beforeEach ->
-        ST.class 'OtherModel', 'Model', ->
+        ST.class 'OtherModel', ST.Model.Base, ->
       
       describe ".belongsTo", ->
         beforeEach ->
@@ -299,7 +299,7 @@ $ ->
           @model.other.should beAFunction
         
         it "should register virtual attribute", ->
-          attr = ST.TestModel.Attributes['other']
+          attr = ST.TestModel._attributes['other']
           attr.virtual.should beTrue
           attr.type.should equal('belongsTo')
           attr.model.should equal('OtherModel')

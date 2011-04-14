@@ -70,11 +70,6 @@ window.ST = {
     this[className] = newClass
     newClass._namespace = this
     
-    # Allow new class to function as a namespace
-    newClass.getClass   = @getClass
-    newClass.makeClass  = @makeClass
-    newClass.class      = @class
-    
     # Run class definition
     definition.call newClass
   
@@ -84,20 +79,33 @@ window.ST = {
     else
       @getClass className
   
-  _modules: {}
-  
   module: (name, definition) ->
-    ST._modules[name] = definition
-
+    @[name] ||= {
+      _namespace: this
+      _included:  []
+      getClass:   @getClass
+      makeClass:  @makeClass
+      class:      @class
+      module:     @module
+      included:     (definition) ->
+        @_included.push definition
+      method:       (name, fn) ->
+        @included -> @method name, fn
+      classMethod:  (name, fn) ->
+        @included -> @classMethod name, fn
+    }
+    definition.call @[name] if definition
+    @[name]
+  
   # Capitalizes the first letter of a string.
   ucFirst: (s) ->
     x = String(s);
     x.substr(0, 1).toUpperCase() + x.substr(1, x.length)
-
+  
   # Escapes a string for inclusion as a literal value in a regular expression.
   reEscape: (s) ->
     String(s).replace /\\|\/|\.|\*|\+|\?|\||\(|\)|\[|\]|\{|\}|\^|\$/g, '\\$&'
-
+  
   # Compares two values, equivalent to comparison operator (<=>)
   compare: (a, b) ->
     if a > b
@@ -106,7 +114,7 @@ window.ST = {
       -1
     else
       0
-
+  
   # Creates an Array.sort compatible callback function from the provided
   #  conversion function.
   makeSortFn: (fn, reverse) ->
@@ -116,7 +124,7 @@ window.ST = {
         ST.compare fn(b), fn(a)
       else
         ST.compare fn(a), fn(b)
-
+  
   error: (message) ->
     if window.console
       console.error message

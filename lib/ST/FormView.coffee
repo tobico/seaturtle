@@ -37,7 +37,7 @@ ST.class 'FormView', 'View', ->
     cells = $ 'td.field', @_element
     for cell in cells
       attribute = $(cell).attr 'data-attribute'
-      details = @_model.Attributes[attribute]
+      details = @_model._attributes[attribute]
       field = switch details.type
         when 'belongsTo'
           ST.ModelFieldView.createWithModel @_model._namespace.class(details.model)

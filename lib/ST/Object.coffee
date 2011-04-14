@@ -54,8 +54,10 @@ ST.class 'Object', null, ->
       object
     
   # Include a module
-  @classMethod 'include', (name) ->
-    ST._modules[name].call this
+  @classMethod 'include', (module) ->
+    if module._included
+      for definition in module._included
+        definition.call this
   
   @classMethod 'accessor', (name) ->
     ucName = ST.ucFirst name

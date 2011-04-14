@@ -6,11 +6,11 @@
 $ ->
   Spec.describe "FormView", ->
     beforeEach ->
-      ST.class 'Author', 'Model', ->
+      ST.class 'Author', ST.Model.Base, ->
         @string 'name'
         @method 'toFieldText', -> @name()
       @author = ST.Author.createWithData {name: 'Charles Dickens'}
-      ST.class 'Book', 'Model', ->
+      ST.class 'Book', ST.Model.Base, ->
         @string 'title'
         @enum 'format', 'paper', { hard: 'Hardcover', paper: 'Paperback', 'ebook': 'Electronic' }
         @belongsTo 'author', 'Author'
