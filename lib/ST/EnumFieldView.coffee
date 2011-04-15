@@ -1,9 +1,10 @@
 #require ST/View
 
 ST.class 'EnumFieldView', 'View', ->
-  @initializer 'withValues', (values) ->
+  @initializer 'withValuesNull', (values, _null) ->
     @init()
     @_value = null
+    @_null = _null
     @_values = values
     @_valueIndex = {}
     @_selectElement = null
@@ -23,9 +24,11 @@ ST.class 'EnumFieldView', 'View', ->
   
   @method 'renderOptions', ->
     index = 1
-    html = ['<option value=""']
-    html.push ' selected="selected"' if @_value is null
-    html.push '></option>'
+    html = []
+    if @_null
+      html.push '<option value=""'
+      html.push ' selected="selected"' if @_value is null
+      html.push '></option>'
     for value, label of @_values
       if @_values.hasOwnProperty value
         html.push '<option value="', value, '"'

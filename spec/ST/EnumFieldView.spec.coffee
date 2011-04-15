@@ -3,7 +3,7 @@
 $ ->
   Spec.describe 'EnumFieldView', ->
     beforeEach ->
-      @enumField = ST.EnumFieldView.createWithValues {bacon: 'Bacon', waffles: 'Waffles'}
+      @enumField = ST.EnumFieldView.createWithValuesNull {bacon: 'Bacon', waffles: 'Waffles'}, true
     
     describe "initializer", ->
       it "should set defaults", ->

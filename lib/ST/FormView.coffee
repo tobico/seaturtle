@@ -42,7 +42,7 @@ ST.class 'FormView', 'View', ->
         when 'belongsTo'
           ST.ModelFieldView.createWithModel @_model._namespace.class(details.model)
         when 'enum'
-          ST.EnumFieldView.createWithValues details.values
+          ST.EnumFieldView.createWithValuesNull details.values, details.null
         else
           ST.TextFieldView.create()
       field.id attribute
