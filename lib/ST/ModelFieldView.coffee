@@ -87,8 +87,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @method '_selectedResultChanged', (oldValue, newValue) ->
     if @_resultListElement
       rows = $ 'tr', @_resultListElement
-      $(rows[oldValue]).removeClass 'selected' if oldValue >= 0
-      $(rows[newValue]).addClass 'selected' if newValue >= 0
+      rows.eq(oldValue).removeClass 'selected' if oldValue >= 0
+      rows.eq(newValue).addClass 'selected' if newValue >= 0
   
   @method '_valueChanged', (oldValue, newValue) ->
     @trigger 'valueChosen', newValue
