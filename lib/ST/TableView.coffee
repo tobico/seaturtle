@@ -62,21 +62,20 @@ ST.class 'TableView', 'View', ->
     
   @method 'sortFunction', (sortColumn) ->
     self = this
-    column = sortColumn || @_sortColumn
+    if column = sortColumn || @_sortColumn
+      sortFn = null
+      sortFn ||= column.sort
+      sortFn = ST.makeSortFn column.sortBy if column.sortBy
     
-    sortFn = null
-    sortFn ||= column.sort
-    sortFn = ST.makeSortFn column.sortBy if column.sortBy
-    
-    if sortFn
-      if @_reverseSort
-        (a, b) -> sortFn self._list.at(b), self._list.at(a)
+      if sortFn
+        if @_reverseSort
+          (a, b) -> sortFn self._list.at(b), self._list.at(a)
+        else
+          (a, b) -> sortFn self._list.at(a), self._list.at(b)
       else
-        (a, b) -> sortFn self._list.at(a), self._list.at(b)
-    else
-      ST.makeSortFn (index) ->
-        self.cellValue self._list.at(index), column
-      , @_reverseSort
+        ST.makeSortFn (index) ->
+          self.cellValue self._list.at(index), column
+        , @_reverseSort
 
   @method 'setSortColumn', (sortColumn, reverseSort) ->
     self = this
@@ -89,7 +88,7 @@ ST.class 'TableView', 'View', ->
     if oldSortColumn == sortColumn
       @_reverseSort = !@_reverseSort
     else
-      @_reverseSort = sortColumn.reverse || false
+      @_reverseSort = !!(sortColumn && sortColumn.reverse)
       
     @_sortColumn = sortColumn
     
@@ -99,11 +98,12 @@ ST.class 'TableView', 'View', ->
   
   @method 'sort', ->
     self = this
-    @_mapping.sort @sortFunction()
-    if @_loaded
-      tbody = $('tbody', @_tableElement)
-      for index in @_mapping
-        tbody.append $('tr.item' + index, @_tableElement)
+    if sortFunction = @sortFunction()
+      @_mapping.sort sortFunction
+      if @_loaded
+        tbody = $('tbody', @_tableElement)
+        for index in @_mapping
+          tbody.append $('tr.item' + index, @_tableElement)
     
   @method 'render', ->
     @renderTable()
@@ -188,7 +188,7 @@ ST.class 'TableView', 'View', ->
     i = 0
     for column in @_columns      
       unless column.hidden or (column.media and column.media != 'screen')
-        column.activate item, cells[i] if column.activate
+        column.activate item, cells[i] if column.activate && cells[i]
         i++
   
   @method 'generateCellHTML', (item, column, html, media='screen') ->
@@ -212,6 +212,11 @@ ST.class 'TableView', 'View', ->
         item.get column.field
       else if item
         item[column.field]
+  
+  @method 'refreshTable', ->
+    if @_loaded
+      @refreshHeader()
+      @refreshBody()
   
   @method 'refreshHeader', ->
     if @_loaded
