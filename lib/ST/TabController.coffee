@@ -52,7 +52,10 @@ ST.class 'TabController', 'Controller', ->
       @updateTabView()
   
   @method 'tabRemoved', (tabs, tab, index) ->
-    @activeTab tabs.at(index) || tabs.at(index - 1) || null
+    if @_activeTab == tab
+      @activeTab tabs.at(index) || tabs.at(index - 1) || null
+    else
+      @updateTabView()
 
   @method 'tabChanged', (tabs, tab, attribute, oldValue, newValue) ->
     @updateTabView() if attribute == 'tabTitle'
@@ -60,9 +63,11 @@ ST.class 'TabController', 'Controller', ->
   @method '_activeTabChanged', (oldTab, newTab) ->
     self = this
     @updateTabView()
+    oldView = oldTab && oldTab.view()
+    newView = newTab && newTab.view()
     switchViews = ->
-      self._view.removeChild oldTab.view() if oldTab
-      self._view.addChild newTab.view() if newTab
+      self._view.removeChild oldView if oldView
+      self._view.addChild newView if newView
     
     if newTab && !newTab.view().loaded()
       # Switch child views asynchronously, so that user gets response
