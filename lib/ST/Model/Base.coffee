@@ -157,7 +157,7 @@ ST.module 'Model', ->
     @method 'matches', (conditions) ->
       if @_attributes
         for condition in conditions
-          return false unless condition.test @_attributes[condition.attribute]
+          return false unless condition.test this
         true
       else
         false
@@ -248,19 +248,22 @@ ST.module 'Model', ->
           else
             value
 
-    @classMethod 'attribute', (name, type, defaultValue) ->
+    @classMethod 'attribute', (name, type, options) ->
       ucName = ST.ucFirst name
     
       @_attributes ||= {}
       @_attributes[name] = {
-        default:  defaultValue,
-        type:     type,
+        type:     type
         virtual:  false
+        default:  null
+        null:     true
       }
-    
+      for option, value of options
+         @_attributes[name][option] = value
+      
       @method "set#{ucName}", (rawValue) ->
         oldValue = @_attributes[name]
-  
+        
         # Convert new value to correct type
         details = @_class._attributes[name]
         newValue = @_class.convertValueToType rawValue, details.type
@@ -282,19 +285,37 @@ ST.module 'Model', ->
       @method "get#{ucName}", -> @_attributes[name]
     
       @accessor name
+      @matchers name
     
+    # Create convenience attribute method for each data type
+    for type in ['string', 'integer', 'real', 'bool', 'datetime', 'enum']
+      @classMethod type, do (type) ->
+        (name, options) ->
+          @attribute name, type, options
+    
+    @classMethod 'virtual', (name, type, defaultValue) ->
+      @accessor name
+      @_attributes ||= {}
+      @_attributes[name] = {
+        default:  defaultValue,
+        type:     type,
+        virtual:  true
+      }
+      @matchers name
+    
+    @classMethod 'matchers', (name) ->
       _not = ->
         oldTest = @test
         {
           attribute: @attribute
-          test:      (test) -> !oldTest(test)
+          test:      (item) -> !oldTest(item)
         }
     
       @[name] = {
         null: () ->
           {
             attribute:  name
-            test:       (test) -> test is null
+            test:       (item) -> item[name]() is null
             not:        _not
           }
         equals: (value) ->
@@ -303,7 +324,7 @@ ST.module 'Model', ->
             type:       'equals'
             attribute:  name
             value:      value
-            test:       (test) -> String(test) == value
+            test:       (item) -> String(item[name]()) == value
             not:        _not
           }
         lessThan: (value) ->
@@ -311,7 +332,7 @@ ST.module 'Model', ->
           {
             attribute:  name
             value:      value
-            test:       (test) -> Number(test) < value
+            test:       (item) -> Number(item[name]()) < value
             not:        _not
           }
         lessThanOrEquals: (value) ->
@@ -319,7 +340,7 @@ ST.module 'Model', ->
           {
             attribute:  name
             value:      value
-            test:       (test) -> Number(test) <= value
+            test:       (item) -> Number(item[name]()) <= value
             not:        _not
           }
         greaterThan: (value) ->
@@ -327,7 +348,7 @@ ST.module 'Model', ->
           {
             attribute:  name
             value:      value
-            test:       (test) -> Number(test) > value
+            test:       (item) -> Number(item[name]()) > value
             not:        _not
           }
         greaterThanOrEquals: (value) ->
@@ -335,28 +356,9 @@ ST.module 'Model', ->
           {
             attribute:  name
             value:      value
-            test:       (test) -> Number(test) >= value
+            test:       (item) -> Number(item[name]()) >= value
             not:        _not
           }
-      }
-  
-    # In the following methods, “def” stands for “default”
-    @classMethod 'string', (name, def) -> @attribute name, 'string', def
-    @classMethod 'integer', (name, def) -> @attribute name, 'integer', def
-    @classMethod 'real', (name, def) -> @attribute name, 'real', def
-    @classMethod 'bool', (name, def) -> @attribute name, 'bool', def
-    @classMethod 'datetime', (name, def) -> @attribute name, 'datetime', def
-    @classMethod 'enum', (name, def, values) ->
-      @attribute name, 'enum', def
-      @_attributes[name].values = values
-  
-    @classMethod 'virtual', (name, type, defaultValue) ->
-      @accessor name
-      @_attributes ||= {}
-      @_attributes[name] = {
-        default:  defaultValue,
-        type:     type,
-        virtual:  true
       }
   
     @classMethod 'belongsTo', (name, options={}) ->
@@ -373,17 +375,13 @@ ST.module 'Model', ->
         ST.error 'Invalid object specified for association' if value && value._class._name != modelName
         @["#{name}Uuid"](value && value.uuid())
     
-      @virtual(name, 'belongsTo', null).model = modelName
-  
+      @virtual(name, 'belongsTo', null)
+      @_attributes[name].model = modelName
+      
+      matchers = @["#{name}Uuid"]
       @[name] = {
         is: (value) ->
-          uuid = value && String(value.uuid())
-          {
-            type:       'equals'
-            attribute:  name + "Uuid"
-            value:      uuid
-            test:       (test) -> String(test) == uuid
-          }
+          matchers.equals(value && String(value.uuid()))
       }
 
       if options.bind

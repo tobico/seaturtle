@@ -7,7 +7,7 @@ $ ->
   Spec.describe "Model/Base", ->
     beforeEach ->
       ST.class 'TestModel', ST.Model.Base, ->
-        @string 'foo', 'bacon'
+        @string 'foo', {default: 'bacon'}
         @index 'foo'
       @model = ST.TestModel.create()
       
@@ -219,7 +219,7 @@ $ ->
     
     describe ".attribute", ->
       beforeEach ->
-        ST.TestModel.attribute 'bar', 'string', 'bacon'
+        ST.TestModel.attribute 'bar', 'string', {default: 'bacon'}
       
       it "should register default value for attribute", ->
         ST.TestModel._attributes['bar'].default.should equal('bacon')
@@ -273,10 +273,10 @@ $ ->
           @condition.value.should equal('bacon')
         
         it "should test correct value", ->
-          @condition.test('bacon').should beTrue
+          @condition.test({bar: -> 'bacon'}).should beTrue
         
         it "should test incorrect value", ->
-          @condition.test('waffles').should beFalse
+          @condition.test({bar: -> 'waffles'}).should beFalse
     
     context "with an associated model", ->
       beforeEach ->
