@@ -103,6 +103,13 @@ ST.module 'Model', ->
             @[attribute] data[attribute]
           else if !details.virtual
             @[attribute] details.default
+      
+      # Add class to indexes
+      if @_class._indexes
+        for attribute of @_class._attributes
+          if @_class._attributes.hasOwnProperty(attribute)
+            if index = @_class._indexes[attribute]
+              index.add @_attributes[attribute], this 
     
       if @_class._manyBinds
         for binding in @_class._manyBinds
@@ -271,14 +278,14 @@ ST.module 'Model', ->
         # Set new value
         @_attributes[name] = newValue
   
-        # Update index
-        if @_class._indexes
-          if index = @_class._indexes[name]
-            index.remove  oldValue, this
-            index.add     newValue, this
-  
-        # Trigger changed event
         unless @_creating
+          # Update index
+          if @_class._indexes
+            if index = @_class._indexes[name]
+              index.remove  oldValue, this
+              index.add     newValue, this
+  
+          # Trigger changed event
           @_changed name, oldValue, newValue if @_changed
           @trigger 'changed', name, oldValue, newValue
     
