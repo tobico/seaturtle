@@ -16,6 +16,12 @@ ST.class 'DialogView', 'View', ->
     @makeFooter()
     @showBlanker()
     @showDialog()
+    
+  @initializer 'withTitleController', (title, controller) ->
+    @controller controller
+    @initWithTitleView title, controller.view()
+  
+  @retainedProperty 'controller'
   
   @method 'makeHeader', ->
     header = ST.View.createWithElement($ '<h3></h3>')
