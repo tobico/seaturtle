@@ -39,7 +39,7 @@ ST.module 'Model', ->
         @_index = @_model.master()
         
         if @_model._indexes
-          cardinality = 0
+          cardinality = -1
           for condition in @_conditions
             if condition.type == 'equals'
               if index = @_model._indexes[condition.attribute]
