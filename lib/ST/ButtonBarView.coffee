@@ -33,9 +33,29 @@ ST.class 'ButtonBarView', 'View', ->
       action: action
       alternatives: []
     }
+    @_buttons.length - 1
   
   @method 'alternative', (title, action) ->
     @_buttons[@_buttons.length - 1].alternatives.push {
       title:  title
       action: action
     }
+    @_buttons.length - 1
+  
+  @method 'buttonElement', (index) ->
+    $('a[data-index=' + index + ']', @_element)
+  
+  @method 'buttonTitle', (index, title) ->
+    @buttonElement(index).html title if @_loaded
+  
+  @method 'buttonDisabled', (index, disabled) ->
+    if @_loaded
+      button = @buttonElement index
+      if disabled?
+        if disabled
+          button.addClass 'disabled'
+        else
+          button.removeClass 'disabled'
+        disabled
+      else
+        !!button.is('.disabled')
