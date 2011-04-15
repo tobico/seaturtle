@@ -179,10 +179,13 @@ ST.class 'Object', null, ->
   @hybridMethod 'bind', (trigger, receiver, selector) ->
     @_bindings ||= {}
     @_bindings[trigger] ||= []
-    @_bindings[trigger].push {
-      receiver: receiver,
-      selector: selector || trigger
-    }
+    if typeof receiver == 'function' && receiver[selector || trigger] is undefined
+      @_bindings[trigger].push { fn: receiver }
+    else
+      @_bindings[trigger].push {
+        receiver: receiver,
+        selector: selector || trigger
+      }
   
   @hybridMethod 'unbindOne', (trigger, receiver) ->
     if @_bindings && @_bindings[trigger]
@@ -213,7 +216,9 @@ ST.class 'Object', null, ->
   @hybridMethod 'trigger', (trigger, passArgs...) ->
     if @_bindings && @_bindings[trigger]
       for target in @_bindings[trigger]
-        if target.receiver[target.selector]
+        if target.fn
+          target.fn this, passArgs...
+        else if target.receiver[target.selector]
           target.receiver[target.selector] this, passArgs...
         else
           ST.error "Error triggering binding from #{this}: #{trigger} to #{target.receiver}.#{target.selector}"
