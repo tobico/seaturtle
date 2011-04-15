@@ -37,12 +37,15 @@ ST.class 'TextFieldView', 'View', ->
   
   @method 'focus', ->
     if @_loaded
-      @_inputElement[0].focus()
-      @_inputElement[0].select()
+      input = @_inputElement[0]
+      if input && input.focus
+        input.focus()
+        input.select()
 
   @method 'blur', ->
     if @_loaded
-      @_inputElement[0].blur()
+      input = @_inputElement[0]
+      input.blur() if input && input.blur
   
   @method 'inputChanged', (e) ->
     if e && e.which && e.which == 13
