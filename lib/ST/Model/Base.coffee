@@ -435,34 +435,37 @@ ST.module 'Model', ->
       @_trigrams = {}
   
     @classMethod 'search', (keywords, limit=10, conditions) ->
-      trigrams = ST.Model.trigramsFor(keywords)
-      uuids = {}
-      for trigram in trigrams
-        if @_trigrams[trigram]
-          for uuid, count of @_trigrams[trigram]
-            if @_trigrams[trigram].hasOwnProperty uuid
-              uuids[uuid] ||= 0
-              uuids[uuid]++
-      matches = []
-      for uuid, score of uuids
-        if uuids.hasOwnProperty uuid
-          matches.push [ST.Model._byUuid[uuid], score]
-      matches.sort (a, b) ->
-        if a[1] < b[1]
-          1
-        else if a[1] > b[1]
-          -1
+      if @_trigrams
+        trigrams = ST.Model.trigramsFor(keywords)
+        uuids = {}
+        for trigram in trigrams
+          if @_trigrams[trigram]
+            for uuid, count of @_trigrams[trigram]
+              if @_trigrams[trigram].hasOwnProperty uuid
+                uuids[uuid] ||= 0
+                uuids[uuid]++
+        matches = []
+        for uuid, score of uuids
+          if uuids.hasOwnProperty uuid
+            matches.push [ST.Model._byUuid[uuid], score]
+        matches.sort (a, b) ->
+          if a[1] < b[1]
+            1
+          else if a[1] > b[1]
+            -1
+          else
+            0
+        if conditions
+          found = []
+          for match in matches
+            if match[0].matches conditions
+              found.push match
+              break if found.length >= limit
+          found
         else
-          0
-      if conditions
-        found = []
-        for match in matches
-          if match[0].matches conditions
-            found.push match
-            break if found.length >= limit
-        found
+          matches
       else
-        matches
+        []
   
     @method 'indexForKeyword', (keyword) ->
       trigrams = ST.Model.trigramsFor keyword
@@ -476,3 +479,27 @@ ST.module 'Model', ->
       for trigram in trigrams      
         if (@_class._trigrams[trigram][@_uuid] -= 1) == 0
           delete @_class._trigrams[trigram][@_uuid]
+    
+    @classMethod 'searchesRemotelyAt', (url) ->
+      @_remoteSearchURL = url
+    
+    @classMethod 'searchRemotely', (keyword, callback) ->
+      if @_remoteSearchURL
+        $.ajax {
+          url: @_remoteSearchURL
+          method: 'get'
+          data: {
+            query: keyword
+          }
+          success: (data) ->
+            results = []
+            for itemData in data
+              item = ST.Model.Base.createWithData itemData
+              results.push [item]
+            callback results
+          error: ->
+            callback []
+        }
+        true
+      else
+        false

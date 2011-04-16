@@ -61,10 +61,10 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @performSearch @_inputElement.val()
   
   @method 'inputBlur', ->
-    @_focused = false
     @_hiding = true
-    if @_inputElement.val() == ''
+    if @_inputValue == ''
       @value null
+      @trigger 'valueChosen', null
       @super()
     else if @_results && @_selectedResult >= 0
       @chooseResult @_results[@_selectedResult]
@@ -75,12 +75,22 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @super()
     @_resultListElement.hide()
     @_hiding = false
+    @_focused = false
     @trigger 'blurred'
   
   @method 'inputChanged', ->
-    @inputValue @_inputElement.val()
+    value = @_inputElement.val()
+    @inputValue value unless @_inputValue == value
   
   @method '_inputValueChanged', (oldValue, newValue) ->
+    if @_loaded && @_inputElement.val != newValue
+      if newValue == '' && !@_focused
+        @_inputElement.css 'color', 'gray'
+        @_inputElement.val @_placeholder
+      else
+        @_inputElement.css 'color', 'inherit'
+        @_inputElement.val newValue
+    
     if @_focused && oldValue != newValue
       @performSearch newValue
   
@@ -91,8 +101,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       rows.eq(newValue).addClass 'selected' if newValue >= 0
   
   @method '_valueChanged', (oldValue, newValue) ->
-    @trigger 'valueChosen', newValue
-    @inputValue if newValue then newValue.toFieldText() else ''
+    @inputValue(if newValue then newValue.toFieldText() else '')
     
   @method 'inputKeyDown', (event) ->
     event.stopPropagation()
@@ -126,11 +135,34 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
             event.preventDefault()
   
   @method 'performSearch', (search) ->
-    if search.length
-      @_results = (@_scope || @_model).search search
-      @showResults()
+    self = this 
+    if @_searching
+      @_searchForNext = search
+    else if search.length
+      remote = !@_scope && @_model.searchRemotely search, (results) ->
+        self._searching = false
+        if !self._focused
+          self._resultListElement.hide()
+        else if self._searchForNext
+          self.performSearch self._searchForNext
+        else
+          self._results = results
+          self.showResults()
+        self._searchForNext = null
+      
+      if remote
+        @_searching = true
+        @showSearchProgress()
+      else
+        @_results = (@_scope || @_model).search search
+        @showResults()
     else
       @_resultListElement.hide()
+  
+  @method 'showSearchProgress', ->
+    @_resultListElement.html 'Searching...'
+    @_resultListElement.css 'top', @_inputElement.outerHeight()
+    @_resultListElement.show()
   
   @method 'showResults', ->
     self = this
@@ -163,3 +195,4 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @method 'chooseResult', (result) ->
     if result && result[0]
       @value result[0]
+      @trigger 'valueChosen', result[0]
