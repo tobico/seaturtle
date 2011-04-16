@@ -372,18 +372,21 @@ ST.module 'Model', ->
       @string "#{name}Uuid"
     
       ucName = ST.ucFirst name
-      modelName = options.model || ucName
+      options.model ||= ucName
     
       @method "get#{ucName}", ->
         uuid = @["#{name}Uuid"]()
         ST.Model._byUuid[uuid] || null
     
       @method "set#{ucName}", (value) ->
-        ST.error 'Invalid object specified for association' if value && value._class._name != modelName
+        ST.error 'Invalid object specified for association' if value && value._class._name != options.model
         @["#{name}Uuid"](value && value.uuid())
     
       @virtual(name, 'belongsTo', null)
-      @_attributes[name].model = modelName
+      
+      for option of options
+        if options.hasOwnProperty option
+          @_attributes[name][option] = options[option]
       
       matchers = @["#{name}Uuid"]
       @[name] = {
@@ -483,10 +486,11 @@ ST.module 'Model', ->
     @classMethod 'searchesRemotelyAt', (url) ->
       @_remoteSearchURL = url
     
-    @classMethod 'searchRemotely', (keyword, callback) ->
-      if @_remoteSearchURL
+    @classMethod 'searchRemotely', (url, keyword, callback) ->
+      if url ||= @_remoteSearchURL
+        self = this
         $.ajax {
-          url: @_remoteSearchURL
+          url: url
           method: 'get'
           data: {
             query: keyword
@@ -495,7 +499,7 @@ ST.module 'Model', ->
             results = []
             for itemData in data
               item = ST.Model.Base.createWithData itemData
-              results.push [item]
+              results.push [item] if item instanceof self
             callback results
           error: ->
             callback []

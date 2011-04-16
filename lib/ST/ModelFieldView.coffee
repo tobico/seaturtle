@@ -20,6 +20,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_results = null
     @_canCreate = false
     @_focused = false
+    @_searchRemotelyAt = null
   
   @initializer 'withScope', (scope) ->
     @initWithModel scope.model()
@@ -33,6 +34,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @property 'acceptsNull'
   @property 'canCreate'
   @property 'resultListElement'
+  @property 'searchRemotelyAt'
   
   @method 'render', ->
     @super()
@@ -58,7 +60,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @super()  
     @_focused = true
     @_inputElement.select() if @_value
-    @performSearch @_inputElement.val()
+    unless @_value && @_inputElement.val() == @_value.toFieldText()
+      @performSearch @_inputElement.val()
   
   @method 'inputBlur', ->
     @_hiding = true
@@ -139,7 +142,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     if @_searching
       @_searchForNext = search
     else if search.length
-      remote = !@_scope && @_model.searchRemotely search, (results) ->
+      remote = !@_scope && @_model.searchRemotely @_searchRemotelyAt, search, (results) ->
         self._searching = false
         if !self._focused
           self._resultListElement.hide()
@@ -160,7 +163,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @_resultListElement.hide()
   
   @method 'showSearchProgress', ->
-    @_resultListElement.html 'Searching...'
+    @_resultListElement.html '<table><tr><td>Searching...</td></tr></table>'
     @_resultListElement.css 'top', @_inputElement.outerHeight()
     @_resultListElement.show()
   

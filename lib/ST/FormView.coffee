@@ -17,6 +17,7 @@ ST.class 'FormView', 'View', ->
     @initWithModelAttributes item._class, attributes
     @_item = item
 
+  @property 'defaults'
   @property 'model'
   @property 'item'
   
@@ -46,8 +47,16 @@ ST.class 'FormView', 'View', ->
         else
           ST.TextFieldView.create()
       field.id attribute
+      field.searchRemotelyAt details.searchesRemotelyAt if details.searchesRemotelyAt
       @_fields[attribute] = field
-      field.value(if @_item then @_item[attribute]() else details.default)
+      field.value(
+        if @_item
+          @_item[attribute]()
+        else if @_defaults && @_defaults[attribute]
+          @_defaults[attribute]
+        else
+          details.default
+      )
       field.load()
       $(cell).append field.element()
   
@@ -56,9 +65,17 @@ ST.class 'FormView', 'View', ->
   
   @method 'data', ->
     data = {}
+    
+    # Copy default values into data
+    for attribute of @_defaults
+      if @_defaults.hasOwnProperty attribute
+        data[attribute] = @_defaults[attribute]
+    
+    # Read field values into data
     for attribute in @_attributes
       field = @_fields[attribute]
       data[attribute] = field.value()
+    
     data
   
   @method 'save', ->
