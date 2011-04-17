@@ -75,5 +75,8 @@ jQuery.fn.popup = (items, open, close) ->
     element = this
     options = {}
     options.close = -> close.call element if close
-    open.call element, element if open
-    popup $(this), id, (if items.call then items.call(element, e.altKey || e.shiftKey) else items), options
+    if popupID == id
+      closePopup()
+    else
+      popup $(this), id, (if items.call then items.call(element, e.altKey || e.shiftKey) else items), options
+      open.call element, element if open
