@@ -120,7 +120,7 @@ ST.module 'Model', ->
           success:  (data) ->
             results = []
             for itemData in data
-              item = ST.Model.Base.createWithData itemData
+              item = ST.Model.Base.createWithData itemData, {loaded: true}
               results.push [item] if item instanceof self
             callback results
           error:    ->

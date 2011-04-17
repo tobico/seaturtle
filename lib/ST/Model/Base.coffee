@@ -15,7 +15,7 @@ ST.module 'Model', ->
           type:     'get'
           data:     @FETCH_DATA || {}
           success:  (data) ->
-            model = self.createWithData data
+            model = self.createWithData data, {loaded: true}
             yield model if yield
         }
       else
@@ -48,48 +48,13 @@ ST.module 'Model', ->
     @classMethod 'index', (attribute) ->
       @_indexes ||= {}
       @_indexes[attribute] ||= ST.Model.Index.createWithModelAttribute(this, attribute)
-    
-    @classMethod 'changes', ->
-      ST.Model._changes || []
   
-    @classMethod 'saveToServer', (url, async, extraData) ->
-      return if ST.Model.Saving
-      return unless ST.Model._changes && ST.Model._changes.length
-    
-      ST.Model.Saving = true
-    
-      data = { data: JSON.stringify updatedData }
-      $.extend data, extraData if extraData
-    
-      STModel.SaveStarted() if STModel.SaveStarted
-    
-      $.ajax {
-        url:      url
-        type:     'post'
-        async:    if async? then async; else true
-        data:     data,
-        success:  (data) ->
-          STModel.SaveFinished() if STModel.SaveFinished
-        
-          if data.status && data.status == 'Access Denied'
-            STModel.AccessDeniedHandler() if STModel.AccessDeniedHandler
-        
-          for type in ['created', 'updated', 'deleted']
-            if data[type] && data[type] instanceof Array
-              for uuid in data[type]
-                object = ST.Model.find uuid
-                object.set(type, false).persist() if object
-             
-        complete: ->
-          ST.Model.Saving = false
-      }
-  
-    @initializer (options) ->
+    @initializer (options={}) ->
       @initWithData {}, options
       this
   
     # Initializes a new model, and loads the supplied attribute data, if any
-    @initializer 'withData', (data, options) ->
+    @initializer 'withData', (data, options={}) ->
       self = this
     
       ST.Object.prototype.init.call this
@@ -114,6 +79,9 @@ ST.module 'Model', ->
       if @_class._manyBinds
         for binding in @_class._manyBinds
           @get(binding.assoc).bind binding.from, self, binding.to
+      
+      unless options.loaded
+        ST.Model.recordChange 'create', @_uuid, @_class._name, @data()
 
       @_creating = false
       @_class.master().add this
@@ -121,7 +89,7 @@ ST.module 'Model', ->
     # Creates a new object from model data. If the data includes a 
     # property, as with data genereated by #objectify, the specified model
     # will be used instead of the model createWithData was called on.
-    @classMethod 'createWithData', (data, options) ->
+    @classMethod 'createWithData', (data, options={}) ->
       # If data is being sent to the wrong model, transfer to correct model
       if data.model && data.model != @_name
         if modelClass = @_namespace.class data.model
@@ -168,30 +136,22 @@ ST.module 'Model', ->
     @method '_changed', (member, oldValue, newValue) ->
       @super member, oldValue, newValue
       @_class.trigger 'itemChanged', this
+      
+      if @_attributes[member]?
+        unless @_creating || String(oldValue) == String(newValue)
+          data = {}
+          data[member] = newValue
+          ST.Model.recordChange 'update', @_uuid, @_class._name, data
     
-      ST.Model._changes ||= []
-      ST.Model._changes.push {
-        uuid:       ST.Model._generateUUID()
-        model:      @_class._name
-        type:       'update'
-        objectUuid: @_uuid
-        attribute:  member
-        oldValue:   oldValue
-        newValue:   newValue
-      }
-  
     # Returns saveable object containing model data.
-    @method 'serialize', ->
-      output = {
-        model:  @_class._name
-        uuid:   @uuid()
-      }
+    @method 'data', ->
+      output = {}
       for attribute of @_attributes
         if @_attributes.hasOwnProperty attribute
           value = @_attributes[attribute]
           value = String(value) if value instanceof Date
           output[attribute] = value
-      JSON.stringify output
+      output
   
     # Saves model data and saved status in Storage for persistance.
     @method 'persist', ->
@@ -219,13 +179,7 @@ ST.module 'Model', ->
     # Marks model as destroyed, destroy to be propagated to server when 
     # possible.
     @method 'destroy', ->
-      ST.Model._changes ||= []
-      ST.Model._changes.push {
-        uuid:       ST.Model._generateUUID()
-        model:      @_class._name
-        type:       'destroy'
-        objectUuid: @_uuid
-      }
+      ST.Model.recordChange 'destroy', @_uuid, @_class._name
       @forget()
       @_destroyed = true
   
