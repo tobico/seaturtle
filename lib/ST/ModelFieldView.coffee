@@ -130,7 +130,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
             @selectedResult(0)
         event.preventDefault()
       when 13 # ENTER
-        @blur()
+        @blur() if @_selectedResult >= 0
         event.preventDefault()
       when 27 # Escape
         @blur()
