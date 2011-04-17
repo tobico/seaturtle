@@ -2,12 +2,12 @@
 
 ST.class 'ModelFieldView', 'TextFieldView', ->
   # Mappings for event key code to result index
-  @KEY_CODES = { 49:0, 50:1, 51:2, 52:3, 53:4, 54:5, 55:6, 56:7, 57:8, 48:9, 190:10, 191:11, 97:0, 98:1, 99:2, 100:3, 101:4, 102:5, 103:6, 104:7, 105:8, 96:9, 110:10, 111:11 }
+  @KEY_CODES = { 49:0, 50:1, 51:2, 52:3, 53:4, 54:5, 55:6, 56:7, 57:8, 48:9, 97:0, 98:1, 99:2, 100:3, 101:4, 102:5, 103:6, 104:7, 105:8, 96:9 }
   
   @RESULT_LIMIT = 9
   
   # Mappings from result index to label for key
-  @KEY_LABELS = '1234567890./*-+'.split('')
+  @KEY_LABELS = '123456789'.split('')
   
   @initializer 'withModel', (model) ->
     @init()
@@ -19,6 +19,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_searchValue = ''
     @_results = null
     @_canCreate = false
+    @_createAttributes = null
+    @_createPrefill = null
     @_focused = false
     @_searchRemotelyAt = null
   
@@ -32,9 +34,13 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @property 'results'
   @property 'selectedResult'
   @property 'acceptsNull'
-  @property 'canCreate'
   @property 'resultListElement'
   @property 'searchRemotelyAt'
+  
+  @method 'allowCreateWithAttributes', (attributes, prefill=null) ->
+    @_canCreate = true
+    @_createAttributes = attributes
+    @_createPrefill = prefill
   
   @method 'render', ->
     @super()
@@ -105,7 +111,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method '_valueChanged', (oldValue, newValue) ->
     @inputValue(if newValue then newValue.toFieldText() else '')
-    
+  
   @method 'inputKeyDown', (event) ->
     event.stopPropagation()
     switch event.which
@@ -129,6 +135,11 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       when 27 # Escape
         @blur()
         event.preventDefault()
+      when 190, 110 # 0
+        if @_canCreate
+          @selectedResult(@_results.length - 1)
+          @blur()
+          event.preventDefault()
       else
         if ST.ModelFieldView.KEY_CODES[event.which]?
           n = ST.ModelFieldView.KEY_CODES[event.which]
@@ -142,23 +153,21 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     if @_searching
       @_searchForNext = search
     else if search.length
-      remote = !@_scope && @_model.searchRemotely @_searchRemotelyAt, search, (results) ->
+      remote = !@_scope && @_model.searchRemotely search, {url: @_searchRemotelyAt}, (results) ->
         self._searching = false
         if !self._focused
           self._resultListElement.hide()
         else if self._searchForNext
           self.performSearch self._searchForNext
         else
-          self._results = results
-          self.showResults()
+          self.showResults results
         self._searchForNext = null
       
       if remote
         @_searching = true
         @showSearchProgress()
       else
-        @_results = (@_scope || @_model).search search
-        @showResults()
+        @showResults (@_scope || @_model).search(search)
     else
       @_resultListElement.hide()
   
@@ -167,35 +176,57 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_resultListElement.css 'top', @_inputElement.outerHeight()
     @_resultListElement.show()
   
-  @method 'showResults', ->
+  @method 'showResults', (results) ->
     self = this
     
-    if @_results
+    @_results = results
+    if @_results || @_canCreate
       if @_results.length > ST.ModelFieldView.RESULT_LIMIT
         @_results.splice ST.ModelFieldView.RESULT_LIMIT
-
+      
       html = ['<table><tbody>']
+      maxCols = 1
       for result, i in @_results
         html.push '<tr style="cursor: default" onmouseover="selectResult(' + i + ')"><td class="hotkey">'
         html.push ST.ModelFieldView.KEY_LABELS[i]
         html.push '</td><td>'
-        html.push result[0].toListItem().join('</td><td>')
+        cols = result[0].toListItem()
+        maxCols = cols.length if cols.length > maxCols
+        html.push cols.join('</td><td>')
         html.push '</td></tr>'
+      
+      if @_canCreate
+        html.push '<tr style="cursor: default" onmouseover="selectResult(', results.length, ')"><td class="hotkey">0</td><td colspan="', maxCols, '">Create new ', @_model._name.toLowerCase()
+        html.push ' ', @_createPrefill(@_inputValue).label if @_createPrefill
+        results.push 'new'
+      
       html.push '</tbody></table>'
-
+      
       @_resultListElement.html html.join('')
-
+      
       window.selectResult = (index) ->
         self.selectedResult index
       
       @selectedResult -1
-
+      
       @_resultListElement.css 'top', @_inputElement.outerHeight()
       @_resultListElement.show()
     else
       @_resultListElement.hide()
   
   @method 'chooseResult', (result) ->
-    if result && result[0]
+    if result == 'new'
+      self = this
+      form = ST.FormView.createWithModelAttributes @_model, @_createAttributes
+      if @_createPrefill
+        defaults = @_createPrefill @_inputValue
+        delete defaults.label
+        form.defaults defaults
+      form.bind 'saved', (form, item) ->
+        self.value item
+        self.trigger 'valueChosen', item, true
+      ST.DialogView.createWithTitleView "Create new #{@_model._name.toLowerCase()}", form
+      form.release()
+    else if result && result[0]
       @value result[0]
-      @trigger 'valueChosen', result[0]
+      @trigger 'valueChosen', result[0], false

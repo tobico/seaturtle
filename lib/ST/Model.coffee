@@ -1,3 +1,4 @@
+#require ST/Model/Searchable
 #require ST/Model/Base
 #require ST/Model/Scope
 #require ST/Model/Index
@@ -7,13 +8,6 @@ ST.module 'Model', ->
   @_notFound      = {}
   @_generateUUID  = Math.uuid || (-> @NextUUID ||= 0; @NextUUID++)
   @_storage       = null
-  
-  @trigramsFor = (string) ->
-    trigrams = []
-    string = " #{string} ".toLowerCase().replace(/\s+/g, '  ')
-    for i in [0..(string.length - 3)]
-      trigrams.push string.substring(i, i + 3)
-    trigrams
   
   @storage = (newStorage) ->
     self = this

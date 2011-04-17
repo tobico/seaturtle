@@ -25,7 +25,7 @@ ST.module 'Model', ->
     @classDelegate 'order', 'scoped'
     @classDelegate 'each',  'scoped'
     @classDelegate 'first', 'scoped'
-  
+    
     @classMethod 'scoped', ->
       ST.Model.Scope.createWithModel this
   
@@ -114,10 +114,6 @@ ST.module 'Model', ->
       if @_class._manyBinds
         for binding in @_class._manyBinds
           @get(binding.assoc).bind binding.from, self, binding.to
-    
-      if @_class._searchAttributes
-        for attribute in @_class._searchAttributes
-          @indexForKeyword @_attributes[attribute]
 
       @_creating = false
       @_class.master().add this
@@ -172,9 +168,6 @@ ST.module 'Model', ->
     @method '_changed', (member, oldValue, newValue) ->
       @super member, oldValue, newValue
       @_class.trigger 'itemChanged', this
-      if @_class._searchAttributes && @_class._searchAttributes.indexOf(member) >= 0
-        @deindexForKeyword oldValue
-        @indexForKeyword newValue
     
       ST.Model._changes ||= []
       ST.Model._changes.push {
@@ -432,78 +425,8 @@ ST.module 'Model', ->
       if options.dependent
         @_dependent ||= []
         @_dependent.push name
-  
-    @classMethod 'searchesOn', (attributes...) ->
-      @_searchAttributes = attributes
-      @_trigrams = {}
-  
-    @classMethod 'search', (keywords, limit=10, conditions) ->
-      if @_trigrams
-        trigrams = ST.Model.trigramsFor(keywords)
-        uuids = {}
-        for trigram in trigrams
-          if @_trigrams[trigram]
-            for uuid, count of @_trigrams[trigram]
-              if @_trigrams[trigram].hasOwnProperty uuid
-                uuids[uuid] ||= 0
-                uuids[uuid]++
-        matches = []
-        for uuid, score of uuids
-          if uuids.hasOwnProperty uuid
-            matches.push [ST.Model._byUuid[uuid], score]
-        matches.sort (a, b) ->
-          if a[1] < b[1]
-            1
-          else if a[1] > b[1]
-            -1
-          else
-            0
-        if conditions
-          found = []
-          for match in matches
-            if match[0].matches conditions
-              found.push match
-              break if found.length >= limit
-          found
-        else
-          matches
-      else
-        []
-  
-    @method 'indexForKeyword', (keyword) ->
-      trigrams = ST.Model.trigramsFor keyword
-      for trigram in trigrams
-        @_class._trigrams[trigram] ||= {}
-        @_class._trigrams[trigram][@_uuid] ||= 0
-        @_class._trigrams[trigram][@_uuid]++ 
-
-    @method 'deindexForKeyword', (keyword) ->
-      trigrams = ST.Model.trigramsFor keyword
-      for trigram in trigrams      
-        if (@_class._trigrams[trigram][@_uuid] -= 1) == 0
-          delete @_class._trigrams[trigram][@_uuid]
     
-    @classMethod 'searchesRemotelyAt', (url) ->
-      @_remoteSearchURL = url
-    
-    @classMethod 'searchRemotely', (url, keyword, callback) ->
-      if url ||= @_remoteSearchURL
-        self = this
-        $.ajax {
-          url: url
-          method: 'get'
-          data: {
-            query: keyword
-          }
-          success: (data) ->
-            results = []
-            for itemData in data
-              item = ST.Model.Base.createWithData itemData
-              results.push [item] if item instanceof self
-            callback results
-          error: ->
-            callback []
-        }
-        true
-      else
-        false
+    @classMethod 'labelForAttribute', (attribute) ->
+      ST.ucFirst(attribute.replace /([A-Z])/g, " $1")
+  
+    @include ST.Model.Searchable

@@ -107,7 +107,10 @@ ST.module 'Model', ->
       @_model.createWithData defaults
   
     @method 'search', (keywords, limit) ->
-      @_model.search keywords, limit, @_conditions
+      conditions = @_conditions
+      @_model.search keywords, {limit: limit, filter: (item) ->
+        item.matches conditions
+      }
   
     @method 'targetItemAdded', (target, item) ->
       @add item if item.matches @_conditions

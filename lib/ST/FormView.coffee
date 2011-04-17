@@ -30,7 +30,7 @@ ST.class 'FormView', 'View', ->
   @method 'render', ->
     html = ['<table class="formView">']
     for attribute in @_attributes
-      html.push '<tr><th class="label"><label for="', attribute, '">', @labelForAttribute(attribute), '</label></th><td class="field" data-attribute="', attribute, '"></td></tr>'
+      html.push '<tr><th class="label"><label for="', attribute, '">', @_model.labelForAttribute(attribute), ':</label></th><td class="field" data-attribute="', attribute, '"></td></tr>'
     html.push '</table>'
     
     @_element.html html.join('')
@@ -60,9 +60,6 @@ ST.class 'FormView', 'View', ->
       field.load()
       $(cell).append field.element()
   
-  @method 'labelForAttribute', (attribute) ->
-    ST.ucFirst(attribute.replace /([A-Z])/g, " $1") + ':'
-  
   @method 'data', ->
     data = {}
     
@@ -81,10 +78,11 @@ ST.class 'FormView', 'View', ->
   @method 'save', ->
     if @_item
       @_item.set @data()
+      @trigger 'saved', @_item
     else if @_scope
-      @_scope.build @data()
+      @trigger 'saved', @_scope.build(@data())
     else
-      @_model.createWithData @data()
+      @trigger 'saved', @_model.createWithData(@data())
   
   @method 'dialogButtons', (dialog, buttonbar) ->
     self = this
