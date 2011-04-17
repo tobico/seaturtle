@@ -156,7 +156,7 @@ ST.module 'Model', ->
     # Saves model data and saved status in Storage for persistance.
     @method 'persist', ->
       if ST.Model._storage
-        ST.Model._storage.set @uuid(), @serialize()
+        ST.Model._storage.set @uuid(), JSON.stringify(@data())
   
     # Removes all local data for model.
     @method 'forget', ->

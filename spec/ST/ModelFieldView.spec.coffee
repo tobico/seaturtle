@@ -66,7 +66,8 @@ $ ->
       it "should set value to null when input empty", ->
         @modelField.render()
         @modelField.value @item
-        @modelField.inputElement().val ''
+        @modelField._focused = true
+        @modelField.inputValue ''
         @modelField.inputBlur()
         expect(@modelField.value()).to be(null)
       

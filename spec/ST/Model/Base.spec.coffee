@@ -42,11 +42,7 @@ $ ->
       it "should return existing index", ->
         index = ST.TestModel.index 'foo'
         ST.TestModel.index('foo').should be(index)
-    
-    describe ".changes", ->
-      it "should return an array", ->
-        ST.TestModel.changes().should beAnInstanceOf(Array)
-    
+        
     describe ".saveToServer", ->
       it "should be tested"
     
@@ -123,31 +119,18 @@ $ ->
     
     describe "#getManyList", ->
       it "needs to be tested"
-    
-    describe "#_changed", ->
-      it "should store change in change list", ->
-        ST.Model._changes = []
-        @model.foo 'waffles'
-        ST.Model._changes.length.should equal(1)
-        change = ST.Model._changes[0]
-        change.uuid.shouldNot be(null)
-        change.model.should equal('TestModel')
-        change.type.should equal('update')
-        change.objectUuid.should equal(@model.uuid())
-        change.attribute.should equal('foo')
-        change.oldValue.should equal('bacon')
-        change.newValue.should equal('waffles')
-    
-    describe "#serialize", ->
-      it "should return a text representation of object", ->
-        @model._uuid = 'test'
-        @model.serialize().should equal('{"model":"TestModel","uuid":"test","foo":"bacon"}')
+        
+    describe "#data", ->
+      it "should return data representation of object", ->
+        data = @model.data()
+        data.should beAnInstanceOf Object
+        data.foo.should equal('bacon')
     
     describe "#persist", ->
       it "should save object in persistant storage", ->
         ST.Model._storage = {}
         @model._uuid = 'test'
-        ST.Model._storage.shouldReceive('set').with('test', @model.serialize())
+        ST.Model._storage.shouldReceive('set').with('test', JSON.stringify(@model.data()))
         @model.persist()
         delete ST.Model._storage
     
@@ -174,17 +157,6 @@ $ ->
         delete ST.Model._storage
 
     describe "#destroy", ->
-      it "should store destruction in change list", ->
-        ST.Model._changes = []
-        uuid = @model.uuid()
-        @model.destroy()
-        ST.Model._changes.length.should equal(1)
-        change = ST.Model._changes[0]
-        change.uuid.shouldNot be(null)
-        change.model.should equal('TestModel')
-        change.type.should equal('destroy')
-        change.objectUuid.should equal(uuid)
-      
       it "should forget object", ->
         @model.shouldReceive 'forget'
         @model.destroy()
