@@ -96,14 +96,9 @@ ST.module 'Model', ->
           modelClass.createWithData data, options
         else
           null
-      # If object with uuid already exists, update object and return it
+      # If object with uuid already exists, return existing object
       else if data.uuid && ST.Model._byUuid[data.uuid]
-        object = ST.Model._byUuid[data.uuid]
-        attributes = object._class._attributes
-        for attribute, details of attributes
-          if attributes.hasOwnProperty attribute
-            object.set attribute, data[attribute] if data[attribute]?
-        object
+        ST.Model._byUuid[data.uuid]
       # Otherwise, create a new object
       else
         object = new this
