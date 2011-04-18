@@ -101,6 +101,7 @@ ST.class 'View', 'Destructable', ->
       @_footer.element().detach() if @_footer
       @unloadChildren()
       @_element.empty()
+      @_element.remove()
       @_loaded = false
       @trigger 'unloaded'
     
