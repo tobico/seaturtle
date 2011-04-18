@@ -55,6 +55,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     else
       @_inputElement.val @_placeholder
       @_inputElement.css 'color', 'gray'
+    @_inputElement.bind 'choose', (e, text) ->
+      self.chooseByText text
     
     @_resultListElement = $ '<div class="ModelFieldViewResults"></div>'
     @_resultListElement.hide()
@@ -230,3 +232,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     else if result && result[0]
       @value result[0]
       @trigger 'valueChosen', result[0], false
+  
+  @method 'chooseByText', (text) ->
+    if @_results
+      for result in @_results
+        return @chooseResult result if result[0].toFieldText().indexOf(text) >= 0
