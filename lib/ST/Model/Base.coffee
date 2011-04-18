@@ -225,7 +225,9 @@ ST.module 'Model', ->
         # Set new value
         @_attributes[name] = newValue
   
-        unless @_creating
+        if @_creating
+          @indexForKeyword newValue if @_class._searchProperties && @_class._searchProperties.indexOf(name) >= 0
+        else
           # Update index
           if @_class._indexes
             if index = @_class._indexes[name]
