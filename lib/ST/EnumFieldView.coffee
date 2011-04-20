@@ -45,11 +45,13 @@ ST.class 'EnumFieldView', 'View', ->
       option = @_selectElement[0].options[@_selectElement[0].selectedIndex]
       newValue = if option && option.value.length then option.value else null
       unless oldValue == newValue
-        @_value = newValue
-        @_changed 'value', oldValue, newValue
+        @_skipUpdate = true
+        @value newValue
   
   @method '_valueChanged', (oldValue, newValue) ->
-    if @_loaded
+    if @_skipUpdate
+      @_skipUpdate = false
+    else if @_loaded
       @_selectElement[0].selectedIndex = if @_valueIndex[newValue]? then @_valueIndex[newValue] else 0
   
   @method '_valuesChanged', (oldValues, newValues) ->
