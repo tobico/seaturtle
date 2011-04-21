@@ -199,7 +199,7 @@ ST.class 'TableView', 'View', ->
   @method 'generateCellInnerHTML', (item, column, html, media='screen') ->
     html.push(
       if column.html
-        column.html item
+        column.html item, media
       else
         @cellValue item, column, media
     )
@@ -293,12 +293,25 @@ ST.class 'TableView', 'View', ->
       @refreshRow item
       @sort()
 
-  @method 'print', (sortColumn) ->
-    html = ['<table class="tableView">']
+  @method 'print', (options={}) ->
+    oldMapping = @_mapping
+    oldSortColumn = @_sortColumn
+    if options.sortColumn
+      @_sortColumn = options.sortColumn
+      @_mapping = oldMapping.slice(0)
+      if sortFunction = @sortFunction()
+        @_mapping.sort sortFunction
+    
+    html = []
+    html.push '<h2>', options.heading, '</h2>' if options.heading
+    html.push '<table class="tableView">'
     @generateHeaderHTML html, 'print'
     @generateBodyHTML html, 'print'
     html.push '</table>'
-    @helper().print html.join('')
+    @_mapping = oldMapping
+    @_sortColumn = @_sortColumn
+    
+    @helper().print html.join(''), options
   
   @method '_headerChanged', (oldValue, newValue) ->
     @super oldValue, newValue
