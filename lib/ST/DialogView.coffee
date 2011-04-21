@@ -45,7 +45,7 @@ ST.class 'DialogView', 'View', ->
       $('body').append $('<div id="blanker"></div>').css('opacity', 0).click (e) -> e.stopPropagation()
 
     # Fade blanker in
-    if window.iOS
+    if $.browser.webkit
       $('#blanker').css('height', $(document).height())
           .css('width', $(document).width())
           .css('-webkit-transition', 'opacity 100ms linear')
@@ -62,7 +62,7 @@ ST.class 'DialogView', 'View', ->
         blanker.remove()
   
   @method 'showDialog', ->
-    if window.iOS
+    if $.browser.webkit
       @_element.css('top', window.pageYOffset - @_element.height())
           .show()
           .css('-webkit-transition', 'top 200ms ease-in')
@@ -75,10 +75,10 @@ ST.class 'DialogView', 'View', ->
           .show()
           .animate({top: 0}, 200, 'swing')
 
-    $('textarea, input, button', @_element).slice(0,1).focus()
+    $('textarea, input, button', @_element).slice(0,1).focus() unless ST.touch()
   
   @method 'hideDialog', (callback) ->
-    if iOS
+    if $.browser.webkit
       @_element.css('-webkit-transition', 'top 200ms ease-in')
           .css('top', window.pageYOffset - @_element.height())
           .bind 'webkitTransitionEnd', ->

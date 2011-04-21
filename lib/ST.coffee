@@ -137,6 +137,10 @@ window.ST = {
       if values.hasOwnProperty key
         s = s.replace ":#{key}", value
     s
+  
+  # Detect touchscreen devices
+  touch: ->
+    navigator.userAgent.match(/(iPhone|iPod|iPad|Android)/) isnt null
 }
 
 unless Array.prototype.indexOf

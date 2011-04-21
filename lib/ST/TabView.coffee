@@ -28,7 +28,7 @@ ST.class 'TabView', 'View', ->
         li.append '<span class="title active_title">' + title + '</span>'
         li.addClass 'hl'
       else
-        li.append($('<span class="title inactive_title">' + title + '</span>').bind('touchstart mousedown', do (index) -> ->
+        li.append($('<span class="title inactive_title">' + title + '</span>').bind((if ST.touch() then 'touchstart' else 'mousedown'), do (index) -> ->
           self.switchToTab index
           closePopup() if window.closePopup
         ))

@@ -48,6 +48,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     self = this
     
     @_inputElement.attr 'autocomplete', 'off'
+    @_inputElement.attr 'autocorrect', 'off'
     @_inputElement.keydown  @method('inputKeyDown')
     if @_inputValue && @_inputValue.length
       @_inputElement.val @_inputValue
