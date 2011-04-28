@@ -19,8 +19,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_searchValue = ''
     @_results = null
     @_canCreate = false
-    @_createAttributes = null
-    @_createPrefill = null
+    @_createLabel = null
     @_focused = false
     @_searchRemotelyAt = null
   
@@ -37,10 +36,9 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @property 'resultListElement'
   @property 'searchRemotelyAt'
   
-  @method 'allowCreateWithAttributes', (attributes, prefill=null) ->
+  @method 'allowCreateWithLabel', (label) ->
     @_canCreate = true
-    @_createAttributes = attributes
-    @_createPrefill = prefill
+    @_createLabel = label
   
   @method 'render', ->
     @super()
@@ -200,7 +198,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       
       if @_canCreate
         html.push '<tr style="cursor: default" onmouseover="selectResult(', results.length, ')"><td class="hotkey">0</td><td colspan="', maxCols, '">Create new ', @_model._name.toLowerCase()
-        html.push ' ', @_createPrefill(@_inputValue).label if @_createPrefill
+        html.push ' ', @_createLabel.replace('$1', @_inputValue)
         results.push 'new'
       
       html.push '</tbody></table>'
@@ -219,20 +217,10 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'chooseResult', (result) ->
     if result == 'new'
-      self = this
-      form = ST.FormView.createWithModelAttributes @_model, @_createAttributes
-      if @_createPrefill
-        defaults = @_createPrefill @_inputValue
-        delete defaults.label
-        form.defaults defaults
-      form.bind 'saved', (form, item) ->
-        self.value item
-        self.trigger 'valueChosen', item, true
-      ST.DialogView.createWithTitleView "Create new #{@_model._name.toLowerCase()}", form
-      form.release()
+      @trigger 'create', @_inputValue
     else if result && result[0]
       @value result[0]
-      @trigger 'valueChosen', result[0], false
+      @trigger 'valueChosen', result[0]
   
   @method 'chooseByText', (text) ->
     if @_results
