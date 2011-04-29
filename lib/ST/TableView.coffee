@@ -292,8 +292,8 @@ ST.class 'TableView', 'View', ->
     if @_loaded
       @refreshRow item
       @sort()
-
-  @method 'print', (options={}) ->
+  
+  @method 'generatePrintHTML', (html, options={}) ->
     oldMapping = @_mapping
     oldSortColumn = @_sortColumn
     if options.sortColumn
@@ -302,15 +302,17 @@ ST.class 'TableView', 'View', ->
       if sortFunction = @sortFunction()
         @_mapping.sort sortFunction
     
-    html = []
-    html.push '<h2>', options.heading, '</h2>' if options.heading
     html.push '<table class="tableView">'
     @generateHeaderHTML html, 'print'
     @generateBodyHTML html, 'print'
     html.push '</table>'
+    
     @_mapping = oldMapping
     @_sortColumn = @_sortColumn
-    
+
+  @method 'print', (options={}) ->
+    html = []
+    html.push '<h2>', options.heading, '</h2>' if options.heading    
     @helper().print html.join(''), options
   
   @method '_headerChanged', (oldValue, newValue) ->
