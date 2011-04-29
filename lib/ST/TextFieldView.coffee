@@ -17,8 +17,8 @@ ST.class 'TextFieldView', 'View', ->
 
   @method 'setValue', (newValue) ->
     oldValue = @_value
-    @_value = String newValue
-    @_inputElement.val @_value if @_loaded
+    @_value = if newValue? then String(newValue) else null
+    @_inputElement.val(@_value || '') if @_loaded
     @_changed 'value', oldValue, @_value
   
   @method 'render', ->
