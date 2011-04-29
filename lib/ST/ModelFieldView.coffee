@@ -223,6 +223,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @trigger 'valueChosen', result[0]
   
   @method 'chooseByText', (text) ->
-    if @_results
+    if text == 'new'
+      @chooseResult 'new'
+    else if @_results
       for result in @_results
         return @chooseResult result if result[0].toFieldText().indexOf(text) >= 0
