@@ -95,6 +95,7 @@ window.ST = {
         @included -> @classMethod name, fn
     }
     definition.call @[name] if definition
+    Spec.extend @[name] if window.Spec
     @[name]
   
   # Capitalizes the first letter of a string.
@@ -142,6 +143,7 @@ window.ST = {
   touch: ->
     navigator.userAgent.match(/(iPhone|iPod|iPad|Android)/) isnt null
 }
+Spec.extend ST if window.Spec
 
 unless Array.prototype.indexOf
   `

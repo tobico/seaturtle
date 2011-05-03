@@ -1,4 +1,5 @@
 #require ST/View
+#require Popup
 
 ST.class 'ButtonBarView', 'View', ->
   @initializer ->

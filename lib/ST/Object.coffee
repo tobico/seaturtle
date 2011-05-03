@@ -226,3 +226,5 @@ ST.class 'Object', null, ->
   @method 'error', (message) ->
     # Call an undefined method to trigger a javascript exception
     @causeAnException()
+
+Spec.extend ST.Object if window.Spec

@@ -1,5 +1,6 @@
 #require ST/Destructable
 #require ST/List
+#require ST/ViewHelper
 
 ST.class 'View', 'Destructable', ->
   @ViewWithContent = (content) ->

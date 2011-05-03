@@ -1,7 +1,6 @@
 #require ST/Object
 
-$ ->
- Spec.describe "List", ->
+Spec.describe "List", ->
   beforeEach ->
     @list = ST.List.create()
  
@@ -27,7 +26,7 @@ $ ->
       count = 0
       @list.add testItem
       @list.each (item) ->
-        item.should be(testItem)
+        expect(item).to be(testItem)
         count++
       count.should equal(1)
       
@@ -99,7 +98,7 @@ $ ->
         
   describe "insertAt", ->
     it "should retain object", ->
-      object = {}
+      object = []
       object.shouldReceive 'retain'
       @list.add object
       
@@ -117,12 +116,12 @@ $ ->
       @list._array[1].should equal(2)
       
     it "should bind list to changed event", ->
-      object = {}
+      object = []
       object.shouldReceive('bind').with('changed', @list, 'itemChanged')
       @list.insertAt 0, object
 
     it "should trigger itemAdded event", ->
-      object = {}
+      object = []
       @list.shouldReceive('trigger').with('itemAdded', object, 0)
       @list.insertAt 0, object
       
@@ -133,7 +132,7 @@ $ ->
       @list.addAndRelease object
     
     it "should release object", ->
-      object = {}
+      object = []
       object.shouldReceive 'release'
       @list.addAndRelease object
   
@@ -149,19 +148,19 @@ $ ->
       @list._array[1].should equal(3)
     
     it "should unbind list from changed event", ->
-      object = {}
+      object = []
       @list._array = [object]
       object.shouldReceive('unbind').with('changed', @list)
       @list.removeAt 0
       
     it "should trigger itemRemoved event", ->
-      object = {}
+      object = []
       @list._array = [object]
       @list.shouldReceive('trigger').with('itemRemoved', object, 0)
       @list.removeAt 0
     
     it "should release object", ->
-      object = {}
+      object = []
       @list._array = [object]
       object.shouldReceive 'release'
       @list.removeAt 0
@@ -217,7 +216,7 @@ $ ->
       @list._array.length.should equal(0)
       
     it "should release object", ->
-      object = {}
+      object = []
       @list._array = [object]
       object.shouldReceive 'release'
       @list.empty()
