@@ -312,7 +312,8 @@ ST.class 'TableView', 'View', ->
 
   @method 'print', (options={}) ->
     html = []
-    html.push '<h2>', options.heading, '</h2>' if options.heading    
+    html.push '<h2>', options.heading, '</h2>' if options.heading
+    @generatePrintHTML html, options
     @helper().print html.join(''), options
   
   @method '_headerChanged', (oldValue, newValue) ->
