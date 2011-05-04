@@ -63,10 +63,11 @@ ST.class 'DialogView', 'View', ->
   
   @method 'showDialog', ->
     if $.browser.webkit
-      @_element.css('top', window.pageYOffset - @_element.height())
+      offset = if ST.touch() then window.pageYOffset else 0
+      @_element.css('top', offset - @_element.height())
           .show()
           .css('-webkit-transition', 'top 200ms ease-in')
-          .css('top', window.pageYOffset)
+          .css('top', offset)
           .bind 'webkitTransitionEnd', ->
             $(this).css('-webkit-transition', '')
                 .unbind('webkitTransitionEnd')
@@ -79,8 +80,9 @@ ST.class 'DialogView', 'View', ->
   
   @method 'hideDialog', (callback) ->
     if $.browser.webkit
+      offset = if ST.touch() then window.pageYOffset else 0
       @_element.css('-webkit-transition', 'top 200ms ease-in')
-          .css('top', window.pageYOffset - @_element.height())
+          .css('top', offset - @_element.height())
           .bind 'webkitTransitionEnd', ->
             $(this).unbind('webkitTransitionEnd')
             callback() if callback
