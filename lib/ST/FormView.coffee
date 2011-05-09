@@ -90,4 +90,5 @@ ST.class 'FormView', 'View', ->
       self.save()
       dialog.close()
     buttonbar.button 'Cancel', ->
+      self.trigger 'cancelled'
       dialog.close()
