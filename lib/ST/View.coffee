@@ -18,6 +18,7 @@ ST.class 'View', 'Destructable', ->
     ST.Destructable.method('init').call this
     @_element = element
     @_loaded = false
+    @_visible = true
     @_children = ST.List.create()
     @_children.bind 'itemAdded',   this, 'childAdded'
     @_children.bind 'itemRemoved', this, 'childRemoved'
@@ -26,6 +27,7 @@ ST.class 'View', 'Destructable', ->
   @property 'children', 'read'
   @property 'element',  'read'
   @property 'loaded',   'read'
+  @property 'visible'
   
   @retainedProperty 'header'
   @retainedProperty 'footer'
@@ -116,11 +118,17 @@ ST.class 'View', 'Destructable', ->
     @load()
   
   @method 'show', ->
-    @load() unless @_loaded
-    @element().show()
+    @visible true
   
   @method 'hide', ->
-    @element().hide()
+    @visible false
+  
+  @method '_visibleChanged', (oldValue, newValue) ->
+    if newValue
+      @load() unless @_loaded
+      @element().show()
+    else
+      @element().hide()
         
   @method 'scrollTo', -> $.scrollTo @_element
   
