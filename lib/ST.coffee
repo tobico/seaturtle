@@ -98,6 +98,10 @@ window.ST = {
     Spec.extend @[name] if window.Spec
     @[name]
   
+  # Removes leading and trailing whitespace
+  trim: (s) ->
+    s.replace /(^\s+|\s+$)/g, ''
+  
   # Capitalizes the first letter of a string.
   ucFirst: (s) ->
     x = String(s);
