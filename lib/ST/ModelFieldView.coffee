@@ -67,8 +67,9 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @super()  
     @_focused = true
     @_inputElement.select() if @_value
-    unless @_value && @_inputElement.val() == @_value.toFieldText()
-      @performSearch @_inputElement.val()
+    inputValue = ST.trim(@_inputElement.val())
+    unless @_value && inputValue == @_value.toFieldText()
+      @performSearch inputValue
   
   @method 'inputBlur', ->
     @_hiding = true
@@ -82,6 +83,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @_inputValue = @_value.toFieldText()
       @_inputElement.val @_inputValue 
     else
+      @inputValue ''
       @super()
     @_resultListElement.hide()
     @_hiding = false
@@ -93,7 +95,9 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @inputValue value unless @_inputValue == value
   
   @method '_inputValueChanged', (oldValue, newValue) ->
-    if @_loaded && @_inputElement.val != newValue
+    newValue = ST.trim newValue
+  
+    if @_loaded && ST.trim(@_inputElement.val()) != newValue
       if newValue == '' && !@_focused
         @_inputElement.css 'color', 'gray'
         @_inputElement.val @_placeholder
@@ -116,31 +120,33 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   @method 'inputKeyDown', (event) ->
     event.stopPropagation()
     switch event.which
-      when 38 # UP
+      when 38 # Up
         if @_results
           if @_selectedResult > 0
             @selectedResult(@_selectedResult - 1)
           else
             @selectedResult(@_results.length - 1)
         event.preventDefault()
-      when 40 # DOWN
+      when 40 # Down
         if @_results
           if @_selectedResult < @_results.length - 1
             @selectedResult(@_selectedResult + 1)
           else
             @selectedResult(0)
         event.preventDefault()
-      when 13 # ENTER
+      when 13 # Enter
         @blur() if @_selectedResult >= 0 || @_inputValue == ''
         event.preventDefault()
       when 27 # Escape
         @blur()
         event.preventDefault()
-      when 190, 110 # 0
+      when 48, 190, 110 # 0
         if @_canCreate
           @selectedResult(@_results.length - 1)
           @blur()
           event.preventDefault()
+      when 9 # Tab
+        event.preventDefault() if @_searching || @_results
       else
         if ST.ModelFieldView.KEY_CODES[event.which]?
           n = ST.ModelFieldView.KEY_CODES[event.which]
@@ -158,7 +164,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
         self._searching = false
         if !self._focused
           self._resultListElement.hide()
-        else if self._searchForNext
+        else if self._searchForNext?
           self.performSearch self._searchForNext
         else
           self.showResults results
@@ -170,6 +176,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       else
         @showResults (@_scope || @_model).search(search)
     else
+      @_results = null
       @_resultListElement.hide()
   
   @method 'showSearchProgress', ->
@@ -221,6 +228,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     else if result && result[0]
       @value result[0]
       @trigger 'valueChosen', result[0]
+    @_results = null
   
   @method 'chooseByText', (text) ->
     if text == 'new'
