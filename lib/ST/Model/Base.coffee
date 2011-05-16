@@ -272,12 +272,20 @@ ST.module 'Model', ->
             not:        _not
           }
         equals: (value) ->
-          value = String value
+          value = String(value)
           {
             type:       'equals'
             attribute:  name
             value:      value
             test:       (item) -> String(item[name]()) == value
+            not:        _not
+          }
+        equalsci: (value) ->
+          value = String(value).toLowerCase()
+          {
+            attribute:  name
+            value:      value
+            test:       (item) -> String(item[name]()).toLowerCase() == value
             not:        _not
           }
         lessThan: (value) ->
@@ -310,6 +318,12 @@ ST.module 'Model', ->
             attribute:  name
             value:      value
             test:       (item) -> Number(item[name]()) >= value
+            not:        _not
+          }
+        tests: (callback) ->
+          {
+            attribute:  name
+            test:       callback
             not:        _not
           }
       }
