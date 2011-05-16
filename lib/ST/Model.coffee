@@ -35,7 +35,7 @@ ST.module 'Model', ->
       @_onHasChanges @_changesCount if @_onHasChanges
     true
   
-  @submitChanges = (url, async, additionalData) ->
+  @sync = (url, async, additionalData) ->
     if @_changesCount > 0 && !@_submitting
       self = this
       @_submitting = true
@@ -51,16 +51,76 @@ ST.module 'Model', ->
         data:     data
         success:  (data) ->
           self._submitting = false
-          self.ackSubmission data
+          self.ackSync data
         error: ->
           self._submitting = false
-          self._onSubmissionError [] if self._onSubmissionError
+          self._onSyncError [] if self._onSyncError
       }
       true
     else
       false
   
-  @ackSubmission = (data) ->
+  @autoSync = (url, options={}) ->
+    @onHasChanges (count) ->
+      if options.statusDisplay
+        options.statusDisplay.html(
+          ST.template(options.unsavedTemplate || ':count :changes waiting to save', {
+            count:    count
+            changes:  if count == 1 then 'change' else 'changes'
+          })
+        )
+    
+    @onSyncComplete ->
+      if options.statusDisplay
+        options.statusDisplay.html(
+          options.savedTemplate || 'Saved.'
+        )
+    
+    @onSyncError (errors) ->
+      if options.statusDisplay
+        options.statusDisplay.html(
+          options.errorTemplate || 'Save failed!'
+        )
+        if errors.length
+          a = $('<a href="javascript:;" style="display: inline">(' + errors.length + ' ' + (if errors.length == 1 then 'error' else 'errors') + ')</a>')
+          items = []
+          for error in errors
+            items.push [error, (-> null)]
+          a.popup(items, ->
+            a.css 'font-weight', 'bold'
+            $('#popup').css 'z-index', 10
+          , ->
+            a.css 'font-weight', 'normal'
+          )
+          options.statusDisplay.append ' ', a
+
+    setInterval(->
+      if ST.Model.sync(url, true, options.data || {})
+        if options.statusDisplay
+          count = ST.Model.changes()
+          options.statusDisplay.html(
+            ST.template(options.savingTemplate || 'Saving :count :changes...', {
+              count:   count
+              changes: if count == 1 then 'change' else 'changes'
+            })
+          )
+    options.interval || 10000)
+    
+    if options.syncBeforeUnload
+      window.onbeforeunload = (e) ->
+        ev = e || window.event
+        msg = if window.Connection && !Connection.active
+          options.unsavedWarning || 'Unable to save your changes to the server. If you leave now, you will lose your changes.'
+        else if ST.Model._submitting
+          options.savingWarning || 'Currently writing your changes to the server. If you leave now, you will lose your changes.'
+        else
+          save false
+          undefined
+        
+        ev.returnValue = msg if ev && msg
+        msg
+  
+  @ackSync = (data) ->
     errors = []
     if data.ack
       for id, status of data.ack
@@ -85,25 +145,25 @@ ST.module 'Model', ->
       for id of @_changes
         if @_changes.hasOwnProperty(id) && @_changes[id].submitted
           @_changes[id].submitted = false
-          @_onSubmissionError errors if @_onSubmissionError
+          @_onSyncError errors if @_onSyncError
           return false
       if @_changesCount > 0
         @_onHasChanges @_changesCount if @_onHasChanges
       else
-        @_onSubmissionComplete() if @_onSubmissionComplete
+        @_onSyncComplete() if @_onSyncComplete
       true
     else
-      @_onSubmissionError errors if @_onSubmissionError
+      @_onSyncError errors if @_onSyncError
       false
   
   @onHasChanges = (fn) ->
     @_onHasChanges = fn
 
-  @onSubmissionComplete = (fn) ->
-    @_onSubmissionComplete = fn
+  @onSyncComplete = (fn) ->
+    @_onSyncComplete = fn
 
-  @onSubmissionError = (fn) ->
-    @_onSubmissionError = fn
+  @onSyncError = (fn) ->
+    @_onSyncError = fn
   
   @changes = ->
     @_changesCount
