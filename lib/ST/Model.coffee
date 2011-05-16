@@ -93,9 +93,12 @@ ST.module 'Model', ->
             a.css 'font-weight', 'normal'
           )
           options.statusDisplay.append ' ', a
-
+    
+    sync = (async) ->
+      ST.Model.sync(url, async, options.data || {})
+    
     setInterval(->
-      if ST.Model.sync(url, true, options.data || {})
+      if sync(true)
         if options.statusDisplay
           count = ST.Model.changes()
           options.statusDisplay.html(
@@ -114,7 +117,7 @@ ST.module 'Model', ->
         else if ST.Model._submitting
           options.savingWarning || 'Currently writing your changes to the server. If you leave now, you will lose your changes.'
         else
-          save false
+          sync(false)
           undefined
         
         ev.returnValue = msg if ev && msg

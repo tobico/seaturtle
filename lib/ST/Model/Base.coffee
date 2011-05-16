@@ -80,7 +80,7 @@ ST.module 'Model', ->
         for binding in @_class._manyBinds
           @get(binding.assoc).bind binding.from, self, binding.to
       
-      unless options.loaded
+      unless options.loaded || @_class.ReadOnly
         ST.Model.recordChange 'create', @_uuid, @_class._name, @data()
 
       @_creating = false
@@ -133,7 +133,7 @@ ST.module 'Model', ->
       @_class.trigger 'itemChanged', this
       
       if @_attributes[member]?
-        unless @_creating || String(oldValue) == String(newValue)
+        unless @_creating || String(oldValue) == String(newValue) || @_class.ReadOnly
           data = {}
           data[member] = newValue
           ST.Model.recordChange 'update', @_uuid, @_class._name, data
@@ -174,7 +174,8 @@ ST.module 'Model', ->
     # Marks model as destroyed, destroy to be propagated to server when 
     # possible.
     @method 'destroy', ->
-      ST.Model.recordChange 'destroy', @_uuid, @_class._name
+      unless @_class.ReadOnly
+        ST.Model.recordChange 'destroy', @_uuid, @_class._name
       @forget()
       @_destroyed = true
   
