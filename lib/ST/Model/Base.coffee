@@ -25,6 +25,7 @@ ST.module 'Model', ->
     @classDelegate 'order', 'scoped'
     @classDelegate 'each',  'scoped'
     @classDelegate 'first', 'scoped'
+    @classDelegate 'count', 'scoped'
     
     @classMethod 'scoped', ->
       ST.Model.Scope.createWithModel this
