@@ -169,9 +169,8 @@ ST.class 'TableView', 'View', ->
   @method 'activateBody', ->
     self = this
     index = 0
-    @_list.eachAsync((item) ->
+    @_list.each (item) ->
       self.activateRow item, index++
-    , {iteration: 5})
   
   @method 'generateRowHTML', (item, index, html, media='screen') ->
     html.push '<tr class="item', index, '">'
