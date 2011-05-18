@@ -6,16 +6,14 @@ ST.module 'Model', ->
       @init()
       @_model = model
       @_conditions = []
-      @_order = null
+      @_orders = null
       @_populated = false
   
     @initializer 'withScope', (scope) ->
       @init()
       @_model = scope._model
-      @_conditions = []
-      for condition in scope._conditions
-        @_conditions.push condition
-      @_order = scope._order
+      @_conditions = scope._conditions && scope._conditions.slice(0)
+      @_orders = scope._orders && scope._orders.slice(0)
       @_populated = false
   
     @property 'model', 'read'
@@ -30,9 +28,14 @@ ST.module 'Model', ->
         for condition in conditions
           @_conditions.push condition
   
-    @method 'order', (order) ->
+    @method 'order', (orders...) ->
       @fork ->
-        @_order = order
+        @_orders ||= []
+        for order in orders
+          if found = order.match /^(\w+) (desc|asc)$/i
+            order = found[1]
+            order = {reverse: order} if found[2].toLowerCase() == 'desc'
+          @_orders.push order
     
     @method 'index', ->
       unless @_index
@@ -81,17 +84,19 @@ ST.module 'Model', ->
         @index().each (candidate) ->
           self.add candidate if candidate.matches self._conditions
         
-        if @_order
-          order = @_order
+        if @_orders
+          orders = @_orders
           @_array.sort (a, b) ->
-            a_value = a.get order
-            b_value = b.get order
-            if a_value > b_value
-              1
-            else if a_value < b_value
-              -1
-            else
-              0
+            for attribute in orders
+              if attribute.reverse
+                a_value = b.get attribute.reverse
+                b_value = a.get attribute.reverse
+              else
+                a_value = a.get attribute
+                b_value = b.get attribute
+              return 1  if a_value > b_value
+              return -1 if a_value < b_value
+            0
         
         @_populated = true
   
