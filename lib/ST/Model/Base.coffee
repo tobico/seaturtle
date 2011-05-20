@@ -155,7 +155,14 @@ ST.module 'Model', ->
         ST.Model._storage.set @uuid(), JSON.stringify(@data())
   
     # Removes all local data for model.
-    @method 'forget', ->
+    @method 'forget', (destroy=false) ->  
+      if destroy && !@_class.ReadOnly
+        ST.Model.recordChange 'destroy', @_uuid, @_class._name
+      
+      if @_class._dependent
+        for dependent in @_class._dependent
+          @[dependent]().forgetAll destroy
+
       # Remove from global index
       delete ST.Model._byUuid[@_uuid]
     
@@ -171,14 +178,13 @@ ST.module 'Model', ->
       ST.Model._storage.remove @_uuid if ST.Model._storage
     
       @_class.master().remove this
+      
+      @_destroyed = true if destroy
 
     # Marks model as destroyed, destroy to be propagated to server when 
     # possible.
     @method 'destroy', ->
-      unless @_class.ReadOnly
-        ST.Model.recordChange 'destroy', @_uuid, @_class._name
-      @forget()
-      @_destroyed = true
+      @forget true
   
     @classMethod 'convertValueToType', (value, type) ->
       if value is null

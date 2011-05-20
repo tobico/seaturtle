@@ -99,10 +99,14 @@ ST.module 'Model', ->
             0
         
         @_populated = true
-  
+    
+    @method 'forgetAll', (destroy=false) ->
+      while item = @first()
+        item.forget destroy
+    
     @method 'destroyAll', ->
-      @each 'destroy'
-  
+      @forgetAll true
+    
     @method 'build', (data) ->
       defaults = {}
       for condition in @_conditions
