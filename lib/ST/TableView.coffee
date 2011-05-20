@@ -58,6 +58,7 @@ ST.class 'TableView', 'View', ->
       column.index = i
     @sortColumn sortColumnIndex if columns.length > sortColumnIndex && @_sortColumn isnt columns[sortColumnIndex]
     if @_loaded
+      @refreshHeader()
       @refreshBody()
     
   @method 'sortFunction', (sortColumn) ->
