@@ -43,15 +43,18 @@ ST.class 'DialogView', 'View', ->
     # Add blanker div if it doesn't already exist
     if $('#blanker').length < 1
       $('body').append $('<div id="blanker"></div>').css('opacity', 0).click (e) -> e.stopPropagation()
-
-    # Fade blanker in
-    if $.browser.webkit
-      $('#blanker').css('height', $(document).height())
-          .css('width', $(document).width())
-          .css('-webkit-transition', 'opacity 100ms linear')
-          .css('opacity', 0.6)
+      
+      # Fade blanker in
+      if $.browser.webkit
+        $('#blanker').css('height', $(document).height())
+            .css('width', $(document).width())
+            .css('-webkit-transition', 'opacity 100ms linear')
+            .css('opacity', 0.6)
+      else
+        $('#blanker').show().css('opacity', 0).animate {opacity: 0.6}, 100, 'linear'
     else
-      $('#blanker').show().css('opacity', 0).animate {opacity: 0.6}, 100, 'linear'
+      # Prevent currently visible blanker from hiding
+      $('#blanker').stop().css('opacity', 0.6)
   
   @method 'hideBlanker', ->
     # Get blanker div
