@@ -139,6 +139,29 @@ ST.module 'Model', ->
           data[member] = newValue
           ST.Model.recordChange 'update', @_uuid, @_class._name, data
     
+    @method 'writeAttribute', (name, rawValue) ->
+      oldValue = @_attributes[name]
+    
+      # Convert new value to correct type
+      details = @_class._attributes[name]
+      newValue = @_class.convertValueToType rawValue, details.type
+  
+      # Set new value
+      @_attributes[name] = newValue
+
+      if @_creating
+        @indexForKeyword newValue if @_class._searchProperties && @_class._searchProperties.indexOf(name) >= 0
+      else
+        # Update index
+        if @_class._indexes
+          if index = @_class._indexes[name]
+            index.remove  oldValue, this
+            index.add     newValue, this
+
+        # Trigger changed event
+        @_changed name, oldValue, newValue if @_changed
+        @trigger 'changed', name, oldValue, newValue
+    
     # Returns saveable object containing model data.
     @method 'data', ->
       output = {}
@@ -204,7 +227,7 @@ ST.module 'Model', ->
             if isNaN(date.getTime()) then null else date
           else
             value
-
+    
     @classMethod 'attribute', (name, type, options) ->
       ucName = ST.ucFirst name
     
@@ -219,27 +242,7 @@ ST.module 'Model', ->
          @_attributes[name][option] = value
       
       @method "set#{ucName}", (rawValue) ->
-        oldValue = @_attributes[name]
-        
-        # Convert new value to correct type
-        details = @_class._attributes[name]
-        newValue = @_class.convertValueToType rawValue, details.type
-      
-        # Set new value
-        @_attributes[name] = newValue
-  
-        if @_creating
-          @indexForKeyword newValue if @_class._searchProperties && @_class._searchProperties.indexOf(name) >= 0
-        else
-          # Update index
-          if @_class._indexes
-            if index = @_class._indexes[name]
-              index.remove  oldValue, this
-              index.add     newValue, this
-  
-          # Trigger changed event
-          @_changed name, oldValue, newValue if @_changed
-          @trigger 'changed', name, oldValue, newValue
+        @writeAttribute name, rawValue
     
       @method "get#{ucName}", -> @_attributes[name]
     
