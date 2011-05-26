@@ -31,6 +31,12 @@ ST.class 'Destructable', 'Object', ->
     @accessor name
     
   @destructor ->
+    # Unbind any loose bindings
+    if @_boundTo
+      for source in @_boundTo
+        source.unbindAll this
+    
+    # Release any retained properties
     c = @_class
     while c isnt ST.Destructable
       if c._retainedProperties

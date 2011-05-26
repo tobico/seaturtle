@@ -182,6 +182,8 @@ ST.class 'Object', null, ->
     if typeof receiver == 'function' && receiver[selector || trigger] is undefined
       @_bindings[trigger].push { fn: receiver }
     else
+      receiver._boundTo ||= []
+      receiver._boundTo.push this if receiver._boundTo.indexOf(this) is false
       @_bindings[trigger].push {
         receiver: receiver,
         selector: selector || trigger
