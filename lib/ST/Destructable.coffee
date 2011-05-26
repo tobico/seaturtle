@@ -33,8 +33,8 @@ ST.class 'Destructable', 'Object', ->
   @destructor ->
     # Unbind any loose bindings
     if @_boundTo
-      for source in @_boundTo
-        source.unbindAll this
+      for binding in @_boundTo
+        binding.source.unbindOne binding.selector, this
     
     # Release any retained properties
     c = @_class

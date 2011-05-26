@@ -183,7 +183,7 @@ ST.class 'Object', null, ->
       @_bindings[trigger].push { fn: receiver }
     else
       receiver._boundTo ||= []
-      receiver._boundTo.push this if receiver._boundTo.indexOf(this) is false
+      receiver._boundTo.push {source: this, selector: selector || trigger}
       @_bindings[trigger].push {
         receiver: receiver,
         selector: selector || trigger

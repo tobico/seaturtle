@@ -179,9 +179,16 @@ ST.module 'Model', ->
   
     # Removes all local data for model.
     @method 'forget', (destroy=false) ->  
+      # Record destruction in change list, if destroy is true
       if destroy && !@_class.ReadOnly
         ST.Model.recordChange 'destroy', @_uuid, @_class._name
       
+      # Unbind any loose bindings
+      if @_boundTo
+        for binding in @_boundTo
+          binding.source.unbindOne binding.selector, this
+      
+      # Propagate to dependent associated objects
       if @_class._dependent
         for dependent in @_class._dependent
           @[dependent]().forgetAll destroy
