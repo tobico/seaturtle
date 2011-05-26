@@ -10,18 +10,21 @@ popupCloseCallback = null
 
 # Closes a popup displayed with #popup
 window.closePopup = ->
-  onClose = popupCloseCallback
-  popupCloseCallback = null
-  popupID = null
-  $('#popup').removeAttr('id').stop().fadeOut 100, ->
-    onClose() if onClose
-    $(this).remove()
+  if popupID
+    ST.popCancelFunction()
+    onClose = popupCloseCallback
+    popupCloseCallback = null
+    popupID = null
+    $('#popup').removeAttr('id').stop().fadeOut 100, ->
+      onClose() if onClose
+      $(this).remove()
 
 # Displays a popup menu.
 window.popup = (element, id, display, options={}) ->
-  return closePopup() if popupID == id
-  
+  return closePopup() if popupID == id  
   closePopup()
+  
+  ST.pushCancelFunction closePopup
   
   popupID = id
   
@@ -48,9 +51,9 @@ window.popup = (element, id, display, options={}) ->
           li = $ '<li></li>'
           a = $('<a href="javascript:;">' + (item.title || item[0]) + '</a>')
           a.click (e) ->
+            closePopup()
             item.action() if item.action
             item[1]() if item[1]
-            closePopup()
           li.append a
           ul.append li
   

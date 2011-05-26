@@ -30,6 +30,7 @@ ST.class 'WizardView', ST.View, ->
     @_backButton = buttonbar.button '&lt; Back', @method('lastStep')
     @_nextButton = buttonbar.button 'Next &gt;', @method('nextStep')
     @_cancelButton = buttonbar.button 'Cancel', @method('cancel')
+    dialog.cancelFunction @method('cancel')
     buttonbar.load()
     @updateButtons()
     

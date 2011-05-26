@@ -146,6 +146,23 @@ window.ST = {
   # Detect touchscreen devices
   touch: ->
     navigator.userAgent.match(/(iPhone|iPod|iPad|Android)/) isnt null
+  
+  initializeCancelStack: ->
+    @_cancelStack ||= []
+    $ ->
+      $('html').keydown (e) ->
+        if e.which == 27 && ST._cancelStack.length
+          ST._cancelStack[ST._cancelStack.length - 1]()
+          e.stopPropagation()
+          e.preventDefault()
+  
+  pushCancelFunction: (fn) ->
+    @initializeCancelStack()
+    @_cancelStack.push fn
+  
+  popCancelFunction: ->
+    @initializeCancelStack()
+    @_cancelStack.pop()
 }
 Spec.extend ST if window.Spec
 

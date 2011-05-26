@@ -84,11 +84,15 @@ ST.class 'FormView', 'View', ->
     else
       @trigger 'saved', @_model.createWithData(@data())
   
+  @method 'cancel', ->
+    @trigger 'cancelled'
+    @_dialog.close() if @_dialog
+  
   @method 'dialogButtons', (dialog, buttonbar) ->
+    @_dialog = dialog
     self = this
     buttonbar.button '&nbsp;&nbsp;OK&nbsp;&nbsp;', ->
       self.save()
       dialog.close()
-    buttonbar.button 'Cancel', ->
-      self.trigger 'cancelled'
-      dialog.close()
+    buttonbar.button 'Cancel', @method('cancel')
+    dialog.cancelFunction @method('cancel')

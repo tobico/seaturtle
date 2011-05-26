@@ -64,6 +64,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     $(document.body).append @_resultListElement
   
   @method 'inputFocus', ->
+    self = this
     @super()  
     @_focused = true
     @_inputElement.select() if @_value
@@ -85,7 +86,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     else
       @inputValue ''
       @super()
-    @_resultListElement.hide()
+    @hideResultList()
     @_hiding = false
     @_focused = false
     @trigger 'blurred'
@@ -118,7 +119,6 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @inputValue(if newValue then newValue.toFieldText() else '')
   
   @method 'inputKeyDown', (event) ->
-    event.stopPropagation()
     switch event.which
       when 38 # Up
         if @_results
@@ -126,6 +126,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
             @selectedResult(@_selectedResult - 1)
           else
             @selectedResult(@_results.length - 1)
+        event.stopPropagation()
         event.preventDefault()
       when 40 # Down
         if @_results
@@ -133,26 +134,29 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
             @selectedResult(@_selectedResult + 1)
           else
             @selectedResult(0)
+        event.stopPropagation()
         event.preventDefault()
       when 13 # Enter
         @blur() if @_selectedResult >= 0 || @_inputValue == ''
-        event.preventDefault()
-      when 27 # Escape
-        @blur()
+        event.stopPropagation()
         event.preventDefault()
       when 48, 190, 110 # 0
         if @_canCreate
           @selectedResult(@_results.length - 1)
           @blur()
+          event.stopPropagation()
           event.preventDefault()
       when 9 # Tab
-        event.preventDefault() if @_searching || @_results
+        if @_searching || @_results
+          event.stopPropagation()
+          event.preventDefault()
       else
         if ST.ModelFieldView.KEY_CODES[event.which]?
           n = ST.ModelFieldView.KEY_CODES[event.which]
           if @_results && @_results[n]
             @selectedResult n
             @blur()
+            event.stopPropagation()
             event.preventDefault()
   
   @method 'performSearch', (search) ->
@@ -163,7 +167,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       remote = !@_scope && @_model.searchRemotely search, {url: @_searchRemotelyAt}, (results) ->
         self._searching = false
         if !self._focused
-          self._resultListElement.hide() if self._resultListElement
+          self.hideResultList() if self._resultListElement
         else if self._searchForNext?
           self.performSearch self._searchForNext
         else
@@ -177,13 +181,22 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
         @showResults (@_scope || @_model).search(search)
     else
       @_results = null
-      @_resultListElement.hide()
+      @hideResultList()
   
   @method 'showResultList', ->
-    offset = @_inputElement.offset()
-    @_resultListElement.css 'left', offset.left
-    @_resultListElement.css 'top', offset.top + @_inputElement.outerHeight()
-    @_resultListElement.show()
+    unless @_resultListVisible
+      ST.pushCancelFunction @method('blur')
+      offset = @_inputElement.offset()
+      @_resultListElement.css 'left', offset.left
+      @_resultListElement.css 'top', offset.top + @_inputElement.outerHeight()
+      @_resultListElement.show()
+      @_resultListVisible = true
+  
+  @method 'hideResultList', ->
+    if @_resultListVisible
+      ST.popCancelFunction()
+      @_resultListElement.hide()
+      @_resultListVisible = false
   
   @method 'showSearchProgress', ->
     @_resultListElement.html '<table><tr><td>Searching...</td></tr></table>'
@@ -224,7 +237,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       
       @showResultList()
     else
-      @_resultListElement.hide()
+      @hideResultList()
   
   @method 'chooseResult', (result) ->
     if result == 'new'

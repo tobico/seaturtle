@@ -39,6 +39,11 @@ ST.class 'DialogView', 'View', ->
     @footer footer
     footer.release()
   
+  @method 'cancelFunction', (fn) ->
+    ST.popCancelFunction() if @_cancelFunction
+    @_cancelFunction = fn
+    ST.pushCancelFunction fn
+  
   @method 'showBlanker', ->
     # Add blanker div if it doesn't already exist
     if $('#blanker').length < 1
@@ -99,6 +104,7 @@ ST.class 'DialogView', 'View', ->
   
   @method 'close', ->
     self = this
+    ST.popCancelFunction() if @_cancelFunction
     @trigger 'closed'
     @hideBlanker()
     @hideDialog -> self.release()
