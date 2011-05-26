@@ -95,5 +95,6 @@ ST.class 'DialogView', 'View', ->
   
   @method 'close', ->
     self = this
+    @trigger 'closed'
     @hideBlanker()
     @hideDialog -> self.release()
