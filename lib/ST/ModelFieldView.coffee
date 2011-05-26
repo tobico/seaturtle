@@ -61,7 +61,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_resultListElement.hide()
     @_resultListElement.mouseout ->
       self.selectedResult -1 unless @_hiding
-    @element().append @_resultListElement
+    $(document.body).append @_resultListElement
   
   @method 'inputFocus', ->
     @super()  
@@ -163,7 +163,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       remote = !@_scope && @_model.searchRemotely search, {url: @_searchRemotelyAt}, (results) ->
         self._searching = false
         if !self._focused
-          self._resultListElement.hide()
+          self._resultListElement.hide() if self._resultListElement
         else if self._searchForNext?
           self.performSearch self._searchForNext
         else
@@ -179,10 +179,15 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @_results = null
       @_resultListElement.hide()
   
+  @method 'showResultList', ->
+    offset = @_inputElement.offset()
+    @_resultListElement.css 'left', offset.left
+    @_resultListElement.css 'top', offset.top + @_inputElement.outerHeight()
+    @_resultListElement.show()
+  
   @method 'showSearchProgress', ->
     @_resultListElement.html '<table><tr><td>Searching...</td></tr></table>'
-    @_resultListElement.css 'top', @_inputElement.outerHeight()
-    @_resultListElement.show()
+    @showResultList()
   
   @method 'showResults', (results) ->
     self = this
@@ -217,8 +222,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       
       @selectedResult -1
       
-      @_resultListElement.css 'top', @_inputElement.outerHeight()
-      @_resultListElement.show()
+      @showResultList()
     else
       @_resultListElement.hide()
   
