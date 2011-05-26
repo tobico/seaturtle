@@ -65,6 +65,7 @@ ST.class 'DialogView', 'View', ->
         blanker.remove()
   
   @method 'showDialog', ->
+    self = this
     if $.browser.webkit
       offset = if ST.touch() then window.pageYOffset else 0
       @_element.css('top', offset - @_element.height())
@@ -74,10 +75,13 @@ ST.class 'DialogView', 'View', ->
           .bind 'webkitTransitionEnd', ->
             $(this).css('-webkit-transition', '')
                 .unbind('webkitTransitionEnd')
+            self.trigger 'opened'
     else
       @_element.css('top', '-' + @_element.height() + 'px')
           .show()
-          .animate({top: 0}, 200, 'swing')
+          .animate({top: 0}, 200, 'swing', ->
+            self.trigger 'opened'
+          )
 
     $('textarea, input, button', @_element).slice(0,1).focus() unless ST.touch()
   
