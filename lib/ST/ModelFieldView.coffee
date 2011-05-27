@@ -99,7 +99,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     newValue = ST.trim newValue
   
     if @_loaded && ST.trim(@_inputElement.val()) != newValue
-      if newValue == '' && !@_focused
+      if newValue == '' && (!@_focused || @_hiding)
         @_inputElement.css 'color', 'gray'
         @_inputElement.val @_placeholder
       else
