@@ -55,6 +55,10 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       @_inputElement.val @_placeholder
       @_inputElement.css 'color', 'gray'
     @_inputElement.bind 'choose', (e, text) ->
+      self.blur()
+      self.hideResultList()
+      self._focused = false
+      self._searchNext = null
       self.chooseByText text
     
     @_resultListElement = $ '<div class="ModelFieldViewResults"></div>'

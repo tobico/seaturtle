@@ -122,6 +122,8 @@ ST.module 'Model', ->
         
         ev.returnValue = msg if ev && msg
         msg
+    
+    sync
   
   @ackSync = (data) ->
     errors = []
