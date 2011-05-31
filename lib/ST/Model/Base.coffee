@@ -186,7 +186,7 @@ ST.module 'Model', ->
       # Unbind any loose bindings
       if @_boundTo
         for binding in @_boundTo
-          binding.source.unbindOne binding.selector, this
+          binding.source.unbindOne binding.trigger, this
       
       # Propagate to dependent associated objects
       if @_class._dependent

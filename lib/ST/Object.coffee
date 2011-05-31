@@ -183,7 +183,7 @@ ST.class 'Object', null, ->
       @_bindings[trigger].push { fn: receiver }
     else
       receiver._boundTo ||= []
-      receiver._boundTo.push {source: this, selector: selector || trigger}
+      receiver._boundTo.push {source: this, trigger: trigger}
       @_bindings[trigger].push {
         receiver: receiver,
         selector: selector || trigger
@@ -194,7 +194,9 @@ ST.class 'Object', null, ->
       bindings = @_bindings[trigger]
       i = 0
       while bindings[i]
-        bindings.splice i, 1 if bindings[i].receiver == receiver
+        if bindings[i].receiver == receiver
+          bindings[i].destroyed = true
+          bindings.splice i, 1
         i++
   
   @hybridMethod 'unbindAll', (receiver) ->
@@ -217,13 +219,16 @@ ST.class 'Object', null, ->
   
   @hybridMethod 'trigger', (trigger, passArgs...) ->
     if @_bindings && @_bindings[trigger]
-      for target in @_bindings[trigger]
-        if target.fn
-          target.fn this, passArgs...
-        else if target.receiver[target.selector]
-          target.receiver[target.selector] this, passArgs...
-        else
-          ST.error "Error triggering binding from #{this}: #{trigger} to #{target.receiver}.#{target.selector}"
+      # Use #slice to make a copy of bindings before we start calling them,
+      # prevents issues when a bound callback alters bindings during its execution
+      for binding in @_bindings[trigger].slice(0)
+        unless binding.destroyed
+          if binding.fn
+            binding.fn this, passArgs...
+          else if binding.receiver[binding.selector]
+            binding.receiver[binding.selector] this, passArgs...
+          else
+            ST.error "Error triggering binding from #{this}: #{trigger} to #{binding.receiver}.#{binding.selector}"
   
   @method 'error', (message) ->
     # Call an undefined method to trigger a javascript exception
