@@ -255,7 +255,7 @@ ST.class 'TableView', 'View', ->
     self = this
     a = []
     for column in @_columns
-      unless column.media && column.media != 'screen'
+      unless (column.media && column.media != 'screen') || column.fixed
         data = {
           title:  column.fullTitle || column.title
           action: ((column) -> -> self.toggleColumn column)(column)
