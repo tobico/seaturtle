@@ -101,6 +101,9 @@ ST.module 'Model', ->
       cancelHideDisplay()
       hideDisplayTimeout = setTimeout(hideDisplay, 5000)
     
+    @onSyncContinue ->
+      sync true
+    
     @onSyncComplete ->
       if options.statusDisplay
         setDisplayClass options.completeClass
@@ -174,22 +177,32 @@ ST.module 'Model', ->
           @_changes[id].submitted = false
           @_onSyncError errors if @_onSyncError
           return false
-      unless @_changesCount
+      if @_changesCount
+        @_onSyncContinue() if @_onSyncContinue
+      else
         @_onSyncComplete() if @_onSyncComplete
       true
     else
       @_onSyncError errors if @_onSyncError
       false
   
+  # Event handler - called when changes are available to sync
   @onHasChanges = (fn) ->
     @_onHasChanges = fn
 
+  # Event handler - called when a sync request starts
   @onSyncStart = (fn) ->
     @_onSyncStart = fn
 
+  # Event handler - called when sync request finishes, but there are new changes
+  @onSyncContinue = (fn) ->
+    @_onSyncContinue = fn
+
+  # Event handler - called when sync request finishes and there are no new changes
   @onSyncComplete = (fn) ->
     @_onSyncComplete = fn
 
+  # Event handler - called when sync request fails with error message
   @onSyncError = (fn) ->
     @_onSyncError = fn
   
