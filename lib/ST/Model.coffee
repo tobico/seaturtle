@@ -39,6 +39,7 @@ ST.module 'Model', ->
     if @_changesCount > 0 && !@_submitting
       self = this
       @_submitting = true
+      @_onSyncStart @_changesCount if @_onSyncStart
       for id of @_changes
         if @_changes.hasOwnProperty id
           @_changes[id].submitted = true
@@ -61,23 +62,56 @@ ST.module 'Model', ->
       false
   
   @autoSync = (url, options={}) ->
-    @onHasChanges (count) ->
+    sync = (async) ->
+      ST.Model.sync url, async, options.data || {}
+    
+    options.savingClass   ||= 'saving'
+    options.completeClass ||= 'saved'
+    options.errorClass    ||= 'failed'
+    
+    allClasses = "#{options.savingClass} #{options.completeClass} #{options.errorClass}"
+    
+    setDisplayClass = (newClass) ->
+      if options.statusDisplay
+        options.statusDisplay.removeClass allClasses
+        options.statusDisplay.addClass newClass if newClass
+    
+    @onSyncStart (count) ->
       if options.statusDisplay
         options.statusDisplay.html(
-          ST.template(options.unsavedTemplate || ':count :changes waiting to save', {
-            count:    count
-            changes:  if count == 1 then 'change' else 'changes'
+          ST.template(options.savingTemplate || 'Saving :count :changes...', {
+            count:   count
+            changes: if count == 1 then 'change' else 'changes'
           })
         )
+        setDisplayClass options.savingClass
+    
+    hideDisplayTimeout = null
+    
+    hideDisplay = ->
+      options.statusDisplay.empty()
+      setDisplayClass null 
+    
+    cancelHideDisplay = ->
+      if hideDisplayTimeout
+        clearTimeout hideDisplayTimeout
+        hideDisplayTimeout = null
+    
+    setHideDisplay = ->
+      cancelHideDisplay()
+      hideDisplayTimeout = setTimeout(hideDisplay, 5000)
     
     @onSyncComplete ->
       if options.statusDisplay
+        setDisplayClass options.completeClass
         options.statusDisplay.html(
           options.savedTemplate || 'Saved.'
         )
+        setHideDisplay()
     
     @onSyncError (errors) ->
       if options.statusDisplay
+        setDisplayClass options.errorClass
         options.statusDisplay.html(
           options.errorTemplate || 'Save failed!'
         )
@@ -94,20 +128,8 @@ ST.module 'Model', ->
           )
           options.statusDisplay.append ' ', a
     
-    sync = (async) ->
-      ST.Model.sync(url, async, options.data || {})
-    
-    setInterval(->
-      if sync(true)
-        if options.statusDisplay
-          count = ST.Model.changes()
-          options.statusDisplay.html(
-            ST.template(options.savingTemplate || 'Saving :count :changes...', {
-              count:   count
-              changes: if count == 1 then 'change' else 'changes'
-            })
-          )
-    options.interval || 10000)
+    @onHasChanges ->
+      setTimeout (-> sync true), 100
     
     if options.syncBeforeUnload
       window.onbeforeunload = (e) ->
@@ -152,9 +174,7 @@ ST.module 'Model', ->
           @_changes[id].submitted = false
           @_onSyncError errors if @_onSyncError
           return false
-      if @_changesCount > 0
-        @_onHasChanges @_changesCount if @_onHasChanges
-      else
+      unless @_changesCount
         @_onSyncComplete() if @_onSyncComplete
       true
     else
@@ -163,6 +183,9 @@ ST.module 'Model', ->
   
   @onHasChanges = (fn) ->
     @_onHasChanges = fn
+
+  @onSyncStart = (fn) ->
+    @_onSyncStart = fn
 
   @onSyncComplete = (fn) ->
     @_onSyncComplete = fn
