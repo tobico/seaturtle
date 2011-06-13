@@ -3,7 +3,7 @@
 # Keeps track of unique IDs for popup-enabled elements, to allow closing
 # of the popup, in the event of a second click on the associated element
 popupID = -1
-popupIDs = 0
+popupIDs = 1
 
 # Keeps track of callback function to execute on closing the popup
 popupCloseCallback = null
@@ -36,7 +36,7 @@ window.popup = (element, id, display, options={}) ->
     options.close.call element, element if options.close
     display.release() if display.release
   
-  if display instanceof ST.View
+  if ST.View && (display instanceof ST.View)
     display.load()
     popup.append display.element()
   else
