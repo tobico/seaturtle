@@ -9,8 +9,8 @@ ST.class 'TableView', 'View', ->
     @init()
     ST.TableView.Instances.push this
     @_id = ST.TableView.Instances.length - 1
+    @_rowsByUid = {}
     @_columns = []
-    @_mapping = []
     @_sortColumn = null
     @_reverseSort = false
     @_tableClass = null
@@ -34,23 +34,16 @@ ST.class 'TableView', 'View', ->
     unless newList == @list    
       if @_list
         @_list.unbindAll this
-    
-      @_list = newList
       
-      @createMapping()
-    
+      @_list = newList
+      @_ordered = @_list._array.slice(0)
+      for item in @_list._array
+        item._uid ||= ST.Object.UID++
+      
       if @_list
         @_list.bind 'itemAdded', this, 'listItemAdded'
         @_list.bind 'itemChanged', this, 'listItemChanged'
         @_list.bind 'itemRemoved', this, 'listItemRemoved'
-  
-  @method 'createMapping', ->
-    self = this
-    @_mapping = []
-    if @_list
-      i = 0
-      @_list.each (item) ->
-        self._mapping.push i++
 
   @method 'setColumns', (columns, sortColumnIndex=0) ->
     @_columns = columns
@@ -64,18 +57,16 @@ ST.class 'TableView', 'View', ->
   @method 'sortFunction', (sortColumn) ->
     self = this
     if column = sortColumn || @_sortColumn
-      sortFn = null
-      sortFn ||= column.sort
-      sortFn = ST.makeSortFn column.sortBy if column.sortBy
-    
-      if sortFn
+      if column.sortBy
+        ST.makeSortFn column.sortBy, @_reverseSort
+      else if column.sort
         if @_reverseSort
-          (a, b) -> sortFn self._list.at(b), self._list.at(a)
+          (a, b) -> column.sort b, a
         else
-          (a, b) -> sortFn self._list.at(a), self._list.at(b)
+          column.sort
       else
-        ST.makeSortFn (index) ->
-          self.cellValue self._list.at(index), column
+        ST.makeSortFn (item) ->
+          self.cellValue item, column
         , @_reverseSort
 
   @method 'setSortColumn', (sortColumn, reverseSort) ->
@@ -100,24 +91,28 @@ ST.class 'TableView', 'View', ->
   @method 'sort', ->
     self = this
     if sortFunction = @sortFunction()
-      @_mapping.sort sortFunction
+      @_ordered.sort sortFunction
       if @_loaded
-        tbody = $('tbody', @_tableElement)
-        for index in @_mapping
-          tbody.append $('tr.item' + index, @_tableElement)
-    
+        tbody = $ 'tbody', @_tableElement
+        for item in @_ordered
+          tbody.append @_rowsByUid[item._uid]
+  
   @method 'render', ->
     @renderTable()
     @element().append @_tableElement
     @renderColumnsButton() if @_canCustomizeColumns
   
   @method 'renderTable', ->
+    self = this
     @_tableElement = @helper().tag('table').addClass('tableView')
     @_tableElement.addClass @_tableClass if @_tableClass
     html = []
     @generateHeaderHTML html
     @generateBodyHTML html
     @_tableElement.html html.join('')
+    @_tbody = $ 'tbody', @_tableElement
+    $('tr', @_tbody).each (index) ->
+      self._rowsByUid[self._ordered[index]._uid] = this
     @activateBody()
   
   @method 'renderColumnsButton', ->
@@ -164,45 +159,36 @@ ST.class 'TableView', 'View', ->
   
   @method 'generateBodyInnerHTML', (html, media='screen') ->
     self = this
-    for index in @_mapping
-      self.generateRowHTML @_list.at(index), index, html, media
+    for item in @_ordered
+      self.generateRowHTML item, html, media
   
   @method 'activateBody', ->
-    self = this
-    index = 0
-    @_list.each (item) ->
-      self.activateRow item, index++
+    @_list.each @method('activateRow')
   
-  @method 'generateRowHTML', (item, index, html, media='screen') ->
-    html.push '<tr class="item', index, '">'
+  @method 'generateRowHTML', (item, html, media='screen') ->
+    html.push '<tr data-uid="', item._uid, '">'
     @generateRowInnerHTML item, html, media
     html.push '</tr>'
 
   @method 'generateRowInnerHTML', (item, html, media='screen') ->
     for column in @_columns      
       unless column.hidden or (column.media and column.media != media)
-        @generateCellHTML item, column, html, media
+        html.push '<td>'
+        html.push(
+          if column.html
+            column.html item, media
+          else
+            @cellValue item, column, media
+        )
+        html.push '</td>'
   
-  @method 'activateRow', (item, index) ->
-    cells = $("tr.item#{index} td", @_tableElement)
+  @method 'activateRow', (item) ->
+    cells = $ "td", @_rowsByUid[item._uid]
     i = 0
     for column in @_columns      
       unless column.hidden or (column.media and column.media != 'screen')
         column.activate item, cells[i] if column.activate && cells[i]
         i++
-  
-  @method 'generateCellHTML', (item, column, html, media='screen') ->
-    html.push '<td>'
-    @generateCellInnerHTML item, column, html, media
-    html.push '</td>'
-  
-  @method 'generateCellInnerHTML', (item, column, html, media='screen') ->
-    html.push(
-      if column.html
-        column.html item, media
-      else
-        @cellValue item, column, media
-    )
   
   @method 'cellValue', (item, column, media='screen') ->
     if column.value
@@ -234,17 +220,11 @@ ST.class 'TableView', 'View', ->
       @activateBody()
   
   @method 'refreshRow', (item) ->
-    if @_loaded
-      row = @row item
-      if row.length
-        html = []
-        @generateRowInnerHTML item, html
-        row.html html.join('')
-        @activateRow item, @_list.indexOf(item)
-  
-  @method 'row', (item) ->
-    index = @_list.indexOf item
-    row = $('tr.item' + index, @_tableElement)
+    if row = @_rowsByUid[item._uid]
+      html = []
+      @generateRowInnerHTML item, html
+      $(row).html html.join('')
+      @activateRow item
   
   @method 'toggleColumn', (column) ->
     column.hidden = !column.hidden
@@ -264,34 +244,32 @@ ST.class 'TableView', 'View', ->
         a.push data
     a
   
-  @method 'listItemAdded', (list, item, index) ->
-    return unless @_loaded
-    
-    insertBefore = 0
-    sortFn = @sortFunction()
-    tbody = $ 'tbody', @_tableElement
-    html = []
-    @generateRowHTML item, index, html
-    tbody.append html.join('')
-    @activateRow item, index
-    @_mapping.push index
-    @sort()
-  
-  @method 'listItemRemoved', (list, item, index) ->
+  @method 'listItemAdded', (list, item) ->  
+    item._uid ||= ST.Object.UID++
+    @_ordered.push item
+
     if @_loaded
-      $('tr.item' + index, @_tableElement).remove()
-      last = @_list.count() - 1
-      if index <= last
-        for i in [index..last]
-          row = $('tr.item' + (i+1), @_tableElement)
-          row[0].className = "item#{i}" if row.length
-      @createMapping()
+      tbody = $ 'tbody', @_tableElement
+      html = []
+      @generateRowHTML item, html
+      row = $(html.join(''))
+      @_rowsByUid[item._uid] = row[0]
+      @activateRow item
+      tbody.append row
       @sort()
+  
+  @method 'listItemRemoved', (list, item) ->
+    if (index = @_ordered.indexOf(item))?
+      @_ordered.splice index, 1
+    
+    if row = @_rowsByUid[item._uid]
+      $(row).remove()
+      delete @_rowsByUid[item._uid]
   
   @method 'listItemChanged', (list, item) ->
     if @_loaded
       @refreshRow item
-      @sort()
+      ST.once "sort#{@_uid}", @method('sort')
   
   @method 'generatePrintHTML', (html, options={}) ->
     oldMapping = @_mapping

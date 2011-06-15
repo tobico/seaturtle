@@ -7,6 +7,7 @@ ST.class 'FormView', 'View', ->
     @init()
     @_model = model
     @_attributes = attributes
+    @_command = 'Save Form'
     @_fields = {}
   
   @initializer 'withScopeAttributes', (scope, attributes) ->
@@ -20,6 +21,7 @@ ST.class 'FormView', 'View', ->
   @property 'defaults'
   @property 'model'
   @property 'item'
+  @property 'command'
   
   @destructor ->
     for attribute, field of @_fields
@@ -76,13 +78,14 @@ ST.class 'FormView', 'View', ->
     data
   
   @method 'save', ->
-    if @_item
+    item = if @_item
       @_item.set @data()
-      @trigger 'saved', @_item
+      @_item
     else if @_scope
-      @trigger 'saved', @_scope.build(@data())
+      @_scope.build(@data())
     else
-      @trigger 'saved', @_model.createWithData(@data())
+      @_model.createWithData(@data())
+    @trigger 'saved', item
   
   @method 'cancel', ->
     @trigger 'cancelled'
@@ -92,7 +95,7 @@ ST.class 'FormView', 'View', ->
     @_dialog = dialog
     self = this
     buttonbar.button '&nbsp;&nbsp;OK&nbsp;&nbsp;', ->
-      self.save()
+      ST.command self._command, self.method('save')
       dialog.close()
     buttonbar.button 'Cancel', @method('cancel')
     dialog.cancelFunction @method('cancel')

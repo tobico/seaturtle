@@ -163,6 +163,48 @@ window.ST = {
   popCancelFunction: ->
     @initializeCancelStack()
     @_cancelStack.pop()
+  
+  beginCommand: (name) ->    
+    throw "Tried to run more than one command at once" if ST._command
+    ST._command = {
+      tally: {}
+      oneTimeTasks: {}
+      log: (method, time, args) ->
+        @tally[method] ||= { method: method, count: 0, time: 0 }
+        @tally[method].count++
+        @tally[method].time += time
+      runOneTimeTasks: ->
+        for key, fn of @oneTimeTasks
+          fn()
+      dump: ->
+        counts = []
+        for id, item of @tally
+          counts.push item
+        counts.sort ST.makeSortFn('time', true)
+        console.table counts, ['method', 'count', 'time'] if console.table
+    }
+    if window.console
+      console.groupCollapsed "Command: #{name}"
+      console.time 'execute'
+  
+  endCommand: ->
+    ST._command.runOneTimeTasks()
+    if window.console
+      console.timeEnd 'execute'
+      ST._command.dump()
+      console.groupEnd()
+    ST._command = null
+  
+  command: (name, forward, reverse=null) ->
+    @beginCommand name
+    forward()
+    @endCommand()
+  
+  once: (key, fn) ->
+    if ST._command
+      ST._command.oneTimeTasks[key] ||= fn
+    else
+      fn()
 }
 Spec.extend ST if window.Spec
 

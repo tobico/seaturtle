@@ -12,6 +12,8 @@ ST.class 'Object', null, ->
       @super = oldSuper
       result
   
+  @MethodToString = -> @displayName
+  
   # Override or assign class method
   @classMethod = (name, fn) ->
     if this[name]
@@ -26,11 +28,19 @@ ST.class 'Object', null, ->
     if fn?
       if @_superclass && @_superclass.prototype[name]
         @prototype[name] = ST.Object.OverrideMethod @_superclass.prototype[name], fn
+      else if window.console
+        @prototype[name] = ->
+          start = Number(new Date)
+          result = fn.apply this, arguments
+          end = Number(new Date)
+          ST._command.log @[name], (end - start), arguments if ST._command
+          result
       else
         @prototype[name] = fn
 
       # Set function displayName for debugging
       @prototype[name].displayName = @_name + '#' + name
+      @prototype[name].toString = ST.Object.MethodToString
     else
       @prototype[name]
   
