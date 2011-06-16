@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="../vendor/jquery/jquery.js"></script>
+    <script src="../compiled/ST.js"></script>
+    <script src="../compiled/ST/Object.js"></script>
+    <script src="../compiled/ST/Enumerable.js"></script>
+    <script src="../compiled/ST/Destructable.js"></script>
+    <script src="../compiled/ST/List.js"></script>
+    <script src="../compiled/ST/ViewHelper.js"></script>
+    <script src="../compiled/ST/View.js"></script>
+    <script src="../compiled/ST/TextFieldView.js"></script>
+    <script>
+        $(function() {
+            var textField = ST.TextFieldView.create()
+            textField.placeholder('Example Text Field');
+            textField.load();
+            $('#textfield').append(textField.element());
+        });
+    </script>
+</head>
+<body>
+    <h2>Text Field View</h2>
+    <div id="textfield"></div>
+</body>

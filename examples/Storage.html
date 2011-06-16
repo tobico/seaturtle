@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="../vendor/jquery/jquery.js"></script>
+    <script src="../compiled/ST.js"></script>
+    <script src="../compiled/ST/Object.js"></script>
+    <script src="../compiled/ST/Storage.js"></script>
+    <script>
+        $(function() {
+            var storage = ST.Storage.instance();
+            
+            function showData() {
+                var select = $('#data');
+                select.empty()
+                storage.each(function(key, value) {
+                    select.append('<option>' + key + ': ' + value + '</option>');
+                });
+            }
+            showData();
+            $('#fetch').click(function() {
+                var key = $('#key').val();
+                storage.fetch(key, function(value) {
+                    $('#value').val(value);
+                });
+            });
+            $('#set').click(function() {
+                var key = $('#key').val();
+                var value = $('#value').val();
+                storage.set(key, value);
+                setTimeout(showData, 100);
+            });
+            $('#remove').click(function() {
+                var key = $('#key').val();
+                storage.remove(key);
+                setTimeout(showData, 100);
+            });
+            $('#remove_all').click(function() {
+                storage.removeAll();
+                setTimeout(showData, 100);
+            });
+        });
+    </script>
+    <style>
+        #data {
+            width: 400px;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Storage</h2>
+    <h3>Data</h3>
+    <select id="data" multiple="multiple"></select>
+    <h3>Actions</h3>
+    <p>
+        <label for="key">Key: </label><input id="key" />
+        <label for="value">Value: </label><input id="value" />
+        <button id="fetch">Fetch</button>
+        <button id="set">Set</button>
+        <button id="remove">Remove</button>
+        <button id="remove_all">Remove All</button>
+    </p>
+</body>

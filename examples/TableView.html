@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="../vendor/jquery/jquery.js"></script>
+    <script src="../compiled/Popup.js"></script>
+    <script src="../compiled/ST.js"></script>
+    <script src="../compiled/ST/Object.js"></script>
+    <script src="../compiled/ST/Enumerable.js"></script>
+    <script src="../compiled/ST/Destructable.js"></script>
+    <script src="../compiled/ST/List.js"></script>
+    <script src="../compiled/ST/ViewHelper.js"></script>
+    <script src="../compiled/ST/View.js"></script>
+    <script src="../compiled/ST/TableView.js"></script>
+    <script>
+        $(function() {
+            list = ST.List.create();
+            list.add({
+                name:   'John Smith',
+                dob:    new Date('1982-07-01'),
+                color:  'blue'
+            });
+            list.add({
+                name:   'Rebecca Green',
+                dob:    new Date('1992-02-19'),
+                color:  'green'
+            });
+            list.add({
+                name:   'Sarah Jones',
+                dob:    new Date('1990-03-10'),
+                color:  'cyan'
+            });
+            list.add({
+                name:   'Ashley Jacobs',
+                dob:    new Date('1974-12-06'),
+                color:  'teal'
+            });
+            view = ST.TableView.createWithList(list);
+            view.columns([
+                {
+                    title: 'Name',
+                    field: 'name'
+                }, {
+                    title: 'Age',
+                    value: function(item) {
+                        return Math.floor(((new Date()).getTime() - item.dob.getTime()) / 31536000000);
+                    }
+                }, {
+                    title: 'Date of Birth',
+                    field: 'dob',
+                    html: function(item) {
+                        return item.dob.toLocaleDateString();
+                    },
+                    hidden: true
+                }, {
+                    title: 'Color',
+                    field: 'color',
+                    html: function(item) {
+                        return '<span style="display: inline-block; width: 80px; background: ' + item.color + '">' + item.color + '</span>';
+                    }
+                }, {
+                    title: 'Actions',
+                    html: function(item) {
+                        return '<a href="javascript:;" class="rename">Rename</a>, <a href="javascript:" class="remove">Remove</a>';
+                    },
+                    activate: function(item, cell) {
+                        $('.rename', cell).click(function() {
+                            var newName = prompt('Rename', item.name);
+                            if (newName) {
+                                item.name = newName;
+                                list.itemChanged(item);
+                            }
+                        });
+                        $('.remove', cell).click(function() {
+                            list.remove(item);
+                        });
+                    }
+                }
+            ]);
+            view.load()
+            $('#tableview').append(view.element().css('width', '400px'));
+            $('#additem').click(function() {
+                list.add({
+                    name:   'Bob Smith',
+                    dob:    new Date('2001-01-01'),
+                    color:  'orange'
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h2>Table View</h2>
+    <div id="tableview"></div>
+    <p><a href="javascript:;" id="additem">Add Item</a></p>
+</body>

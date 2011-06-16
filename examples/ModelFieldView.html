@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<head>
+    <link rel="stylesheet" href="style.css" type="text/css" />
+    <script src="../vendor/jquery/jquery.js"></script>
+    <script src="../compiled/ST.js"></script>
+    <script src="../compiled/ST/Object.js"></script>
+    <script src="../compiled/ST/Enumerable.js"></script>
+    <script src="../compiled/ST/Destructable.js"></script>
+    <script src="../compiled/ST/List.js"></script>
+    <script src="../compiled/ST/Model.js"></script>
+    <script src="../compiled/ST/Model/Scope.js"></script>
+    <script src="../compiled/ST/Model/Index.js"></script>
+    <script src="../compiled/ST/ViewHelper.js"></script>
+    <script src="../compiled/ST/View.js"></script>
+    <script src="../compiled/ST/TextFieldView.js"></script>
+    <script src="../compiled/ST/ModelFieldView.js"></script>
+    <script>
+        ST['class']('Book', 'Model', function() {
+            this.string('title');
+            this.string('author');
+            this.integer('year');
+            this.searchesOn('title', 'author', 'year');
+            this['method']('toListItem', function() {
+                return [this.title(), this.author(), this.year()];
+            });
+            this['method']('toFieldText', function() {
+                return this.author() + ' - ' + this.title();
+            });
+        });
+    
+        ST.Book.createWithData({
+            title:  'Moby Dick',
+            author: 'Herman Melville',
+            year:   1851
+        });
+        ST.Book.createWithData({
+            title:  '1984',
+            author: 'George Orwell',
+            year:   1948
+        });
+        ST.Book.createWithData({
+            title:  'Neuromancer',
+            author: 'William Gibson',
+            year:   1984
+        });
+        ST.Book.createWithData({
+            title:  'Never Let Me Go',
+            author: 'Kazuo Ishiguro',
+            year:   2005
+        });
+
+        $(function() {
+            var modelField = ST.ModelFieldView.createWithModel(ST.Book);
+            modelField.placeholder('Select a book (eg. neuromancer)');
+            modelField.load();
+            $('#modelfield').append(modelField.element());
+        });
+    </script>
+</head>
+<body>
+    <h2>Model Field View</h2>
+    <div id="modelfield"></div>
+</body>
