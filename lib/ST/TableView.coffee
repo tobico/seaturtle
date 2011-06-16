@@ -11,6 +11,7 @@ ST.class 'TableView', 'View', ->
     @_id = ST.TableView.Instances.length - 1
     @_rowsByUid = {}
     @_columns = []
+    @_ordered = []
     @_sortColumn = null
     @_reverseSort = false
     @_tableClass = null
@@ -31,16 +32,17 @@ ST.class 'TableView', 'View', ->
     @super()
   
   @method 'setList', (newList) ->
+    self = this
     unless newList == @list    
       if @_list
         @_list.unbindAll this
       
       @_list = newList
-      @_ordered = @_list._array.slice(0)
-      for item in @_list._array
-        item._uid ||= ST.Object.UID++
       
       if @_list
+        @_list.each (item) ->
+          item._uid ||= ST.Object.UID++
+          self._ordered.push item
         @_list.bind 'itemAdded', this, 'listItemAdded'
         @_list.bind 'itemChanged', this, 'listItemChanged'
         @_list.bind 'itemRemoved', this, 'listItemRemoved'
@@ -93,9 +95,8 @@ ST.class 'TableView', 'View', ->
     if sortFunction = @sortFunction()
       @_ordered.sort sortFunction
       if @_loaded
-        tbody = $ 'tbody', @_tableElement
         for item in @_ordered
-          tbody.append @_rowsByUid[item._uid]
+          @_tbody.append @_rowsByUid[item._uid]
   
   @method 'render', ->
     @renderTable()
@@ -107,8 +108,7 @@ ST.class 'TableView', 'View', ->
     @_tableElement = @helper().tag('table').addClass('tableView')
     @_tableElement.addClass @_tableClass if @_tableClass
     html = []
-    @generateHeaderHTML html
-    @generateBodyHTML html
+    @generateTableHTML html
     @_tableElement.html html.join('')
     @_tbody = $ 'tbody', @_tableElement
     $('tr', @_tbody).each (index) ->
@@ -126,10 +126,12 @@ ST.class 'TableView', 'View', ->
         $('.columnsButton', self._element).css 'top', self._tableElement.position().top
       , 1)
 
-  @method 'generateHeaderHTML', (html, media='screen') ->
+  @method 'generateTableHTML', (html, media='screen') ->
     html.push '<thead>'
     @generateHeaderInnerHTML html, media
-    html.push '</thead>'
+    html.push '</thead><tbody>'
+    @generateBodyInnerHTML html, media
+    html.push '</tbody>'
   
   @method 'generateHeaderInnerHTML', (html, media='screen') ->
     html.push '<tr>'
@@ -151,11 +153,6 @@ ST.class 'TableView', 'View', ->
       html.push '</span>'
     
     html.push '</th>'
-  
-  @method 'generateBodyHTML', (html, media='screen') ->
-    html.push '<tbody>'
-    @generateBodyInnerHTML html, media
-    html.push '</tbody>'
   
   @method 'generateBodyInnerHTML', (html, media='screen') ->
     self = this
@@ -213,10 +210,9 @@ ST.class 'TableView', 'View', ->
 
   @method 'refreshBody', ->
     if @_loaded
-      tbody = $ 'tbody', @_tableElement
       html = []
       @generateBodyInnerHTML html
-      tbody.html html.join('')
+      @_tbody.html html.join('')
       @activateBody()
   
   @method 'refreshRow', (item) ->
@@ -249,14 +245,12 @@ ST.class 'TableView', 'View', ->
     @_ordered.push item
 
     if @_loaded
-      tbody = $ 'tbody', @_tableElement
       html = []
       @generateRowHTML item, html
-      row = $(html.join(''))
-      @_rowsByUid[item._uid] = row[0]
+      @_tbody.append html.join('')
+      @_rowsByUid[item._uid] = $ 'tr:last-child', @_tbody
       @activateRow item
-      tbody.append row
-      @sort()
+      ST.once "sort#{@_uid}", @method('sort')
   
   @method 'listItemRemoved', (list, item) ->
     if (index = @_ordered.indexOf(item))?
@@ -281,8 +275,7 @@ ST.class 'TableView', 'View', ->
         @_mapping.sort sortFunction
     
     html.push '<table class="tableView">'
-    @generateHeaderHTML html, 'print'
-    @generateBodyHTML html, 'print'
+    @generateTableHTML html, 'print'
     html.push '</table>'
     
     @_mapping = oldMapping
