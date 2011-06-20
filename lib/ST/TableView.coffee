@@ -98,6 +98,9 @@ ST.class 'TableView', 'View', ->
         for item in @_ordered
           @_tbody.append @_rowsByUid[item._uid]
   
+  @method 'rowFor', (item) ->
+    item && item._uid && @_rowsByUid[item._uid]
+  
   @method 'render', ->
     @renderTable()
     @element().append @_tableElement
