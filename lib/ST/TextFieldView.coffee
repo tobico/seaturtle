@@ -26,9 +26,10 @@ ST.class 'TextFieldView', 'View', ->
     @_inputElement.attr 'id', @_id if @_id
     if @_value && @_value.length
       @_inputElement.val @_value
+      @_inputElement.removeClass 'placeholder'
     else
       @_inputElement.val @_placeholder
-      @_inputElement.css 'color', 'gray'
+      @_inputElement.addClass 'placeholder'
     @_inputElement.bind   'keyup change', @method('inputChanged')
     @_inputElement.focus  @method('inputFocus')
     @_inputElement.blur   @method('inputBlur')
@@ -61,17 +62,17 @@ ST.class 'TextFieldView', 'View', ->
   @method 'inputFocus', ->
     if @_inputElement.val() == @_placeholder
       @_inputElement.val ''
-      @_inputElement.css 'color', 'inherit'
+      @_inputElement.removeClass 'placeholder'
 
   @method 'inputBlur', ->
     if @_inputElement.val() == ''
       @_inputElement.val @_placeholder
-      @_inputElement.css 'color', 'gray'
+      @_inputElement.addClass 'placeholder'
   
   @method '_placeholderChanged', (oldPlaceholder, newPlaceholder) ->
     if @_loaded && @_inputElement.val() == oldPlaceholder
       @_inputElement.val newPlaceholder
-      @_inputElement.css 'color', 'gray'
+      @_inputElement.addClass 'placeholder'
   
   @method '_idChanged', (oldValue, newValue) ->
     @_inputElement.attr 'id', newValue if @_loaded

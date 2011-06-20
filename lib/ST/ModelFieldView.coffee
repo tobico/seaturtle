@@ -50,10 +50,10 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_inputElement.keydown  @method('inputKeyDown')
     if @_inputValue && @_inputValue.length
       @_inputElement.val @_inputValue
-      @_inputElement.css 'color', 'inherit'
+      @_inputElement.removeClass 'placeholder'
     else
       @_inputElement.val @_placeholder
-      @_inputElement.css 'color', 'gray'
+      @_inputElement.addClass 'placeholder'
     @_inputElement.bind 'choose', (e, text) ->
       self.blur()
       self.hideResultList()
@@ -104,10 +104,10 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
     if @_loaded && ST.trim(@_inputElement.val()) != newValue
       if newValue == '' && (!@_focused || @_hiding)
-        @_inputElement.css 'color', 'gray'
+        @_inputElement.addClass 'placeholder'
         @_inputElement.val @_placeholder
       else
-        @_inputElement.css 'color', 'inherit'
+        @_inputElement.removeClass 'placeholder'
         @_inputElement.val newValue
     
     if @_focused && oldValue != newValue
