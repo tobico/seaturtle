@@ -183,7 +183,7 @@ window.ST = {
         counts.sort ST.makeSortFn('time', true)
         console.table counts, ['method', 'count', 'time'] if console.table
     }
-    if window.console
+    if window.console && console.groupCollapsed
       console.groupCollapsed "Command: #{name}"
       console.time 'execute'
   
