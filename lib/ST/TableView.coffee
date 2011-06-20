@@ -235,12 +235,11 @@ ST.class 'TableView', 'View', ->
     a = []
     for column in @_columns
       unless (column.media && column.media != 'screen') || column.fixed
-        data = {
+        a.push {
           title:  column.fullTitle || column.title
           action: ((column) -> -> self.toggleColumn column)(column)
+          className: if column.hidden then 'unchecked' else 'checked'
         }
-        data.title = '&#x2714; ' + data.title unless column.hidden
-        a.push data
     a
   
   @method 'listItemAdded', (list, item) ->  

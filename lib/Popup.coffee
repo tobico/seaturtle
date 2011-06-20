@@ -49,6 +49,7 @@ window.popup = (element, id, display, options={}) ->
       else
         do (item) ->
           li = $ '<li></li>'
+          li.addClass item.className if item.className
           a = $('<a href="javascript:;">' + (item.title || item[0]) + '</a>')
           a.click (e) ->
             closePopup()
