@@ -1,4 +1,7 @@
 window.ST = {
+  _logging: window.console && console.groupCollapsed
+  _history: []
+  
   # Converts a string to a function returns the named attribute of it's first
   # parameter, or (this) object.
   # 
@@ -167,7 +170,8 @@ window.ST = {
   beginCommand: (name) ->    
     throw "Tried to run more than one command at once" if ST._command
     ST._command = {
-      tally: {}
+      name:         name
+      tally:        {}
       oneTimeTasks: {}
       log: (method, time, args) ->
         @tally[method] ||= { method: method, count: 0, time: 0 }
@@ -183,22 +187,32 @@ window.ST = {
         counts.sort ST.makeSortFn('time', true)
         console.table counts, ['method', 'count', 'time'] if console.table
     }
-    if window.console && console.groupCollapsed
+    if ST._logging
       console.groupCollapsed "Command: #{name}"
       console.time 'execute'
+    ST._command
   
   endCommand: ->
-    ST._command.runOneTimeTasks()
-    if window.console
+    command = ST._command
+    command.runOneTimeTasks()
+    if ST._logging
       console.timeEnd 'execute'
-      ST._command.dump()
+      command.dump()
       console.groupEnd()
+    ST._history.push command if command.reverse
     ST._command = null
+    command
   
   command: (name, forward, reverse=null) ->
-    @beginCommand name
+    command = @beginCommand name
     forward()
+    command.reverse = reverse
     @endCommand()
+  
+  undo: ->
+    if command = ST._history.pop()
+      console.log "Undo command: #{command.name}" if ST._logging
+      command.reverse()
   
   once: (key, fn) ->
     if ST._command

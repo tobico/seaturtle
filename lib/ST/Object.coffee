@@ -28,7 +28,7 @@ ST.class 'Object', null, ->
     if fn?
       if @_superclass && @_superclass.prototype[name]
         @prototype[name] = ST.Object.OverrideMethod @_superclass.prototype[name], fn
-      else if window.console && console.groupCollapsed
+      else if ST._logging
         @prototype[name] = ->
           start = Number(new Date)
           result = fn.apply this, arguments
