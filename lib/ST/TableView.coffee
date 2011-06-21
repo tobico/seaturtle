@@ -129,11 +129,11 @@ ST.class 'TableView', 'View', ->
         $('.columnsButton', self._element).css 'top', self._tableElement.position().top
       , 1)
 
-  @method 'generateTableHTML', (html, media='screen') ->
+  @method 'generateTableHTML', (html, rows=null, media='screen') ->
     html.push '<thead>'
     @generateHeaderInnerHTML html, media
     html.push '</thead><tbody>'
-    @generateBodyInnerHTML html, media
+    @generateBodyInnerHTML html, rows, media
     html.push '</tbody>'
   
   @method 'generateHeaderInnerHTML', (html, media='screen') ->
@@ -147,7 +147,7 @@ ST.class 'TableView', 'View', ->
     html.push '<th style="cursor:pointer" onclick="ST.TableView.Instances[' + @_id + '].setSortColumn(' + column.index + ')">'
     html.push column.title
     
-    if column == @_sortColumn
+    if media == 'screen' && column == @_sortColumn
       html.push '<span class="sortLabel">'
       if @_reverseSort
         html.push ' &#x2191;' 
@@ -157,9 +157,10 @@ ST.class 'TableView', 'View', ->
     
     html.push '</th>'
   
-  @method 'generateBodyInnerHTML', (html, media='screen') ->
+  @method 'generateBodyInnerHTML', (html, rows=null, media='screen') ->
     self = this
-    for item in @_ordered
+    rows ||= @_ordered
+    for item in rows
       self.generateRowHTML item, html, media
   
   @method 'activateBody', ->
@@ -268,20 +269,11 @@ ST.class 'TableView', 'View', ->
       ST.once "sort#{@_uid}", @method('sort')
   
   @method 'generatePrintHTML', (html, options={}) ->
-    oldMapping = @_mapping
-    oldSortColumn = @_sortColumn
-    if options.sortColumn
-      @_sortColumn = options.sortColumn
-      @_mapping = oldMapping.slice(0)
-      if sortFunction = @sortFunction()
-        @_mapping.sort sortFunction
-    
+    rows = @_ordered.slice(0)
+    rows.sort @sortFunction(options.sortColumn)
     html.push '<table class="tableView">'
-    @generateTableHTML html, 'print'
+    @generateTableHTML html, rows, 'print'
     html.push '</table>'
-    
-    @_mapping = oldMapping
-    @_sortColumn = @_sortColumn
 
   @method 'print', (options={}) ->
     html = []
