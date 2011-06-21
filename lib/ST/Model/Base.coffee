@@ -27,12 +27,16 @@ ST.module 'Model', ->
     @classDelegate 'first', 'scoped'
     @classDelegate 'count', 'scoped'
     
+    @include ST.Model.Callbacks
+    @callback 'create'
+    @callback 'destroy'
+    
     @classMethod 'scoped', ->
       ST.Model.Scope.createWithModel this
   
     @classMethod 'find', (uuid) ->
       ST.Model._byUuid[uuid]
-  
+    
     @classMethod 'load', (data) ->
       self = this
       if data instanceof Array
@@ -57,9 +61,11 @@ ST.module 'Model', ->
     # Initializes a new model, and loads the supplied attribute data, if any
     @initializer 'withData', (data, options={}) ->
       self = this
-    
+      
+      @callBefore 'create' unless options.loaded
+      
       ST.Object.prototype.init.call this
-
+      
       @uuid data.uuid || ST.Model._generateUUID()
       @_creating = true
       @_attributes = {}
@@ -83,9 +89,11 @@ ST.module 'Model', ->
       
       unless options.loaded || @_class.ReadOnly
         ST.Model.recordChange 'create', @_uuid, @_class._name, @data()
-
+      
       @_creating = false
       @_class.master().add this
+      
+      @callAfter 'create' unless options.loaded
   
     # Creates a new object from model data. If the data includes a 
     # property, as with data genereated by #objectify, the specified model
@@ -176,9 +184,11 @@ ST.module 'Model', ->
     @method 'persist', ->
       if ST.Model._storage
         ST.Model._storage.set @uuid(), JSON.stringify(@data())
-  
+    
     # Removes all local data for model.
     @method 'forget', (destroy=false) ->  
+      @callBefore 'destroy' if destroy
+    
       # Record destruction in change list, if destroy is true
       if destroy && !@_class.ReadOnly
         ST.Model.recordChange 'destroy', @_uuid, @_class._name
@@ -210,7 +220,9 @@ ST.module 'Model', ->
       @_class.master().remove this
       
       @_destroyed = true if destroy
-
+      
+      @callAfter 'destroy' if destroy
+    
     # Marks model as destroyed, destroy to be propagated to server when 
     # possible.
     @method 'destroy', ->
@@ -397,14 +409,13 @@ ST.module 'Model', ->
     
       if options.bind
         for key of options.bind
-          if options.bind.hasOwnProperty key
-            @_manyBinds ||= []
-            @_manyBinds.push {
-              assoc:  name
-              from:   key
-              to:     options.bind[key]
-            }
-    
+          @_manyBinds ||= []
+          @_manyBinds.push {
+            assoc:  name
+            from:   key
+            to:     options.bind[key]
+          }
+      
       if options.dependent
         @_dependent ||= []
         @_dependent.push name
