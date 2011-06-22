@@ -107,15 +107,11 @@ ST.class 'TableView', 'View', ->
     @renderColumnsButton() if @_canCustomizeColumns
   
   @method 'renderTable', ->
-    self = this
     @_tableElement = @helper().tag('table').addClass('tableView')
     @_tableElement.addClass @_tableClass if @_tableClass
     html = []
     @generateTableHTML html
     @_tableElement.html html.join('')
-    @_tbody = $ 'tbody', @_tableElement
-    $('tr', @_tbody).each (index) ->
-      self._rowsByUid[self._ordered[index]._uid] = this
     @activateBody()
   
   @method 'renderColumnsButton', ->
@@ -164,6 +160,10 @@ ST.class 'TableView', 'View', ->
       self.generateRowHTML item, html, media
   
   @method 'activateBody', ->
+    self = this
+    @_tbody = $ 'tbody', @_tableElement
+    $('tr', @_tbody).each (index) ->
+      self._rowsByUid[self._ordered[index]._uid] = this
     @_list.each @method('activateRow')
   
   @method 'generateRowHTML', (item, html, media='screen') ->
