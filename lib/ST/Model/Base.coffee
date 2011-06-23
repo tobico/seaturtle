@@ -141,7 +141,7 @@ ST.module 'Model', ->
       @super member, oldValue, newValue
       @_class.trigger 'itemChanged', this
       
-      if @_attributes[member]?
+      if @_attributes[member] isnt undefined
         unless @_creating || String(oldValue) == String(newValue) || @_class.ReadOnly
           data = {}
           data[member] = newValue
