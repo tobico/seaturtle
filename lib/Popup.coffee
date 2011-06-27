@@ -39,6 +39,8 @@ window.popup = (element, id, display, options={}) ->
   if ST.View && (display instanceof ST.View)
     display.load()
     popup.append display.element()
+  else if display instanceof jQuery
+    popup.append display
   else
     ul = $ "<ul class=\"popupMenu\"></ul>"
     popup.append ul
@@ -58,9 +60,10 @@ window.popup = (element, id, display, options={}) ->
           li.append a
           ul.append li
   
-  popup.click (e) -> e.stopPropagation()
+  popup.click (e) ->
+    e.stopPropagation()
   
-  style = if offset.left < $(window).width() - 150
+  style = if (offset.left < $(window).width() - 150) && !options.right
     "left: #{Math.round offset.left}px"
   else
     "right: #{Math.round($(window).width() - offset.left - element.outerWidth())}px"
@@ -72,12 +75,13 @@ window.popup = (element, id, display, options={}) ->
 # items   Items for menu, see #popup
 # open    Callback function to execute before opening the popup menu
 # close   Callback function to execute after the popup menu is closed
-jQuery.fn.popup = (items, open, close) ->
+jQuery.fn.popup = (items, open, close, options) ->
   id = popupIDs++
   @click (e) ->
+    e.preventDefault()
     e.stopPropagation()
     element = this
-    options = {}
+    options = $.extend({}, options);
     options.close = -> close.call element if close
     if popupID == id
       closePopup()
