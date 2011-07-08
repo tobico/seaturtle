@@ -49,6 +49,7 @@ ST.class 'FormView', 'View', ->
         else
           ST.TextFieldView.create()
       field.id attribute
+      field.bind 'submit', this
       field.searchRemotelyAt details.searchesRemotelyAt if details.searchesRemotelyAt
       @_fields[attribute] = field
       field.value(
@@ -86,6 +87,10 @@ ST.class 'FormView', 'View', ->
     else
       @_model.createWithData(@data())
     @trigger 'saved', item
+    
+  @method 'submit', ->
+    ST.command @_command, @method('save')
+    @_dialog.close() if @_dialog
   
   @method 'cancel', ->
     @trigger 'cancelled'
@@ -94,8 +99,6 @@ ST.class 'FormView', 'View', ->
   @method 'dialogButtons', (dialog, buttonbar) ->
     @_dialog = dialog
     self = this
-    buttonbar.button '&nbsp;&nbsp;OK&nbsp;&nbsp;', ->
-      ST.command self._command, self.method('save')
-      dialog.close()
+    buttonbar.button '&nbsp;&nbsp;OK&nbsp;&nbsp;', @method('submit')
     buttonbar.button 'Cancel', @method('cancel')
     dialog.cancelFunction @method('cancel')
