@@ -30,6 +30,7 @@ ST.class 'TextFieldView', 'View', ->
     else
       @_inputElement.val @_placeholder
       @_inputElement.addClass 'placeholder'
+    @_inputElement.bind   'keydown', @method('keyDown')
     @_inputElement.bind   'keyup change', @method('inputChanged')
     @_inputElement.focus  @method('inputFocus')
     @_inputElement.blur   @method('inputBlur')
@@ -48,16 +49,16 @@ ST.class 'TextFieldView', 'View', ->
       input = @_inputElement[0]
       input.blur() if input && input.blur
   
-  @method 'inputChanged', (e) ->
-    if e && e.which && e.which == 13
-      @trigger 'submit'
-    else
-      oldValue = @_value
-      newValue = @_inputElement.val()
-      unless oldValue == newValue
-        @_value = newValue
-        @_value = $.trim @_value if @_autoTrim
-        @_changed 'value', oldValue, newValue
+  @method 'keyDown', (e) ->
+    @trigger 'submit' if e && e.which && e.which == 13
+  
+  @method 'inputChanged', ->
+    oldValue = @_value
+    newValue = @_inputElement.val()
+    unless oldValue == newValue
+      @_value = newValue
+      @_value = $.trim @_value if @_autoTrim
+      @_changed 'value', oldValue, newValue
   
   @method 'inputFocus', ->
     if @_inputElement.val() == @_placeholder
