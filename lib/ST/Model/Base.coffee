@@ -404,7 +404,8 @@ ST.module 'Model', ->
       @method name, ->
         unless this["_#{name}"]
           model = @_class._namespace.class modelName
-          this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
+          scope = this["_#{name}"] = model.where(model["#{foreign}Uuid"].equals(@uuid()))
+          scope.addBindings()
         this["_#{name}"]
     
       if options.bind

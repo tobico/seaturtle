@@ -52,22 +52,24 @@ ST.module 'Model', ->
       @_index
 
     @method 'addBindings', ->
-      @index().bind 'itemAdded',   this, 'targetItemAdded'
-      @index().bind 'itemRemoved', this, 'targetItemRemoved'
-      @_bindingsAdded = true
+      unless @_bindingsAdded
+        @index().bind 'itemAdded',   this, 'targetItemAdded'
+        @index().bind 'itemRemoved', this, 'targetItemRemoved'
+        @_bindingsAdded = true
   
     @method 'removeBindings', ->
-      @index().unbindAll(this)
-      @_bindingsAdded = false
+      if @_bindingsAdded
+        @index().unbindAll(this)
+        @_bindingsAdded = false
   
     @method 'bind', (trigger, receiver, selector) ->
       @populate()
-      @addBindings() unless @_bindingsAdded
+      @addBindings()
       @super trigger, receiver, selector
   
     @method 'unbindAll', (receiver) ->
       @super receiver
-      @removeBindings() if @_bindingsAdded && !@isBound()
+      @removeBindings() unless @isBound()
 
     @method 'each', (yield) ->
       @populate()
