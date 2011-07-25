@@ -3,20 +3,43 @@
 #require ST/ModelFieldView
 
 ST.class 'FormView', 'View', ->
-  @initializer 'withModelAttributes', (model, attributes) ->
-    @init()
-    @_model = model
-    @_attributes = attributes
-    @_command = 'Save Form'
-    @_fields = {}
-  
-  @initializer 'withScopeAttributes', (scope, attributes) ->
-    @initWithModelAttributes scope.model(), attributes
-    @_scope = scope
-  
-  @initializer 'withItemAttributes', (item, attributes) ->
-    @initWithModelAttributes item._class, attributes
-    @_item = item
+  @initializer (options, definition) ->
+    self = this
+    
+    @super()
+    
+    @_command   = options.command || 'Save Form'
+    @_defaults  = options.default || null
+    @_fields    = ST.List.create()
+    
+    if options.scope
+      @_scope = options.scope
+      @_model = options.scope.model()
+    else if options.item
+      @_item  = options.item
+      @_model = options.item._class
+    else
+      @_model   = options.model
+    
+    dsl = {
+      _add: (field) ->
+        field.id attribute
+        field.bind 'submit', self
+        self._fields.add field
+        field.release()        
+      text: (attribute) ->
+        @_add ST.TextFieldView.create()
+      enum: (attribute) ->
+        details = self.detailsFor attribute
+        @_add ST.EnumFieldView.createWithValuesNull details.values, details.null
+      model: (attribute) ->
+        details = self.detailsFor attribute
+        field = ST.ModelFieldView.createWithModel self._model._namespace.class(details.model)
+        field.searchRemotelyAt details.searchesRemotelyAt if details.searchesRemotelyAt
+        @_add field
+    }
+    definition.call dsl
+    @loadFieldValues()
 
   @property 'defaults'
   @property 'model'
@@ -24,44 +47,44 @@ ST.class 'FormView', 'View', ->
   @property 'command'
   
   @destructor ->
-    for attribute, field of @_fields
-      if @_fields.hasOwnProperty attribute
-        field.release()
+    @_fields.empty()
     @super()
   
-  @method 'render', ->
-    html = ['<table class="formView">']
-    for attribute in @_attributes
-      html.push '<tr><th class="label"><label for="', attribute, '">', @_model.labelForAttribute(attribute), ':</label></th><td class="field" data-attribute="', attribute, '"></td></tr>'
-    html.push '</table>'
-    
-    @_element.html html.join('')
-    
-    cells = $ 'td.field', @_element
-    for cell in cells
-      attribute = $(cell).attr 'data-attribute'
-      details = @_model._attributes[attribute]
-      field = switch details.type
-        when 'belongsTo'
-          ST.ModelFieldView.createWithModel @_model._namespace.class(details.model)
-        when 'enum'
-          ST.EnumFieldView.createWithValuesNull details.values, details.null
-        else
-          ST.TextFieldView.create()
-      field.id attribute
-      field.bind 'submit', this
-      field.searchRemotelyAt details.searchesRemotelyAt if details.searchesRemotelyAt
-      @_fields[attribute] = field
+  @method 'loadFieldValues', ->
+    self = this
+    @_fields.each (field) ->
+      attribute = field.id()
       field.value(
-        if @_item
-          @_item[attribute]()
-        else if @_defaults && @_defaults[attribute]
-          @_defaults[attribute]
-        else
+        if self._item
+          self._item[attribute]()
+        else if self._defaults && self._defaults[attribute]
+          self._defaults[attribute]
+        else if details = self.detailsFor(attribute)
           details.default
       )
+  
+  @method 'detailsFor', (attribute) ->
+    @_model._attributes[attribute]
+  
+  @method 'generateTableHTML', ->
+    self = this
+    html = ['<table class="formView">']
+    @_fields.each (field) ->
+      attribute = field.id()
+      html.push '<tr><th class="label"><label for="', attribute, '">',
+        self._model.labelForAttribute(attribute),
+        ':</label></th><td class="field" id="cell_for_', attribute,
+        '"></td></tr>'
+    html.push '</table>'
+    html.join ''
+  
+  @method 'render', ->
+    @_element.html @generateTableHTML()
+    
+    @_fields.each (field) ->
+      cell = $ "#cell_for_#{field.id()}"
       field.load()
-      $(cell).append field.element()
+      cell.append field.element()
   
   @method 'data', ->
     data = {}
@@ -72,9 +95,8 @@ ST.class 'FormView', 'View', ->
         data[attribute] = @_defaults[attribute]
     
     # Read field values into data
-    for attribute in @_attributes
-      field = @_fields[attribute]
-      data[attribute] = field.value()
+    @_fields.each (field) ->
+      data[field.id()] = field.value()
     
     data
   
