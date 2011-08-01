@@ -5,6 +5,8 @@
 popupID = -1
 popupIDs = 1
 
+detachPopup = false
+
 # Keeps track of callback function to execute on closing the popup
 popupCloseCallback = null
 
@@ -17,6 +19,7 @@ window.closePopup = ->
     popupID = null
     $('#popup').removeAttr('id').stop().fadeOut 100, ->
       onClose() if onClose
+      $(this).children().detach() if detachPopup
       $(this).remove()
 
 # Displays a popup menu.
@@ -27,6 +30,7 @@ window.popup = (element, id, display, options={}) ->
   ST.pushCancelFunction closePopup
   
   popupID = id
+  detachPopup = options.detach
   
   offset = element.offset()
   
