@@ -118,10 +118,10 @@ ST.class 'View', 'Destructable', ->
     @load()
   
   @method 'show', ->
-    @visible true
+    @visible true unless @_visible
   
   @method 'hide', ->
-    @visible false
+    @visible false if @_visible
   
   @method '_visibleChanged', (oldValue, newValue) ->
     if newValue

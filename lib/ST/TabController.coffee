@@ -66,8 +66,12 @@ ST.class 'TabController', 'Controller', ->
     oldView = oldTab && oldTab.view()
     newView = newTab && newTab.view()
     switchViews = ->
-      self._view.removeChild oldView if oldView
-      self._view.addChild newView if newView
+      if oldView
+        oldView.hide()
+        self._view.removeChild oldView
+      if newView
+        self._view.addChild newView
+        newView.show()
     
     if newTab && !newTab.view().loaded()
       # Switch child views asynchronously, so that user gets response
