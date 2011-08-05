@@ -9,7 +9,7 @@ ST.class 'FormView', 'View', ->
     @super()
     
     @_command   = options.command || 'Save Form'
-    @_defaults  = options.default || null
+    @_defaults  = options.defaults || null
     @_fields    = ST.List.create()
     
     if options.scope
@@ -22,21 +22,21 @@ ST.class 'FormView', 'View', ->
       @_model   = options.model
     
     dsl = {
-      _add: (field) ->
+      _add: (field, attribute) ->
         field.id attribute
         field.bind 'submit', self
         self._fields.add field
         field.release()        
       text: (attribute) ->
-        @_add ST.TextFieldView.create()
+        @_add ST.TextFieldView.create(), attribute
       enum: (attribute) ->
         details = self.detailsFor attribute
-        @_add ST.EnumFieldView.createWithValuesNull details.values, details.null
+        @_add ST.EnumFieldView.createWithValuesNull(details.values, details.null), attribute
       model: (attribute) ->
         details = self.detailsFor attribute
         field = ST.ModelFieldView.createWithModel self._model._namespace.class(details.model)
         field.searchRemotelyAt details.searchesRemotelyAt if details.searchesRemotelyAt
-        @_add field
+        @_add field, attribute
     }
     definition.call dsl
     @loadFieldValues()
@@ -79,10 +79,11 @@ ST.class 'FormView', 'View', ->
     html.join ''
   
   @method 'render', ->
+    self = this
     @_element.html @generateTableHTML()
     
     @_fields.each (field) ->
-      cell = $ "#cell_for_#{field.id()}"
+      cell = $ "#cell_for_#{field.id()}", self._element
       field.load()
       cell.append field.element()
   
