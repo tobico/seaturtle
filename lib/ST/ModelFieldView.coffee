@@ -4,7 +4,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   # Mappings for event key code to result index
   @KEY_CODES = { 49:0, 50:1, 51:2, 52:3, 53:4, 54:5, 55:6, 56:7, 57:8, 48:9, 97:0, 98:1, 99:2, 100:3, 101:4, 102:5, 103:6, 104:7, 105:8, 96:9 }
   
-  @RESULT_LIMIT = 9
+  @RESULT_LIMIT = 5
   
   # Mappings from result index to label for key
   @KEY_LABELS = '123456789'.split('')
