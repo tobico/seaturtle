@@ -29,8 +29,8 @@ ST.class 'FormView', 'View', ->
         field.release()        
       text: (attribute) ->
         @_add ST.TextFieldView.create(), attribute
-      enum: (attribute) ->
-        details = self.detailsFor attribute
+      enum: (attribute, details) ->
+        details ||= self.detailsFor attribute
         @_add ST.EnumFieldView.createWithValuesNull(details.values, details.null), attribute
       model: (attribute) ->
         details = self.detailsFor attribute
