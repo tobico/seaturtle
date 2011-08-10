@@ -422,6 +422,6 @@ ST.module 'Model', ->
         @_dependent.push name
     
     @classMethod 'labelForAttribute', (attribute) ->
-      ST.ucFirst(attribute.replace /([A-Z])/g, " $1")
+      ST.ucFirst(attribute.replace(/([A-Z])/g, " $1").replace(/\sUuid$/, ''))
   
     @include ST.Model.Searchable
