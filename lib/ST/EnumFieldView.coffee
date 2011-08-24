@@ -3,7 +3,7 @@
 ST.class 'EnumFieldView', 'View', ->
   @initializer 'withValuesNull', (values, _null) ->
     @init()
-    @_value = null
+    @_value = if _null then null else values[0][1]
     @_null = _null
     @_values = values
     @_valueIndex = {}
@@ -14,6 +14,14 @@ ST.class 'EnumFieldView', 'View', ->
   @property 'values'
   @property 'selectElement'
   @property 'id'
+  
+  @method 'isValueValid', (value) ->
+    if value is null
+      @_null
+    else
+      for option in @_values
+        return true if option[1] == value
+      false
   
   @method 'render', ->
     @_selectElement = $ '<select />'
@@ -29,12 +37,11 @@ ST.class 'EnumFieldView', 'View', ->
       html.push '<option value=""'
       html.push ' selected="selected"' if @_value is null
       html.push '></option>'
-    for value, label of @_values
-      if @_values.hasOwnProperty value
-        html.push '<option value="', value, '"'
-        html.push ' selected="selected"' if @_value == value
-        html.push '>', label, '</option>'
-        @_valueIndex[value] = index++
+    for option in @_values
+      html.push '<option value="', option[1], '"'
+      html.push ' selected="selected"' if @_value == option[1]
+      html.push '>', option[0], '</option>'
+      @_valueIndex[option[1]] = index++
     @_selectElement.html html.join('')
   
   @method 'selectChanged', (e) ->
@@ -48,14 +55,16 @@ ST.class 'EnumFieldView', 'View', ->
         @_skipUpdate = true
         @value newValue
   
-  @method '_valueChanged', (oldValue, newValue) ->
-    if @_skipUpdate
-      @_skipUpdate = false
-    else if @_loaded
-      @_selectElement[0].selectedIndex = if @_valueIndex[newValue]? then @_valueIndex[newValue] else 0
+  @method 'setValue', (newValue) ->
+    if @isValueValid(newValue)
+      @_value = newValue
+      if @_skipUpdate
+        @_skipUpdate = false
+      else if @_loaded
+        @_selectElement[0].selectedIndex = if @_valueIndex[newValue]? then @_valueIndex[newValue] else 0
   
   @method '_valuesChanged', (oldValues, newValues) ->
-    @value null unless @_values[@_value]
+    @value null unless @isValueValid(@value)
     @renderOptions() if @_loaded
   
   @method '_idChanged', (oldValue, newValue) ->
