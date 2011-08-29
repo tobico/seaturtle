@@ -1,5 +1,5 @@
-#require ST/Model
-#require ST/ModelFieldView
+#= require ST/Model
+#= require ST/ModelFieldView
 
 Spec.describe 'ModelFieldView', ->
   beforeEach ->
@@ -120,10 +120,7 @@ Spec.describe 'ModelFieldView', ->
   
   describe "#performSearch", ->
     it "should start search for keyword"
-    it "should hide results with blank keyword", ->
-      @modelField.load()
-      @modelField.resultListElement().shouldReceive 'hide'
-      @modelField.performSearch ''
+    it "should hide results with blank keyword"
   
   describe "#showResults", ->
     it "should display results"

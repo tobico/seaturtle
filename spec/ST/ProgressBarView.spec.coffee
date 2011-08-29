@@ -1,4 +1,4 @@
-#require ST/ProgressBarView
+#= require ST/ProgressBarView
 
 Spec.describe 'ProgressBarView', ->
   describe '#initWithTitleSteps', ->

@@ -1,8 +1,8 @@
-#require ST/Model/Searchable
-#require ST/Model/Callbacks
-#require ST/Model/Base
-#require ST/Model/Scope
-#require ST/Model/Index
+#= require ST/Model/Searchable
+#= require ST/Model/Callbacks
+#= require ST/Model/Base
+#= require ST/Model/Scope
+#= require ST/Model/Index
 
 ST.module 'Model', ->
   @_byUuid        = {}
@@ -161,16 +161,16 @@ ST.module 'Model', ->
             delete @_changes[id]
             @_changesCount--
           else if status == 'notfound'
-            errors.push "#{change.model} with UUID “#{change.uuid}” not found"
+            errors.push "#{change.model} with UUID #{change.uuid} not found"
           else if status == 'unauthorized'
-            errors.push "Access denied to #{change.model} with UUID “#{change.uuid}”"
+            errors.push "Access denied to #{change.model} with UUID #{change.uuid}"
           else if status == 'exists'
-            errors.push "#{change.model} with UUID “#{change.uuid}” already exists"
+            errors.push "#{change.model} with UUID #{change.uuid} already exists"
           else if status == 'invalid'
-            base = "#{change.model} with UUID “#{change.uuid}” failed to validate"
+            base = "#{change.model} with UUID #{change.uuid} failed to validate"
             if data.errors[id]
               for number, message of data.errors[id]
-                errors.push "#{base} with message “#{message}”"
+                errors.push "#{base} with message #{message}"
             else
               errors.push base
       for id of @_changes

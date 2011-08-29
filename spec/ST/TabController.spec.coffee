@@ -1,4 +1,4 @@
-#require ST/TabController
+#= require ST/TabController
 
 Spec.describe 'TabController', ->
   beforeEach ->

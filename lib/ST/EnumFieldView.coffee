@@ -1,10 +1,10 @@
-#require ST/View
+#= require ST/View
 
 ST.class 'EnumFieldView', 'View', ->
-  @initializer 'withValuesNull', (values, _null) ->
+  @initializer 'withValuesNull', (values, allowNull) ->
     @init()
-    @_value = if _null then null else values[0][1]
-    @_null = _null
+    @_value = if allowNull then null else values[0][1]
+    @_allowNull = !!allowNull
     @_values = values
     @_valueIndex = {}
     @_selectElement = null
@@ -14,10 +14,11 @@ ST.class 'EnumFieldView', 'View', ->
   @property 'values'
   @property 'selectElement'
   @property 'id'
+  @property 'allowNull'
   
   @method 'isValueValid', (value) ->
     if value is null
-      @_null
+      @_allowNull
     else
       for option in @_values
         return true if option[1] == value
@@ -33,7 +34,7 @@ ST.class 'EnumFieldView', 'View', ->
   @method 'renderOptions', ->
     index = 1
     html = []
-    if @_null
+    if @_allowNull
       html.push '<option value=""'
       html.push ' selected="selected"' if @_value is null
       html.push '></option>'
@@ -64,7 +65,7 @@ ST.class 'EnumFieldView', 'View', ->
         @_selectElement[0].selectedIndex = if @_valueIndex[newValue]? then @_valueIndex[newValue] else 0
   
   @method '_valuesChanged', (oldValues, newValues) ->
-    @value null unless @isValueValid(@value)
+    @value null unless @isValueValid(@value())
     @renderOptions() if @_loaded
   
   @method '_idChanged', (oldValue, newValue) ->

@@ -1,4 +1,4 @@
-#require ST
+#= require ST
 
 Spec.describe 'ST', ->
   describe 'stringToProc', ->

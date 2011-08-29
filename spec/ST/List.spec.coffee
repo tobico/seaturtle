@@ -1,4 +1,4 @@
-#require ST/Object
+#= require ST/Object
 
 Spec.describe "List", ->
   beforeEach ->

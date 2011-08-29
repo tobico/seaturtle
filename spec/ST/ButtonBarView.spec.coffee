@@ -1,4 +1,4 @@
-#require ST/ButtonBarView
+#= require ST/ButtonBarView
 
 $.fx.off = true
 

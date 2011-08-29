@@ -1,4 +1,4 @@
-#require ST/View
+#= require ST/View
 
 ST.class 'ProgressBarView', 'View', ->
   @initializer 'withTitleSteps', (title, steps) ->

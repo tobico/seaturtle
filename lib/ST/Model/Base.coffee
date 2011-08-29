@@ -1,6 +1,6 @@
-#require ST/Object
-#require ST/Enumerable
-#require ST/Inflector
+#= require ST/Object
+#= require ST/Enumerable
+#= require ST/Inflector
 
 ST.module 'Model', ->
   @class 'Base', ->

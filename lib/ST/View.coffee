@@ -1,6 +1,6 @@
-#require ST/Destructable
-#require ST/List
-#require ST/ViewHelper
+#= require ST/Destructable
+#= require ST/List
+#= require ST/ViewHelper
 
 ST.class 'View', 'Destructable', ->
   @ViewWithContent = (content) ->
@@ -123,13 +123,14 @@ ST.class 'View', 'Destructable', ->
   @method 'hide', ->
     @visible false if @_visible
   
-  @method '_visibleChanged', (oldValue, newValue) ->
-    if newValue
+  @method 'setVisible', (visible) ->
+    @_visible = visible
+    if visible
       @load() unless @_loaded
       @element().show()
     else
       @element().hide()
-        
+  
   @method 'scrollTo', -> $.scrollTo @_element
   
   @method 'showDialog', (events) -> Dialog.showView this, events

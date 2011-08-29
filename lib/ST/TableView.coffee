@@ -1,5 +1,5 @@
-#require ST/View
-#require Popup
+#= require ST/View
+#= require Popup
 
 ST.class 'TableView', 'View', ->
   @GroupingEnabled = false

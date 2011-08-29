@@ -1,4 +1,4 @@
-#require ST/TextFieldView
+#= require ST/TextFieldView
 
 Spec.describe 'TextFieldView', ->
   beforeEach ->
@@ -47,8 +47,9 @@ Spec.describe 'TextFieldView', ->
   
   describe "#inputChanged", ->
     it "should trigger submit on enter key", ->
+      @textField.load()
       @textField.shouldReceive('trigger').with('submit')
-      @textField.inputChanged {which: 13}
+      @textField.keyDown {which: 13}
     
     it "should update value with value of input", ->
       @textField.load()

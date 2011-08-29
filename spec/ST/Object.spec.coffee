@@ -1,4 +1,4 @@
-#require ST/Object
+#= require ST/Object
 
 Spec.describe "Object", ->
   context "with a test subclass", ->
@@ -45,7 +45,7 @@ Spec.describe "Object", ->
       it "should return existing method", ->
         test = -> false
         ST.Test.method 'test', test
-        ST.Test.method('test').should be(test)
+        ST.Test.method('test').should equal('Test#test')
 
     describe ".hybridMethod", ->
       it "should define a class method", ->

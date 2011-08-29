@@ -1,4 +1,4 @@
-#require ST/Storage
+#= require ST/Storage
 
 Spec.describe "Storage", ->
   describe "#isActive", ->

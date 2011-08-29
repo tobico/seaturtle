@@ -1,4 +1,4 @@
-#require ST/TabView
+#= require ST/TabView
 
 Spec.describe "TabView", ->
   describe "#initializer", ->

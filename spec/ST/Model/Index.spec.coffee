@@ -1,4 +1,4 @@
-#require ST/Model/Index
+#= require ST/Model/Index
 
 Spec.describe "Model/Index", ->
   beforeEach ->

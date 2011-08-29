@@ -1,6 +1,6 @@
-#require ST/View
-#require ST/TextFieldView
-#require ST/ModelFieldView
+#= require ST/View
+#= require ST/TextFieldView
+#= require ST/ModelFieldView
 
 ST.class 'FormView', 'View', ->
   @initializer (options, definition) ->

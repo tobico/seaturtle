@@ -1,4 +1,4 @@
-#require ST/Object
+#= require ST/Object
 
 ST.class 'ViewHelper', ->
   @singleton()

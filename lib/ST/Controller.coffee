@@ -1,4 +1,4 @@
-#require ST/Destructable
+#= require ST/Destructable
 
 ST.class 'Controller', 'Destructable', ->
   @retainedProperty 'view'

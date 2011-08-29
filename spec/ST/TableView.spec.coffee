@@ -1,4 +1,4 @@
-#require ST/TableView
+#= require ST/TableView
 
 Spec.describe 'TableView', ->
   beforeEach ->
@@ -28,7 +28,7 @@ Spec.describe 'TableView', ->
     
     it "should set defaults", ->
       @tableView.columns().should equal([])
-      @tableView._mapping.should equal([])
+      @tableView._ordered.should equal([])
       expect(@tableView.sortColumn()).to be(null)
       @tableView.reverseSort().should beFalse
       expect(@tableView.tableClass()).to be(null)
@@ -58,19 +58,6 @@ Spec.describe 'TableView', ->
       list = ST.List.create()
       list.shouldReceive('bind').exactly(3).times
       @tableView.list list
-    
-    it "should create mapping", ->
-      list = ST.List.create()
-      @tableView.shouldReceive 'createMapping'
-      @tableView.list list
-  
-  describe "#createMapping", ->
-    it "should rebuild mapping", ->
-      list = ST.List.create()
-      list.add 'fish'
-      list.add 'apples'
-      @tableView.list list
-      @tableView._mapping.should equal([0, 1])
   
   describe '#setColumns', ->
     beforeEach ->
@@ -98,29 +85,18 @@ Spec.describe 'TableView', ->
   describe '#sortFunction', ->
     context 'with a custom sort function', ->
       beforeEach ->
+        @sortFn = (a, b) -> 0
         @tableView.columns [{
-          sort: (a, b) ->
-            if a.age > b.age
-              1
-            else if a.age < b.age
-              -1
-            else
-              0
+          sort: @sortFn
         }]
-        
-      it "should sort in ascending order", ->
-        fn = @tableView.sortFunction()
-        [0,1,2].sort(fn).should equal([0,2,1])
-
-      it "should sort in descending order", ->
-        @tableView.reverseSort true
-        fn = @tableView.sortFunction()
-        [0,1,2].sort(fn).should equal([1,2,0])
+      
+      it "should return the custom sort function", ->
+        @tableView.sortFunction().should be(@sortFn)
     
     it "should sort with default sort function in ascending order", ->
-      fn = @tableView.sortFunction()
-      [0,1,2].sort(fn).should equal([1,2,0])
-      
+      @list._array.sort @tableView.sortFunction()
+      @list.first().name.should equal('Eliza')
+    
     it "should sort with default sort function in descending order"
   
   describe '#setSortColumn', ->
@@ -151,18 +127,13 @@ Spec.describe 'TableView', ->
       @tableView.sortColumn 0
   
   describe '#sort', ->
-    it "should sort _mapping", ->
-      @tableView._mapping = [0,1,2]
-      @tableView.sort()
-      @tableView._mapping.should equal([1,2,0])
-    
     it "should rearrage table rows", ->
       @tableView.load()
       @tableView.sort()
-      rows = $ 'tr', @tableView.element()
-      rows[1].className.should equal('item1')
-      rows[2].className.should equal('item2')
-      rows[3].className.should equal('item0')
+      rows = $ 'tr td:first-child', @tableView.element()
+      rows[0].innerHTML.should equal('Eliza')
+      rows[1].innerHTML.should equal('Steve')
+      rows[2].innerHTML.should equal('Zack')
   
   describe '#render', ->
     it "should render table", ->
@@ -187,11 +158,6 @@ Spec.describe 'TableView', ->
       @tableView.renderTable()
       @tableView.tableElement().is('.banana').should beTrue
     
-    it "should load table element HTML", ->
-      @tableView.shouldReceive 'generateHeaderHTML'
-      @tableView.shouldReceive 'generateBodyHTML'
-      @tableView.renderTable()
-    
     it "should activate body", ->
       @tableView.shouldReceive 'activateBody'
       @tableView.renderTable()
@@ -200,14 +166,6 @@ Spec.describe 'TableView', ->
     it "should append a columns button", ->
       @tableView.renderColumnsButton()
       $('.columnsButton', @tableView.element()).length.should equal(1)
-  
-  describe '#generateHeaderHTML', ->
-    it "should wrap header innerHTML in THEAD tag", ->
-      html = []
-      @tableView.shouldReceive 'generateHeaderInnerHTML'
-      @tableView.generateHeaderHTML html
-      html.indexOf('<thead>').should equal(0)
-      html.indexOf('</thead>').should equal(html.length - 1)
   
   describe '#generateHeaderInnerHTML', ->
     it "should be wrapped in a TR tag", ->
@@ -264,14 +222,6 @@ Spec.describe 'TableView', ->
       @tableView.generateColumnHeaderHTML @tableView.columns()[0], html
       html.indexOf(' &#x2191;').shouldNot equal(-1)
   
-  describe '#generateBodyHTML', ->
-    it "should wrap body innerHTML in TBODY tag", ->
-      html = []
-      @tableView.shouldReceive 'generateBodyInnerHTML'
-      @tableView.generateBodyHTML html
-      html[0].should equal('<tbody>')
-      html[html.length-1].should equal('</tbody>')
-  
   describe '#generateBodyInnerHTML', ->
     it "should generate HTML for each row", ->
       @tableView.shouldReceive('generateRowHTML').exactly(3).times
@@ -285,53 +235,9 @@ Spec.describe 'TableView', ->
     it "should wrap row innerHTML in a <tr> tag", ->
       html = []
       @tableView.shouldReceive 'generateRowInnerHTML'
-      @tableView.generateRowHTML @tableView.list().at(0), 0, html
-      html[0].should equal('<tr class="item')
+      @tableView.generateRowHTML @tableView.list().at(0), html
+      html[0].should equal('<tr data-uid="')
       html[html.length-1].should equal('</tr>')
-    
-    it "should include item index as a CSS class", ->
-      html = []
-      @tableView.generateRowHTML @tableView.list().at(0), 0, html
-      html.join('').indexOf('class="item0"').shouldNot equal(-1)
-  
-  describe '#generateRowInnerHTML', ->
-    it "should generate cell HTML", ->
-      @tableView.shouldReceive('generateCellHTML').twice()
-      @tableView.generateRowInnerHTML @tableView.list().at(0), []
-    
-    it "should skip cell for hidden column", ->
-      @tableView.toggleColumn @tableView.columns()[1]
-      @tableView.shouldReceive('generateCellHTML')
-      @tableView.generateRowInnerHTML @tableView.list().at(0), []
-    
-    it "should skip cell for column with wrong media type", ->
-      @tableView.columns()[1].media = 'print'
-      @tableView.shouldReceive('generateCellHTML')
-      @tableView.generateRowInnerHTML @tableView.list().at(0), []
-  
-  describe '#activateRow', ->
-    it "should activate each cell"
-  
-  describe '#generateCellHTML', ->
-    it "should wrap cell innerHTML in a <td> tag", ->
-      html = []
-      @tableView.shouldReceive 'generateCellInnerHTML'
-      @tableView.generateCellHTML @tableView.list().at(0), @tableView.columns()[0], html
-      html[0].should equal('<td>')
-      html[html.length-1].should equal('</td>')
-  
-  describe '#generateCellInnerHTML', ->
-    it "should call custom column html generator", ->
-      item = @tableView.list().at(0)
-      column = @tableView.columns()[0]
-      column.shouldReceive 'html'
-      @tableView.generateCellInnerHTML item, column, []
-      
-    it "should display cell value if no custom generator", ->
-      item = @tableView.list().at(0)
-      column = @tableView.columns()[0]
-      @tableView.shouldReceive('cellValue').with(item, column, 'screen')
-      @tableView.generateCellInnerHTML item, column, []
     
   describe '#cellValue', ->
     it "should call custom value generator", ->
@@ -373,7 +279,7 @@ Spec.describe 'TableView', ->
     it "should reactivate row", ->
       @tableView.load()
       item = @tableView.list().at(0)
-      @tableView.shouldReceive('activateRow').with(item, 0)
+      @tableView.shouldReceive('activateRow').with(item)
       @tableView.refreshRow item
   
   describe '#toggleColumn', ->
@@ -403,15 +309,6 @@ Spec.describe 'TableView', ->
       a = @tableView.generateColumnsPopup()
       a.length.should equal(2)
     
-    it "should display checkmark for visible column", ->
-      a = @tableView.generateColumnsPopup()
-      a[0].title.should equal('&#x2714; Name')
-      
-    it "should not display checkmark for hidden column", ->
-      @tableView.toggleColumn @tableView.columns()[0]
-      a = @tableView.generateColumnsPopup()
-      a[0].title.should equal('Name')
-    
     it "should not include column with non-screen media type", ->
       @tableView.columns()[0].media = 'print'
       a = @tableView.generateColumnsPopup()
@@ -427,16 +324,8 @@ Spec.describe 'TableView', ->
       @list.add {name: 'Fred', age: 19}
           
     it "should generate row for new item", ->
-      $('tr.item3', @tableView.element()).length.should equal(1)
+      $('tr', @tableView.element()).length.should equal(5)
     
-    it "should activate row", ->
-      item = {}
-      @tableView.shouldReceive('activateRow').with(item, 4)
-      @list.add item
-    
-    it "should add _mapping for new item", ->
-      @tableView._mapping.indexOf(3).shouldNot equal(-1)
-      
     it "should sort items", ->
       @tableView.shouldReceive 'sort'
       @list.add {name: 'Jane', age: 44}
@@ -448,20 +337,6 @@ Spec.describe 'TableView', ->
     it "should remove row for item", ->
       @list.removeAt 0
       $('tbody tr', @tableView.element()).length.should equal(2)
-    
-    it "should renumber rows", ->
-      @list.removeAt 1
-      rows = $('tbody tr', @tableView.element())
-      rows[0].className.should equal('item1')
-      rows[1].className.should equal('item0')
-    
-    it "should rebuild _mapping", ->
-      @tableView.shouldReceive 'createMapping'
-      @list.removeAt 0
-    
-    it "should re-sort", ->
-      @tableView.shouldReceive 'sort'
-      @list.removeAt 0
   
   describe '#listItemChanged', ->
     beforeEach ->
@@ -481,12 +356,8 @@ Spec.describe 'TableView', ->
     beforeEach ->
       @tableView.helper().print = ->
     
-    it "should generate header HTML", ->
-      @tableView.shouldReceive('generateHeaderHTML')
-      @tableView.print()
-    
-    it "should generate body HTML", ->
-      @tableView.shouldReceive('generateBodyHTML')
+    it "should generate table HTML", ->
+      @tableView.shouldReceive('generateTableHTML')
       @tableView.print()
     
     it "should print", ->

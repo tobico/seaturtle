@@ -1,4 +1,4 @@
-#require ST/List
+#= require ST/List
 
 ST.module 'Model', ->
   @class 'Scope', 'List', ->
@@ -105,6 +105,7 @@ ST.module 'Model', ->
     @method 'forgetAll', (destroy=false) ->
       while item = @first()
         item.forget destroy
+        @remove item
     
     @method 'destroyAll', ->
       @forgetAll true

@@ -1,4 +1,4 @@
-#require ST/View
+#= require ST/View
 
 ST.class 'WizardView', ST.View, ->
   @initializer ->

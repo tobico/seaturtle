@@ -1,4 +1,4 @@
-#require ST/Model
+#= require ST/Model
 
 NextUUID = 0
 ST.Model._generateUUID = -> NextUUID++
@@ -83,10 +83,10 @@ Spec.describe "Model/Base", ->
       model = ST.Model.Base.createWithData {model: 'Bacon'}
       expect(model).to be(null)
     
-    it "should update an existing object with same ID", ->
+    it "should return an existing object with same ID", ->
       model = ST.TestModel.createWithData {uuid: 'recreate', foo: 'bacon'}
-      ST.TestModel.createWithData {uuid: 'recreate', foo: 'waffles'}
-      model.foo().should equal('waffles')
+      another = ST.TestModel.createWithData {uuid: 'recreate', foo: 'waffles'}
+      another.should be(model)
     
     it "should create a new object", ->
       model = ST.TestModel.createWithData {foo: 'bacon'}

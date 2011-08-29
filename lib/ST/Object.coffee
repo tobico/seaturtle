@@ -1,4 +1,4 @@
-#require ST
+#= require ST
 
 ST.class 'Object', null, ->
   # Used to override an existing method of an STObject. Allows the overriding

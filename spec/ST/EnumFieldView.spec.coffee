@@ -1,8 +1,8 @@
-#require ST/EnumFieldView
+#= require ST/EnumFieldView
 
 Spec.describe 'EnumFieldView', ->
   beforeEach ->
-    @enumField = ST.EnumFieldView.createWithValuesNull {bacon: 'Bacon', waffles: 'Waffles'}, true
+    @enumField = ST.EnumFieldView.createWithValuesNull [['Bacon', 'bacon'], ['Waffles', 'waffles']], true
   
   describe "initializer", ->
     it "should set defaults", ->
@@ -12,7 +12,21 @@ Spec.describe 'EnumFieldView', ->
       expect(@enumField._id).to be(null)
     
     it "should set values", ->
-      expect(@enumField._values).to equal({bacon: 'Bacon', waffles: 'Waffles'})
+      expect(@enumField._values).to equal([['Bacon', 'bacon'], ['Waffles', 'waffles']])
+  
+  describe "#isValueValid", ->
+    it "should be false when null and not allowed", ->
+      @enumField.allowNull false
+      @enumField.isValueValid(null).should beFalse
+    
+    it "should be true when null and allowed", ->
+      @enumField.isValueValid(null).should beTrue
+    
+    it "should be true when value is in values", ->
+      @enumField.isValueValid('bacon').should beTrue
+  
+    it "should be false when value is not in values", ->
+      @enumField.isValueValid('avacado').should beFalse
   
   describe "#render", ->
     it "should create select element", ->
@@ -51,11 +65,11 @@ Spec.describe 'EnumFieldView', ->
           
     it "should report change", ->
       @enumField.load()
-      @enumField.shouldReceive '_valueChanged'
+      @enumField.shouldReceive 'setValue'
       @enumField.selectElement()[0].selectedIndex = 1
       @enumField.selectChanged()
   
-  describe "#_valueChanged", ->
+  describe "#_setValue", ->
     it "should update selected value", ->
       @enumField.load()
       @enumField.value 'waffles'
@@ -65,16 +79,16 @@ Spec.describe 'EnumFieldView', ->
     it "should rerender options", ->
       @enumField.load()
       @enumField.shouldReceive 'renderOptions'
-      @enumField.values {spam: 'Spam'}
+      @enumField.values ['Spam', 'spam']
     
     it "should set value to null if no longer valid", ->
       @enumField.value 'bacon'
-      @enumField.values {spam: 'Spam'}
+      @enumField.values ['Spam', 'spam']
       expect(@enumField.value()).to be(null)
     
     it "should keep value if it's still valid", ->
       @enumField.value 'waffles'
-      @enumField.values {waffles: 'Waffles', pancakes: 'Pancakes'}
+      @enumField.values [['Waffles', 'waffles'], ['Pancakes', 'pancakes']]
       @enumField.value().should equal('waffles')
   
   describe "#_idChanged", ->

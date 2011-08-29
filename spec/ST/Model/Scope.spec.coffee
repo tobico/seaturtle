@@ -1,4 +1,4 @@
-#require ST/Model/Scope
+#= require ST/Model
 
 Spec.describe "Model/Scope", ->
   beforeEach ->
@@ -14,13 +14,13 @@ Spec.describe "Model/Scope", ->
       
     it "should set defaults", ->
       @scope._conditions.should equal([])
-      expect(@scope._order).to be(null)
+      expect(@scope._orders).to be(null)
   
   describe "#initWithScope", ->
     beforeEach ->
       @condition = {attribute: 'foo', test: (-> true) }
       @scope._conditions = [@condition]
-      @scope._order = 'foo'
+      @scope._orders = ['foo']
       @copy = ST.Model.Scope.createWithScope @scope
   
     it "should copy scope model", ->
@@ -31,7 +31,7 @@ Spec.describe "Model/Scope", ->
       expect(@copy._conditions[0]).to be(@condition)
       
     it "should copy scope order", ->
-      @copy._order.should equal('foo')
+      @copy._orders.should equal(['foo'])
   
   describe "#model", ->
     it "should return model", ->
@@ -62,7 +62,7 @@ Spec.describe "Model/Scope", ->
   describe "#order", ->
     it "should set order on fork of scope", ->
       copy = @scope.order('foo')
-      copy._order.should equal('foo')
+      copy._orders.should equal(['foo'])
   
   context "with a test model", ->
     beforeEach ->
@@ -75,7 +75,7 @@ Spec.describe "Model/Scope", ->
   
     describe "#enableBindings", ->
       it "should bind scope to a relevant attribute index"
-  
+    
     describe "#each", ->
       it "should iterate over items matched by scope", ->
         model = ST.TestModel.createWithData {foo: 'bacon'}

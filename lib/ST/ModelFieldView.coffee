@@ -1,4 +1,4 @@
-#require ST/TextFieldView
+#= require ST/TextFieldView
 
 ST.class 'ModelFieldView', 'TextFieldView', ->
   # Mappings for event key code to result index

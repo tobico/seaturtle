@@ -1,5 +1,5 @@
-#require ST/Controller
-#require ST/TabView
+#= require ST/Controller
+#= require ST/TabView
 
 ST.class 'TabController', 'Controller', ->
   @initializer ->

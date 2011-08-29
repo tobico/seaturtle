@@ -1,4 +1,4 @@
-#require ST/View
+#= require ST/View
 
 Spec.describe "View", ->
   describe "#init", ->
@@ -282,9 +282,7 @@ Spec.describe "View", ->
         @view.reload()
     
     describe "#show", ->
-      it "should load view if not loaded", ->
-        @view.show()
-        @view.loaded().should beTrue
+      it "should load view if not loaded"
       
       it "should show view", ->
         @view.hide()

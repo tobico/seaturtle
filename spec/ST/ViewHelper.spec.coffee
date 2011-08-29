@@ -1,4 +1,4 @@
-#require ST/ViewHelper
+#= require ST/ViewHelper
 
 Spec.describe "ViewHelper", ->
   beforeEach ->

@@ -1,5 +1,5 @@
-#require ST/Controller
-#require ST/View
+#= require ST/Controller
+#= require ST/View
 
 Spec.describe 'Controller', ->
   beforeEach ->

@@ -1,7 +1,7 @@
-#require ST/Model
-#require ST/FormView
-#require ST/TextFieldView
-#require ST/EnumFieldView
+#= require ST/Model
+#= require ST/FormView
+#= require ST/TextFieldView
+#= require ST/EnumFieldView
 
 Spec.describe "FormView", ->
   beforeEach ->

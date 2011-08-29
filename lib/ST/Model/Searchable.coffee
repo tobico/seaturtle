@@ -1,4 +1,4 @@
-#require ST
+#= require ST
 
 ST.module 'Model', ->
   # Searchable module enables local trigram-based and remote searching for a
