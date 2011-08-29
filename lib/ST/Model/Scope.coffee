@@ -78,29 +78,31 @@ ST.module 'Model', ->
     @method 'count', ->
       @populate()
       @super()
-  
+    
+    @method 'sort', ->
+      if @_orders
+        orders = @_orders
+        @_array.sort (a, b) ->
+          for attribute in orders
+            if attribute.reverse
+              a_value = b.get attribute.reverse
+              b_value = a.get attribute.reverse
+            else
+              a_value = a.get attribute
+              b_value = b.get attribute
+            return 1  if a_value > b_value
+            return -1 if a_value < b_value
+          0
+    
     @method 'populate', ->
-      unless @_populated
-        self = this
+      unless @_populated || @_array.length
+        @_populated = true
         
+        self = this
         @index().each (candidate) ->
           self.add candidate if candidate.matches self._conditions
         
-        if @_orders
-          orders = @_orders
-          @_array.sort (a, b) ->
-            for attribute in orders
-              if attribute.reverse
-                a_value = b.get attribute.reverse
-                b_value = a.get attribute.reverse
-              else
-                a_value = a.get attribute
-                b_value = b.get attribute
-              return 1  if a_value > b_value
-              return -1 if a_value < b_value
-            0
-        
-        @_populated = true
+        @sort()
     
     @method 'forgetAll', (destroy=false) ->
       while item = @first()
@@ -126,6 +128,7 @@ ST.module 'Model', ->
   
     @method 'targetItemAdded', (target, item) ->
       @add item if item.matches @_conditions
+      @sort()
 
     @method 'targetItemRemoved', (target, item) ->  
       @remove item
