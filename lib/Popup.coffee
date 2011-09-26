@@ -64,8 +64,7 @@ window.popup = (element, id, display, options={}) ->
           li.append a
           ul.append li
   
-  popup.click (e) ->
-    e.stopPropagation()
+  popup.mousedown (e) -> e.stopPropagation()
   
   style = if (offset.left < $(window).width() - 150) && !options.right
     "left: #{Math.round offset.left}px"
@@ -81,9 +80,10 @@ window.popup = (element, id, display, options={}) ->
 # close   Callback function to execute after the popup menu is closed
 jQuery.fn.popup = (items, open, close, options) ->
   id = popupIDs++
+  @mousedown (e) -> e.stopPropagation()
+  
   @click (e) ->
     e.preventDefault()
-    e.stopPropagation()
     element = this
     options = $.extend({}, options);
     options.close = -> close.call element if close

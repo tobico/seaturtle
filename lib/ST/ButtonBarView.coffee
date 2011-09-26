@@ -28,6 +28,9 @@ ST.class 'ButtonBarView', 'View', ->
       else
         $(this).click self._buttons[index].action
   
+  @method 'reverse', ->
+    @_buttons.reverse()
+  
   @method 'button', (title, action) ->
     @_buttons.push {
       title:  title

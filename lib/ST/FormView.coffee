@@ -122,6 +122,7 @@ ST.class 'FormView', 'View', ->
   @method 'dialogButtons', (dialog, buttonbar) ->
     @_dialog = dialog
     self = this
-    buttonbar.button '&nbsp;&nbsp;OK&nbsp;&nbsp;', @method('submit')
+    buttonbar.button '&nbsp;&nbsp;&nbsp;OK&nbsp;&nbsp;&nbsp;&nbsp;', @method('submit')
     buttonbar.button 'Cancel', @method('cancel')
+    buttonbar.reverse() if ST.mac()
     dialog.cancelFunction @method('cancel')

@@ -150,6 +150,10 @@ window.ST = {
   touch: ->
     navigator.userAgent.match(/(iPhone|iPod|iPad|Android)/) isnt null
   
+  # Detect Mac OS
+  mac: ->
+    navigator.platform.indexOf('Mac') >= 0
+  
   initializeCancelStack: ->
     @_cancelStack ||= []
     $ ->

@@ -86,6 +86,7 @@ ST.module 'Model', ->
           })
         )
         setDisplayClass options.savingClass
+      options.onSyncStart() if options.onSyncStart
     
     hideDisplayTimeout = null
     
@@ -112,6 +113,7 @@ ST.module 'Model', ->
           options.savedTemplate || 'Saved.'
         )
         setHideDisplay()
+      options.onSyncComplete() if options.onSyncComplete
     
     @onSyncError (errors) ->
       if options.statusDisplay
@@ -131,6 +133,7 @@ ST.module 'Model', ->
             a.css 'font-weight', 'normal'
           )
           options.statusDisplay.append ' ', a
+      options.onSyncError() if options.onSyncError
     
     @onHasChanges ->
       setTimeout (-> sync true), 100

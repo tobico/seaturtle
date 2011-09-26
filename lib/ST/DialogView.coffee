@@ -6,7 +6,7 @@ ST.class 'DialogView', 'View', ->
     @_element.attr 'id', 'dialog'
     @_element.hide()
     @_element.makeFixed Math.round($(window).width() / 2), 0
-    @_element.click (e) -> e.stopPropagation()
+    @_element.mousedown (e) -> e.stopPropagation()
     @_element.appendTo document.body
     @load()
     @_children.add view
