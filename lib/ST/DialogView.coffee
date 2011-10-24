@@ -23,6 +23,16 @@ ST.class 'DialogView', 'View', ->
   
   @retainedProperty 'controller'
   
+  @classMethod 'confirm', (title, description, confirm, cancel, fn) ->
+    view = ST.View.create()
+    view.element().html description
+    view.dialogButtons = (dialog, buttonbar) ->
+      buttonbar.button confirm, fn
+      buttonbar.button cancel, -> dialog.close()
+      buttonbar.reverse() if ST.mac()
+    dialog = @createWithTitleView title, view
+    view.release()
+  
   @method 'makeHeader', ->
     header = ST.View.createWithElement($ '<h3></h3>')
     header.load()
