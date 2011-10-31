@@ -18,25 +18,28 @@ ST.class 'TabView', 'View', ->
     @element().empty()
     
     for tab, index in @_tabs
-      li = @helper().tag 'li'
+      do (index) =>
+        li = @helper().tag 'li'
       
-      title = tab
-      title = @helper.truncate title, @_truncateLength if @_truncateLength
-      title = String(title)
+        title = tab
+        title = @helper.truncate title, @_truncateLength if @_truncateLength
+        title = String(title)
       
-      if index == @_tabIndex
-        li.append '<span class="title active_title">' + title + '</span>'
-        li.addClass 'hl'
-      else
-        li.append($('<span class="title inactive_title">' + title + '</span>').bind((if ST.touch() then 'touchstart' else 'mousedown'), do (index) -> ->
-          self.switchToTab index
-          closePopup() if window.closePopup
-        ))
+        span = $('<span class="title">' + title + '</span>')
+        li.append span
       
-      @_canClose = @_canClose tab, index if typeof @_canClose == 'function'
-      @helper().linkTag('X', -> self.closeTab index).addClass('close').appendTo(li) if @_canClose
+        if index == @_tabIndex
+          span.addClass 'active_title'
+          li.addClass 'hl'
+        else
+          span.addClass('inactive_title').mousedown =>
+            @switchToTab index
+            closePopup() if window.closePopup
       
-      @element().append li
+        @_canClose = @_canClose tab, index if typeof @_canClose == 'function'
+        @helper().linkTag('X', -> self.closeTab index).addClass('close').appendTo(li) if @_canClose
+      
+        @element().append li
     
   @method 'closeTab', (index) ->
     tab = @_tabs[index]
