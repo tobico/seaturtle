@@ -1,6 +1,9 @@
 #= require ST
 
 ST.class 'Object', null, ->
+  # Don't include ST.Object methods when profiling
+  @_unlogged = true
+  
   # Used to override an existing method of an STObject. Allows the overriding
   # method to call the overridden method using `@super()`, no matter how
   # many methods are chained together.
@@ -28,7 +31,7 @@ ST.class 'Object', null, ->
     if fn?
       if @_superclass && @_superclass.prototype[name]
         @prototype[name] = ST.Object.OverrideMethod @_superclass.prototype[name], fn
-      else if ST._logging
+      else if ST._logging && !@_unlogged
         @prototype[name] = ->
           start = Number(new Date)
           result = fn.apply this, arguments
