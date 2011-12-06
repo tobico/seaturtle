@@ -154,23 +154,6 @@ window.ST = {
   mac: ->
     navigator.platform.indexOf('Mac') >= 0
   
-  initializeCancelStack: ->
-    @_cancelStack ||= []
-    $ ->
-      $('html').keydown (e) ->
-        if e.which == 27 && ST._cancelStack.length
-          ST._cancelStack[ST._cancelStack.length - 1]()
-          e.stopPropagation()
-          e.preventDefault()
-  
-  pushCancelFunction: (fn) ->
-    @initializeCancelStack()
-    @_cancelStack.push fn
-  
-  popCancelFunction: ->
-    @initializeCancelStack()
-    @_cancelStack.pop()
-  
   beginCommand: (name) ->    
     throw "Tried to run more than one command at once" if ST._command
     ST._command = {

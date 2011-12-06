@@ -124,7 +124,11 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'inputKeyDown', (event) ->
     switch event.which
-      when 38 # Up
+      when ST.View.VK_ESCAPE
+        @blur()
+        e.stopPropagation()
+        e.preventDefault()
+      when ST.View.VK_UP
         if @_results
           if @_selectedResult > 0
             @selectedResult(@_selectedResult - 1)
@@ -132,7 +136,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
             @selectedResult(@_results.length - 1)
         event.stopPropagation()
         event.preventDefault()
-      when 40 # Down
+      when ST.View.VK_DOWN
         if @_results
           if @_selectedResult < @_results.length - 1
             @selectedResult(@_selectedResult + 1)
@@ -140,7 +144,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
             @selectedResult(0)
         event.stopPropagation()
         event.preventDefault()
-      when 13 # Enter
+      when ST.View.VK_RETURN
         @blur() if @_selectedResult >= 0 || @_inputValue == ''
         event.stopPropagation()
         event.preventDefault()
@@ -150,7 +154,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
           @blur()
           event.stopPropagation()
           event.preventDefault()
-      when 9 # Tab
+      when ST.View.VK_TAB
         if @_searching || @_results
           event.stopPropagation()
           event.preventDefault()
@@ -189,7 +193,6 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'showResultList', ->
     unless @_resultListVisible
-      ST.pushCancelFunction @method('blur')
       offset = @_inputElement.offset()
       @_resultListElement.css 'left', offset.left
       @_resultListElement.css 'top', offset.top + @_inputElement.outerHeight()
@@ -198,7 +201,6 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'hideResultList', ->
     if @_resultListVisible
-      ST.popCancelFunction()
       @_resultListElement.hide()
       @_resultListVisible = false
   

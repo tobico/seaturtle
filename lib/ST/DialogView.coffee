@@ -16,12 +16,15 @@ ST.class 'DialogView', 'View', ->
     @makeFooter()
     @showBlanker()
     @showDialog()
+    @takeKeyboardFocus()
+    view.takeKeyboardFocus()
     
   @initializer 'withTitleController', (title, controller) ->
     @controller controller
     @initWithTitleView title, controller.view()
   
   @retainedProperty 'controller'
+  @property 'cancelFunction'
   
   @classMethod 'confirm', (title, description, confirm, cancel, fn) ->
     view = ST.View.create()
@@ -49,10 +52,10 @@ ST.class 'DialogView', 'View', ->
     @footer footer
     footer.release()
   
-  @method 'cancelFunction', (fn) ->
-    ST.popCancelFunction() if @_cancelFunction
-    @_cancelFunction = fn
-    ST.pushCancelFunction fn
+  @method 'keyDown', (key) ->
+    if key == ST.View.VK_ESCAPE
+      @_cancelFunction() if @_cancelFunction
+      true
   
   @method 'showBlanker', ->
     # Add blanker div if it doesn't already exist
@@ -114,7 +117,8 @@ ST.class 'DialogView', 'View', ->
   
   @method 'close', ->
     self = this
-    ST.popCancelFunction() if @_cancelFunction
+    @_subView.returnKeyboardFocus()
+    @returnKeyboardFocus()
     @trigger 'closed'
     @hideBlanker()
     @hideDialog -> self.release()

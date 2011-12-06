@@ -1,85 +1,106 @@
 # Provides functions to attach single-level popup menus to an element.
 
-# Keeps track of unique IDs for popup-enabled elements, to allow closing
-# of the popup, in the event of a second click on the associated element
-popupID = -1
-popupIDs = 1
+window.Popup = {
+  # Keeps track of unique IDs for popup-enabled elements, to allow closing
+  # of the popup, in the event of a second click on the associated element
+  _popupID:  -1
+  _popupIDs: 1
+  
+  _detach: false
+  
+  # Keeps track of callback function to execute on closing the popup
+  _closeCallback: null
+  
+  _view: null
+  
+  keyDown: (key) ->
+    if key == ST.View.VK_ESCAPE
+      @close()
+      true
+  
+  close: ->
+    if @_popupID
+      onClose = @_closeCallback
+      @_closeCallback = null
+      @_popupID = null
+      @_view.returnKeyboardFocus() if @_view
+      ST.View.method('returnKeyboardFocus').call(this) if ST.View
+      $('#popup').removeAttr('id').stop().fadeOut 100, ->
+        onClose() if onClose
+        if @_view
+          @_view.release()
+          @_view = null
+        $(this).children().detach() if @_detach
+        $(this).remove()
+        
+  nextId: ->
+    @_popupIDs++
+  
+  show: (element, id, display, options={}) ->
+    return @close() if @_popupID == id  
+    @close()
 
-detachPopup = false
+    @_popupID = id
+    @_detach = options.detach
 
-# Keeps track of callback function to execute on closing the popup
-popupCloseCallback = null
+    offset = element.offset()
 
-# Closes a popup displayed with #popup
-window.closePopup = ->
-  if popupID
-    ST.popCancelFunction()
-    onClose = popupCloseCallback
-    popupCloseCallback = null
-    popupID = null
-    $('#popup').removeAttr('id').stop().fadeOut 100, ->
-      onClose() if onClose
-      $(this).children().detach() if detachPopup
-      $(this).remove()
+    popup = $ '<div id="popup" class="popup"></div>'
 
-# Displays a popup menu.
-window.popup = (element, id, display, options={}) ->
-  return closePopup() if popupID == id  
-  closePopup()
-  
-  ST.pushCancelFunction closePopup
-  
-  popupID = id
-  detachPopup = options.detach
-  
-  offset = element.offset()
-  
-  popup = $ '<div id="popup" class="popup"></div>'
-  
-  popupCloseCallback = ->
-    options.close.call element, element if options.close
-    display.release() if display.release
-  
-  if ST.View && (display instanceof ST.View)
-    display.load()
-    popup.append display.element()
-  else if display instanceof jQuery
-    popup.append display
-  else
-    ul = $ "<ul class=\"popupMenu\"></ul>"
-    popup.append ul
+    @_closeCallback = ->
+      options.close.call element, element if options.close
+    
+    ST.View.method('takeKeyboardFocus').call(this) if ST.View
+    
+    if ST.View && (display instanceof ST.View)
+      @_view = display
+      display.load()
+      display.takeKeyboardFocus()
+      popup.append display.element()
+    else if display instanceof jQuery
+      popup.append display
+    else
+      ul = $ "<ul class=\"popupMenu\"></ul>"
+      popup.append ul
 
-    for item in display
-      if (item == '-')
-        ul.append '<li style="height: 6px"><hr style="margin: 2px" /></li>'
-      else
-        do (item) ->
-          li = $ '<li></li>'
-          li.addClass item.className if item.className
-          a = $('<a href="javascript:;">' + (item.title || item[0]) + '</a>')
-          a.click (e) ->
-            closePopup()
-            item.action() if item.action
-            item[1]() if item[1]
-          li.append a
-          ul.append li
+      for item in display
+        if (item == '-')
+          ul.append '<li style="height: 6px"><hr style="margin: 2px" /></li>'
+        else
+          do (item) ->
+            li = $ '<li></li>'
+            li.addClass item.className if item.className
+            a = $('<a href="javascript:;">' + (item.title || item[0]) + '</a>')
+            a.click (e) ->
+              closePopup()
+              item.action() if item.action
+              item[1]() if item[1]
+            li.append a
+            ul.append li
+
+    popup.mousedown (e) -> e.stopPropagation()
+
+    style = if (offset.left < $(window).width() - 150) && !options.right
+      "left: #{Math.round offset.left}px"
+    else
+      "right: #{Math.round($(window).width() - offset.left - element.outerWidth())}px"
+    popup.attr 'style', "#{style}; top: #{Math.floor(offset.top + element.outerHeight())}px; display: none; position: absolute"
+
+    popup.appendTo(document.body).fadeIn(100)
   
-  popup.mousedown (e) -> e.stopPropagation()
-  
-  style = if (offset.left < $(window).width() - 150) && !options.right
-    "left: #{Math.round offset.left}px"
-  else
-    "right: #{Math.round($(window).width() - offset.left - element.outerWidth())}px"
-  popup.attr 'style', "#{style}; top: #{Math.floor(offset.top + element.outerHeight())}px; display: none; position: absolute"
-  
-  popup.appendTo(document.body).fadeIn(100)
+  toString: ->
+    'Popup'
+}
+
+window.closePopup = Popup.close
+window.popup = Popup.show
 
 # Associates a popup menu with selected elements.
 # items   Items for menu, see #popup
 # open    Callback function to execute before opening the popup menu
 # close   Callback function to execute after the popup menu is closed
 jQuery.fn.popup = (items, open, close, options) ->
-  id = popupIDs++
+  id = Popup.nextId()
   @mousedown (e) -> e.stopPropagation()
   
   @click (e) ->
@@ -87,8 +108,8 @@ jQuery.fn.popup = (items, open, close, options) ->
     element = this
     options = $.extend({}, options);
     options.close = -> close.call element if close
-    if popupID == id
-      closePopup()
+    if Popup._popupID == id
+      Popup.close()
     else
-      popup $(this), id, (if items.call then items.call(element, e.altKey || e.shiftKey) else items), options
+      Popup.show $(this), id, (if items.call then items.call(element, e.altKey || e.shiftKey) else items), options
       open.call element, element if open

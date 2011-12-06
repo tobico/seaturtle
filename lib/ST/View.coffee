@@ -3,12 +3,42 @@
 #= require ST/ViewHelper
 
 ST.class 'View', 'Destructable', ->
+  @VK_BACKSPACE = 8
+  @VK_TAB       = 9
+  @VK_RETURN    = 13
+  @VK_ESCAPE    = 27
+  @VK_SPACE     = 32
+  @VK_PAGE_UP   = 33
+  @VK_PAGE_DOWN = 34
+  @VK_END       = 35
+  @VK_HOME      = 36
+  @VK_LEFT      = 37
+  @VK_UP        = 38
+  @VK_RIGHT     = 39
+  @VK_DOWN      = 40
+  
   @ViewWithContent = (content) ->
     view = @create()
     view.load()
     view.element().append content
     view
+  
+  @classMethod 'keyboardFocusStack', ->
+    unless ST.View._keyboardFocusStack
+      ST.View._keyboardFocusStack = ST.List.create()
+      $('html').keydown (e) ->
+        handled = false
+        ST.View._keyboardFocusStack.each (view) ->
+          if view.keyDown && view.keyDown(e.which)
+            console.log "Keydown: Key #{e.which} handled by #{view}" if window.console
+            handled = true
+            'break'
+        if handled
+          e.stopPropagation()
+          e.preventDefault()
     
+    ST.View._keyboardFocusStack
+  
   @initializer ->
     element = ST.ViewHelper.instance().tag('div')
     element.addClass @_class._name
@@ -130,6 +160,14 @@ ST.class 'View', 'Destructable', ->
       @element().show()
     else
       @element().hide()
+  
+  @method 'takeKeyboardFocus', ->
+    stack = ST.View.keyboardFocusStack()
+    stack.insertAt 0, this
+  
+  @method 'returnKeyboardFocus', ->
+    stack = ST.View.keyboardFocusStack()
+    stack.remove this
   
   @method 'scrollTo', -> $.scrollTo @_element
   
