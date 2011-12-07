@@ -92,8 +92,8 @@ window.Popup = {
     'Popup'
 }
 
-window.closePopup = Popup.close
-window.popup = Popup.show
+window.closePopup = -> Popup.close()
+window.popup = -> Popup.show()
 
 # Associates a popup menu with selected elements.
 # items   Items for menu, see #popup
