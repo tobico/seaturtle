@@ -67,12 +67,12 @@ window.Popup = {
         if (item == '-')
           ul.append '<li style="height: 6px"><hr style="margin: 2px" /></li>'
         else
-          do (item) ->
+          do (item) =>
             li = $ '<li></li>'
             li.addClass item.className if item.className
             a = $('<a href="javascript:;">' + (item.title || item[0]) + '</a>')
-            a.click (e) ->
-              closePopup()
+            a.click (e) =>
+              @close()
               item.action() if item.action
               item[1]() if item[1]
             li.append a
