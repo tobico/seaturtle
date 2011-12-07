@@ -5,7 +5,6 @@ ST.class 'DialogView', 'View', ->
     @init()
     @_element.attr 'id', 'dialog'
     @_element.hide()
-    @_element.makeFixed Math.round($(window).width() / 2), 0
     @_element.mousedown (e) -> e.stopPropagation()
     @_element.appendTo document.body
     @load()
@@ -60,16 +59,20 @@ ST.class 'DialogView', 'View', ->
   @method 'showBlanker', ->
     # Add blanker div if it doesn't already exist
     if $('#blanker').length < 1
-      $('body').append $('<div id="blanker"></div>').css('opacity', 0).click (e) -> e.stopPropagation()
+      blanker = $('<div id="blanker"></div>')
+      blanker.css 'opacity', 0
+      blanker.click (e) -> e.stopPropagation()
+      $('body').append blanker
+      blanker.bind 'touchstart touchmove touchend', (e) -> e.preventDefault()
       
       # Fade blanker in
       if $.browser.webkit
-        $('#blanker').css('height', $(document).height())
+        blanker.css('height', $(document).height())
             .css('width', $(document).width())
             .css('-webkit-transition', 'opacity 100ms linear')
             .css('opacity', 0.6)
       else
-        $('#blanker').show().css('opacity', 0).animate {opacity: 0.6}, 100, 'linear'
+        blanker.show().animate {opacity: 0.6}, 100, 'linear'
     else
       # Prevent currently visible blanker from hiding
       $('#blanker').stop().css('opacity', 0.6)
@@ -79,17 +82,22 @@ ST.class 'DialogView', 'View', ->
     blanker = $ '#blanker'
     if blanker.length > 0
       # Fade blanker out
-      blanker.animate {opacity : 0}, 300, 'linear', ->
-        blanker.remove()
+      if $.browser.webkit
+        blanker.css('-webkit-transition', 'opacity 100ms linear')
+          .css('opacity', 0.0)
+          .bind 'webkitTransitionEnd', ->
+            $(this).unbind('webkitTransitionEnd')
+            blanker.remove()
+      else
+        blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
   
   @method 'showDialog', ->
     self = this
     if $.browser.webkit
-      offset = if ST.touch() then window.pageYOffset else 0
-      @_element.css('top', offset - @_element.height())
+      @_element.css('top', 0 - @_element.height())
           .show()
           .css('-webkit-transition', 'top 200ms ease-in')
-          .css('top', offset)
+          .css('top', 0)
           .bind 'webkitTransitionEnd', ->
             $(this).css('-webkit-transition', '')
                 .unbind('webkitTransitionEnd')
@@ -105,9 +113,8 @@ ST.class 'DialogView', 'View', ->
   
   @method 'hideDialog', (callback) ->
     if $.browser.webkit
-      offset = if ST.touch() then window.pageYOffset else 0
       @_element.css('-webkit-transition', 'top 200ms ease-in')
-          .css('top', offset - @_element.height())
+          .css('top', 0 - @_element.height())
           .bind 'webkitTransitionEnd', ->
             $(this).unbind('webkitTransitionEnd')
             callback() if callback
