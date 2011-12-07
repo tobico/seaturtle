@@ -122,17 +122,13 @@ ST.module 'Model', ->
           options.errorTemplate || 'Save failed!'
         )
         if errors.length
-          a = $('<a href="javascript:;" style="display: inline">(' + errors.length + ' ' + (if errors.length == 1 then 'error' else 'errors') + ')</a>')
-          items = []
+          errorHTML = ['<ul class="errors">']
           for error in errors
-            items.push [error, (-> null)]
-          a.popup(items, ->
-            a.css 'font-weight', 'bold'
-            $('#popup').css 'z-index', 10
-          , ->
-            a.css 'font-weight', 'normal'
-          )
-          options.statusDisplay.append ' ', a
+            errorHTML.push '<li>', error, '</li>'
+          errorHTML.push '</ul>'
+          options.statusDisplay.append ' ', errorHTML.join('')
+        if options.messageOnError
+          options.statusDisplay.append '<div class="message">' + options.messageOnError + '</div>'
       options.onSyncError() if options.onSyncError
     
     @onHasChanges ->
@@ -151,6 +147,10 @@ ST.module 'Model', ->
         
         ev.returnValue = msg if ev && msg
         msg
+      
+      window.forceReload = ->
+        window.onbeforeunload = -> null
+        location.reload true
     
     sync
   
