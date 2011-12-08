@@ -1,5 +1,7 @@
+_touch = navigator.userAgent.match(/(iPhone|iPod|iPad|Android)/) isnt null
+_logging = !_touch && window.console
+  
 window.ST = {
-  _logging: window.console && console.groupCollapsed
   _history: []
   
   # Converts a string to a function returns the named attribute of it's first
@@ -147,8 +149,7 @@ window.ST = {
     s
   
   # Detect touchscreen devices
-  touch: ->
-    navigator.userAgent.match(/(iPhone|iPod|iPad|Android)/) isnt null
+  touch: -> _touch
   
   # Detect Mac OS
   mac: ->
@@ -174,15 +175,17 @@ window.ST = {
         counts.sort ST.makeSortFn('time', true)
         console.table counts, ['method', 'count', 'time'] if console.table
     }
-    if ST._logging
+    if _logging
       console.groupCollapsed "Command: #{name}"
       console.time 'execute'
+    else if window.console
+      console.log "Command: #{name}"
     ST._command
   
   endCommand: ->
     command = ST._command
     command.runOneTimeTasks()
-    if ST._logging
+    if _logging
       console.timeEnd 'execute'
       command.dump()
       console.groupEnd()
@@ -198,7 +201,7 @@ window.ST = {
   
   undo: ->
     if command = ST._history.pop()
-      console.log "Undo command: #{command.name}" if ST._logging
+      console.log "Undo command: #{command.name}" if _logging
       command.reverse()
   
   once: (key, fn) ->

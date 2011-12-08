@@ -36,105 +36,53 @@ ST.module 'Model', ->
       @_onHasChanges @_changesCount if @_onHasChanges
     true
   
-  @sync = (url, async, additionalData) ->
+  @sync = (url, async, additionalData=null) ->
     if @_changesCount > 0 && !@_submitting
-      self = this
       @_submitting = true
       @_onSyncStart @_changesCount if @_onSyncStart
       for id of @_changes
         if @_changes.hasOwnProperty id
           @_changes[id].submitted = true
       data = {changes: JSON.stringify(@_changes)}
-      $.extend data, additionalData
+      $.extend data, additionalData if additionalData
       $.ajax {
         url:      url
         type:     'post'
         async:    async
         data:     data
-        success:  (data) ->
-          self._submitting = false
-          self.ackSync data
-        error: ->
-          self._submitting = false
-          self._onSyncError [] if self._onSyncError
+        success:  (data) =>
+          @_submitting = false
+          if data.fatal
+            @_onFatalError data.fatal if @_onFatalError
+          else
+            @ackSync data
+        error: (xhr, status) =>
+          @_submitting = false
+          @_onConnectionError status if @_onConnectionError
       }
       true
     else
       false
   
-  @autoSync = (url, options={}) ->
-    sync = (async) ->
-      ST.Model.sync url, async, options.data || {}
+  @autoSync = (url, delegate=null, syncBeforeUnload=false) ->
+    window.sync = (async) ->
+      ST.Model.sync url, async
     
-    options.savingClass   ||= 'saving'
-    options.completeClass ||= 'saved'
-    options.errorClass    ||= 'failed'
-    
-    allClasses = "#{options.savingClass} #{options.completeClass} #{options.errorClass}"
-    
-    setDisplayClass = (newClass) ->
-      if options.statusDisplay
-        options.statusDisplay.removeClass allClasses
-        options.statusDisplay.addClass newClass if newClass
-    
-    @onSyncStart (count) ->
-      if options.statusDisplay
-        options.statusDisplay.html(
-          ST.template(options.savingTemplate || 'Saving :count :changes...', {
-            count:   count
-            changes: if count == 1 then 'change' else 'changes'
-          })
-        )
-        setDisplayClass options.savingClass
-      options.onSyncStart() if options.onSyncStart
-    
-    hideDisplayTimeout = null
-    
-    hideDisplay = ->
-      options.statusDisplay.empty()
-      setDisplayClass null 
-    
-    cancelHideDisplay = ->
-      if hideDisplayTimeout
-        clearTimeout hideDisplayTimeout
-        hideDisplayTimeout = null
-    
-    setHideDisplay = ->
-      cancelHideDisplay()
-      hideDisplayTimeout = setTimeout(hideDisplay, 5000)
-    
-    @onSyncContinue ->
-      sync true
-    
-    @onSyncComplete ->
-      if options.statusDisplay
-        setDisplayClass options.completeClass
-        options.statusDisplay.html(
-          options.savedTemplate || 'Saved.'
-        )
-        setHideDisplay()
-      options.onSyncComplete() if options.onSyncComplete
-    
-    @onSyncError (errors) ->
-      if options.statusDisplay
-        setDisplayClass options.errorClass
-        options.statusDisplay.html(
-          options.errorTemplate || 'Save failed!'
-        )
-        if errors.length
-          errorHTML = ['<ul class="errors">']
-          for error in errors
-            errorHTML.push '<li>', error, '</li>'
-          errorHTML.push '</ul>'
-          options.statusDisplay.append ' ', errorHTML.join('')
-        if options.messageOnError
-          options.statusDisplay.append '<div class="message">' + options.messageOnError + '</div>'
-      options.onSyncError() if options.onSyncError
+    @onSyncContinue -> sync true
+    @onConnectionError (status) ->
+      setTimeout(->
+        sync true
+      , 5000)
+      delegate.onConnectionError status if delegate && delegate.onConnectionError
+    @onSyncStart (count) -> delegate.onSyncStart(count) if delegate.onSyncStart
+    @onSyncComplete -> delegate.onSyncComplete() if delegate.onSyncComplete
+    @onFatalError (status) -> delegate.onFatalError(status) if delegate.onFatalError
+    @onSyncError -> delegate.onSyncError() if delegate.onSyncError
     
     @onHasChanges ->
       setTimeout (-> sync true), 100
     
-    if options.syncBeforeUnload
+    if syncBeforeUnload
       window.onbeforeunload = (e) ->
         ev = e || window.event
         msg = if window.Connection && !Connection.active
@@ -206,10 +154,18 @@ ST.module 'Model', ->
   @onSyncComplete = (fn) ->
     @_onSyncComplete = fn
 
-  # Event handler - called when sync request fails with error message
+  # Event handler - called when individual changes fail to save with an error
   @onSyncError = (fn) ->
     @_onSyncError = fn
   
+  # Event handler - called when a connection to the save URL could not be made
+  @onConnectionError = (fn) ->
+    @_onConnectionError = fn
+
+  # Event handler - called when a save request fails completely
+  @onFatalError = (fn) ->
+    @_onFatalError = fn
+
   @changes = ->
     @_changesCount
 
