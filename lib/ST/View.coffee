@@ -172,3 +172,8 @@ ST.class 'View', 'Destructable', ->
   @method 'scrollTo', -> $.scrollTo @_element
   
   @method 'showDialog', (events) -> Dialog.showView this, events
+
+jQuery.fn.addView = (view) ->
+  @append view.element()
+  view.load()
+  this

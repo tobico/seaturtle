@@ -58,7 +58,7 @@ window.Popup = {
       display.takeKeyboardFocus()
       popup.append display.element()
     else if display instanceof jQuery
-      popup.append display
+      popup.append display.show()
     else
       ul = $ "<ul class=\"popupMenu\"></ul>"
       popup.append ul
