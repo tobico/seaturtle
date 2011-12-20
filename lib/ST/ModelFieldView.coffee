@@ -126,8 +126,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     switch event.which
       when ST.View.VK_ESCAPE
         @blur()
-        e.stopPropagation()
-        e.preventDefault()
+        event.stopPropagation()
+        event.preventDefault()
       when ST.View.VK_UP
         if @_results
           if @_selectedResult > 0
