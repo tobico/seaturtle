@@ -1,6 +1,6 @@
 #= require ST/TextFieldView
 
-ST.class 'ModelFieldView', 'TextFieldView', ->
+ST.class 'ModelFieldView', 'FieldView', ->
   # Mappings for event key code to result index
   @KEY_CODES = { 49:0, 50:1, 51:2, 52:3, 53:4, 54:5, 55:6, 56:7, 57:8, 48:9, 97:0, 98:1, 99:2, 100:3, 101:4, 102:5, 103:6, 104:7, 105:8, 96:9 }
   
@@ -13,8 +13,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @init()
     @_model = model
     @_scope = null
-    @_value = null
-    @_inputValue = null
+    @_text = ''
+    @_placeholder = ''
     @_searching = false
     @_searchValue = ''
     @_results = null
@@ -27,9 +27,8 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @initWithModel scope.model()
     @_scope = scope
   
-  @property 'value'
-  @property 'inputValue'
   @property 'searching'
+  @property 'placeholder'
   @property 'results'
   @property 'selectedResult'
   @property 'acceptsNull'
@@ -40,87 +39,87 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
     @_canCreate = true
     @_createLabel = label
   
-  @method 'render', ->
-    @super()
-    
-    self = this
-    
-    @_inputElement.attr 'autocomplete', 'off'
-    @_inputElement.attr 'autocorrect', 'off'
-    @_inputElement.keydown  @method('inputKeyDown')
-    if @_inputValue && @_inputValue.length
-      @_inputElement.val @_inputValue
+  @method 'convertValue', (value) ->
+    if value instanceof ST.Model.Base
+      value
+    else
+      null
+  
+  @method 'inputHTML', ->
+    '<input type="text" class="text" />'
+  
+  @method 'setInputValue', (value) ->
+    if value
+      @_text = ST.trim value.toFieldText()
+      @_inputElement.val @_text
       @_inputElement.removeClass 'placeholder'
     else
+      @_text = ''
       @_inputElement.val @_placeholder
       @_inputElement.addClass 'placeholder'
-    @_inputElement.bind 'choose', (e, text) ->
-      self.blur()
-      self.hideResultList()
-      self._focused = false
-      self._searchNext = null
-      self.chooseByText text
+  
+  @method 'render', ->
+    @super()
+    @_inputElement.keydown  @method('inputKeyDown')
+    @_inputElement.focus    @method('inputFocus')
+    @_inputElement.blur     @method('inputBlur')
+    @_inputElement.attr(
+      'autocomplete': 'off',
+      'autocorrect':  'off'
+    )
+    @_inputElement.bind 'choose', (e, text) =>
+      @blur()
+      @hideResultList()
+      @_focused = false
+      @_searchNext = null
+      @chooseByText text
     
     @_resultListElement = $ '<div class="ModelFieldViewResults"></div>'
     @_resultListElement.hide()
-    @_resultListElement.mouseout ->
-      self.selectedResult -1 unless @_hiding
+    @_resultListElement.mouseout =>
+      @selectedResult -1 unless @_hiding
     $(document.body).append @_resultListElement
   
   @method 'inputFocus', ->
-    self = this
-    @super()  
     @_focused = true
-    @_inputElement.select() if @_value
-    inputValue = ST.trim(@_inputElement.val())
-    unless @_value && inputValue == @_value.toFieldText()
-      @performSearch inputValue
+    if @_value
+      @_inputElement.select() if @_value
+    else
+      @_inputElement.val ''
+      @_inputElement.removeClass 'placeholder'
+    
+    unless @_value && @_text == @_value.toFieldText()
+      @performSearch @_text
+    
+    @trigger 'focused'
   
   @method 'inputBlur', ->
     @_hiding = true
-    if @_inputValue == ''
+    if @_text == ''
       @value null
       @trigger 'valueChosen', null
-      @super()
+      @inputValue null
     else if @_results && @_selectedResult >= 0
       @chooseResult @_results[@_selectedResult]
-    else if @_value
-      @_inputValue = @_value.toFieldText()
-      @_inputElement.val @_inputValue 
     else
-      @inputValue ''
-      @super()
+      @inputValue @_value
+    
     @hideResultList()
     @_hiding = false
     @_focused = false
     @trigger 'blurred'
   
   @method 'inputChanged', ->
-    value = @_inputElement.val()
-    @inputValue value unless @_inputValue == value
-  
-  @method '_inputValueChanged', (oldValue, newValue) ->
-    newValue = ST.trim newValue
-  
-    if @_loaded && ST.trim(@_inputElement.val()) != newValue
-      if newValue == '' && (!@_focused || @_hiding)
-        @_inputElement.addClass 'placeholder'
-        @_inputElement.val @_placeholder
-      else
-        @_inputElement.removeClass 'placeholder'
-        @_inputElement.val newValue
-    
-    if @_focused && oldValue != newValue
-      @performSearch newValue
+    value = ST.trim @_inputElement.val()
+    unless @_text == value
+      @_text = value
+      @performSearch value if @_focused
   
   @method '_selectedResultChanged', (oldValue, newValue) ->
     if @_resultListElement
       rows = $ 'tr', @_resultListElement
       rows.eq(oldValue).removeClass 'selected' if oldValue >= 0
       rows.eq(newValue).addClass 'selected' if newValue >= 0
-  
-  @method '_valueChanged', (oldValue, newValue) ->
-    @inputValue(if newValue then newValue.toFieldText() else '')
   
   @method 'inputKeyDown', (event) ->
     switch event.which
@@ -145,7 +144,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
         event.stopPropagation()
         event.preventDefault()
       when ST.View.VK_RETURN
-        @blur() if @_selectedResult >= 0 || @_inputValue == ''
+        @blur() if @_selectedResult >= 0 || @text == ''
         event.stopPropagation()
         event.preventDefault()
       when 48, 190, 110 # 0
@@ -229,7 +228,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
       
       if @_canCreate
         html.push '<tr style="cursor: default" onmouseover="selectResult(', results.length, ')"><td class="hotkey">0</td><td colspan="', maxCols, '">Create new ', @_model._name.toLowerCase()
-        html.push ' ', @_createLabel.replace('$1', @_inputValue)
+        html.push ' ', @_createLabel.replace('$1', @_text)
         results.push 'new'
       
       html.push '</tbody></table>'
@@ -247,7 +246,7 @@ ST.class 'ModelFieldView', 'TextFieldView', ->
   
   @method 'chooseResult', (result) ->
     if result == 'new'
-      @trigger 'create', @_inputValue
+      @trigger 'create', @_text
     else if result && result[0]
       @value result[0]
       @trigger 'valueChosen', result[0]

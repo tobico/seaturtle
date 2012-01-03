@@ -32,6 +32,8 @@ ST.class 'FormView', 'View', ->
       enum: (attribute, details) ->
         details ||= self.detailsFor attribute
         @_add ST.EnumFieldView.createWithValuesNull(details.values, details.null), attribute
+      bool: (attribute) ->
+        @_add ST.BoolFieldView.create(), attribute
       model: (attribute) ->
         details = self.detailsFor attribute
         field = ST.ModelFieldView.createWithModel self._model._namespace.class(details.model)
