@@ -7,6 +7,7 @@ ST.class 'WizardView', ST.View, ->
     @_stepIndex = -1
     @_data = {}
   
+  @property 'data'
   @property 'steps'
   @property 'stepIndex'
   
@@ -27,7 +28,8 @@ ST.class 'WizardView', ST.View, ->
   @method 'dialogButtons', (dialog, buttonbar) ->
     @_dialog = dialog
     @_buttonBar = buttonbar
-    @_backButton = buttonbar.button '&lt; Back', @method('lastStep')
+    if @_steps.length > 1
+      @_backButton = buttonbar.button '&lt; Back', @method('lastStep')
     @_nextButton = buttonbar.button 'Next &gt;', @method('nextStep')
     @_cancelButton = buttonbar.button 'Cancel', @method('cancel')
     dialog.cancelFunction @method('cancel')
