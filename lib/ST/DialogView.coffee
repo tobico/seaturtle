@@ -52,6 +52,7 @@ ST.class 'DialogView', 'View', ->
       @_subView.dialogButtons this, footer
     else
       footer.button 'Close', @method('close')
+      @cancelFunction @method('close')
     @footer footer
     footer.release()
   
