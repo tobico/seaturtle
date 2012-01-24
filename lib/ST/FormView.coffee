@@ -22,23 +22,26 @@ ST.class 'FormView', 'View', ->
       @_model   = options.model
     
     dsl = {
-      _add: (field, attribute) ->
+      _add: (field, attribute, options={}) ->
         field.id attribute
+        field.label options.label if options.label
         field.bind 'submit', self
         self._fields.add field
         field.release()        
-      text: (attribute) ->
-        @_add ST.TextFieldView.create(), attribute
-      enum: (attribute, details) ->
-        details ||= self.detailsFor attribute
-        @_add ST.EnumFieldView.createWithValuesNull(details.values, details.null), attribute
-      bool: (attribute) ->
-        @_add ST.BoolFieldView.create(), attribute
-      model: (attribute) ->
+      text: (attribute, options={}) ->
+        @_add ST.TextFieldView.create(), attribute, options
+      enum: (attribute, options={}) ->
+        $.extend options, self.detailsFor(attribute)
+        @_add ST.EnumFieldView.createWithValuesNull(options.values, options.null), attribute, options
+      bool: (attribute, options={}) ->
+        @_add ST.BoolFieldView.create(), attribute, options
+      datetime: (attribute, options={}) ->
+        @_add ST.DateTimeFieldView.create(), attribute, options
+      model: (attribute, options={}) ->
         details = self.detailsFor attribute
         field = ST.ModelFieldView.createWithModel self._model._namespace.class(details.model)
         field.searchRemotelyAt details.searchesRemotelyAt if details.searchesRemotelyAt
-        @_add field, attribute
+        @_add field, attribute, options
     }
     definition.call dsl
     @loadFieldValues()
@@ -58,7 +61,10 @@ ST.class 'FormView', 'View', ->
       attribute = field.id()
       field.value(
         if self._item
-          self._item[attribute]()
+          if $.isFunction self._item[attribute]
+            self._item[attribute]()
+          else
+            self._item[attribute]
         else if self._defaults && self._defaults[attribute]
           self._defaults[attribute]
         else if details = self.detailsFor(attribute)
@@ -74,7 +80,7 @@ ST.class 'FormView', 'View', ->
     @_fields.each (field) ->
       attribute = field.id()
       html.push '<tr><th class="label"><label for="', attribute, '">',
-        self._model.labelForAttribute(attribute),
+        field.label() || self._model.labelForAttribute(attribute),
         ':</label></th><td class="field" id="cell_for_', attribute,
         '"></td></tr>'
     html.push '</table>'
@@ -105,7 +111,12 @@ ST.class 'FormView', 'View', ->
   
   @method 'save', ->
     item = if @_item
-      @_item.set @data()
+      if @_item.set
+        @_item.set @data()
+      else
+        for key, value of @data()
+          @_item[key] = value
+      
       @_item
     else if @_scope
       @_scope.build(@data())

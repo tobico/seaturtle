@@ -14,6 +14,7 @@ ST.class 'EnumFieldView', 'View', ->
   @property 'values'
   @property 'selectElement'
   @property 'id'
+  @property 'label'
   @property 'allowNull'
   
   @method 'isValueValid', (value) ->

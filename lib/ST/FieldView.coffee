@@ -18,6 +18,7 @@ ST.class 'FieldView', 'View', ->
   @property 'value'
   @property 'inputElement'
   @property 'id'
+  @property 'label'
   @accessor 'inputValue'
 
   @method 'setValue', (newValue) ->
