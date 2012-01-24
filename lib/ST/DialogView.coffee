@@ -1,26 +1,30 @@
 #= require ST/View
 
 ST.class 'DialogView', 'View', ->
-  @initializer 'withTitleView', (title, view) ->
-    @init()
+  @initializer (args={}) ->
+    @super()
     @_element.attr 'id', 'dialog'
     @_element.hide()
     @_element.mousedown (e) -> e.stopPropagation()
     @_element.appendTo document.body
     @load()
-    @_children.add view
-    @_subView = view
-    @_title = title
+    @_children.add args.view
+    @_subView = args.view
+    @_title = args.title
+    @_autoFocus = args.autoFocus isnt false
     @makeHeader()
     @makeFooter()
     @showBlanker()
     @showDialog()
     @takeKeyboardFocus()
-    view.takeKeyboardFocus()
-    
+    args.view.takeKeyboardFocus()
+  
+  @initializer 'withTitleView', (title, view) ->
+    @init title: title, view: view
+      
   @initializer 'withTitleController', (title, controller) ->
     @controller controller
-    @initWithTitleView title, controller.view()
+    @init title: title, view: controller.view()
   
   @retainedProperty 'controller'
   @property 'cancelFunction'
@@ -108,8 +112,9 @@ ST.class 'DialogView', 'View', ->
           .animate({top: 0}, 200, 'swing', ->
             self.trigger 'opened'
           )
-
-    $('textarea, input, button', @_element).slice(0,1).focus() unless ST.touch()
+    
+    if @_autoFocus && !ST.touch()
+      $('textarea, input, button', @_element).slice(0,1).focus()
   
   @method 'hideDialog', (callback) ->
     if $.browser.webkit
