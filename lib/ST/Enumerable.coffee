@@ -57,6 +57,11 @@ ST.module 'Enumerable', ->
         'break'
     found
   
+  # Runs callback for each item, with index of item in second argument
+  @method 'eachWithIndex', (fn) ->
+    i = 0
+    @each (item) -> fn.call this, item, i++
+  
   # Returns a new list with callback function applied to each item
   @method 'map', (fn=null) ->
     fn = ST.toProc fn if fn
