@@ -34,15 +34,19 @@ ST.class 'DateTimeFieldView', 'FieldView', ->
     @_timeElement.calendricalTime()
   
   @method 'convertValue', (value) ->
-    if value? then new Date(value) else null
+    if value instanceof Date
+      value
+    else if value?
+      Date.parse value
+    else null
   
   @method 'getInputValue', ->
     date = @isoDate(@_dateElement.val()) || ''
     time = @isoTime(@_timeElement.val()) || ''
     if time
-      new Date "#{date}T#{time}"
+      Date.parse("#{date} #{time}")
     else if date
-      new Date "#{date}T00:00"
+      Date.parse date
   
   @method 'setInputValue', (value) ->
     @_dateElement.val @dateValue(value)
