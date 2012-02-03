@@ -1,6 +1,8 @@
 #= require ST/View
 
 ST.class 'DialogView', 'View', ->
+  @_blankerCount = 0
+  
   @initializer (args={}) ->
     @super()
     @_element.attr 'id', 'dialog'
@@ -62,6 +64,8 @@ ST.class 'DialogView', 'View', ->
       true
   
   @method 'showBlanker', ->
+    ST.DialogView._blankerCount++
+    
     # Add blanker div if it doesn't already exist
     if $('#blanker').length < 1
       blanker = $('<div id="blanker"></div>')
@@ -69,7 +73,7 @@ ST.class 'DialogView', 'View', ->
       blanker.click (e) -> e.stopPropagation()
       $('body').append blanker
       blanker.bind 'touchstart touchmove touchend', (e) -> e.preventDefault()
-      
+    
       # Fade blanker in
       if $.browser.webkit
         blanker.css('height', $(document).height())
@@ -83,18 +87,20 @@ ST.class 'DialogView', 'View', ->
       $('#blanker').stop().css('opacity', 0.6)
   
   @method 'hideBlanker', ->
-    # Get blanker div
-    blanker = $ '#blanker'
-    if blanker.length > 0
-      # Fade blanker out
-      if $.browser.webkit
-        blanker.css('-webkit-transition', 'opacity 100ms linear')
-          .css('opacity', 0.0)
-          .bind 'webkitTransitionEnd', ->
-            $(this).unbind('webkitTransitionEnd')
-            blanker.remove()
-      else
-        blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
+    ST.DialogView._blankerCount--
+    if ST.DialogView._blankerCount <= 0
+      # Get blanker div
+      blanker = $ '#blanker'
+      if blanker.length > 0
+        # Fade blanker out
+        if $.browser.webkit
+          blanker.css('-webkit-transition', 'opacity 100ms linear')
+            .css('opacity', 0.0)
+            .bind 'webkitTransitionEnd', ->
+              $(this).unbind('webkitTransitionEnd')
+              blanker.remove()
+        else
+          blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
   
   @method 'showDialog', ->
     self = this
