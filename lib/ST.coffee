@@ -11,12 +11,7 @@ window.ST = {
   # arguments provided to stringToProc, and the result returned.
   stringToProc: (string, passArgs = []) ->
     (o) ->
-      if this && this[string] isnt undefined
-        if this[string] && this[string].apply
-          this[string].apply this, passArgs
-        else
-          this[string]
-      else if o && o[string] isnt undefined
+      if o && o[string] isnt undefined
         if o[string] && o[string].apply
           o[string].apply o, passArgs
         else
