@@ -121,6 +121,14 @@ ST.module 'Enumerable', ->
       list.add item unless fn(item)
     list
 
+  # Returns a new list with callback items in reverse order
+  @method 'reverse', () ->
+    list = ST.List.create()
+    list.retains false
+    @each (item) ->
+      list.insertAt 0, item
+    list
+  
   # Returns lowest value
   @method 'min', (fn) ->
     fn = fn && ST.toProc fn
