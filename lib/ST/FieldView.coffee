@@ -55,3 +55,6 @@ ST.class 'FieldView', 'View', ->
   
   @method '_idChanged', (oldValue, newValue) ->
     @_inputElement.attr 'id', newValue if @_loaded
+  
+  @method '_valueChanged', (oldValue, newValue) ->
+    @trigger 'valueChanged', newValue
