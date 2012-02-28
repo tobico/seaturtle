@@ -47,11 +47,11 @@ ST.class 'TableView', 'View', ->
         @_list.bind 'itemChanged', this, 'listItemChanged'
         @_list.bind 'itemRemoved', this, 'listItemRemoved'
 
-  @method 'setColumns', (columns, sortColumnIndex=0) ->
+  @method 'setColumns', (columns, sortColumnIndex=0, reverseSort=false) ->
     @_columns = columns
     for column, i in columns
       column.index = i
-    @sortColumn sortColumnIndex if columns.length > sortColumnIndex && @_sortColumn isnt columns[sortColumnIndex]
+    @sortColumn sortColumnIndex, reverseSort if columns.length > sortColumnIndex && @_sortColumn isnt columns[sortColumnIndex]
     if @_loaded
       @refreshHeader()
       @refreshBody()
