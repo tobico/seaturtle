@@ -3,10 +3,16 @@
 ST.class 'WizardView', ST.View, ->
   @initializer ->
     @super()
+
     @_steps = []
     @_stepIndex = -1
     @_data = {}
+    
+    # Build box for step details
+    @_stepElement = $ '<div style="height: 200px"></div>'
+    @_element.append @_stepElement
   
+  @accessor 'height'
   @property 'data'
   @property 'steps'
   @property 'stepIndex'
@@ -16,10 +22,6 @@ ST.class 'WizardView', ST.View, ->
     @stepIndex 0 if @stepIndex() == -1
   
   @method 'render', ->
-    # Build box for step details
-    @_stepElement = $ '<div style="height: 200px"></div>'
-    @_element.append @_stepElement
-    
     # Load current step
     unless @_stepIndex == -1
       @renderStep @_steps[@_stepIndex]
@@ -30,13 +32,14 @@ ST.class 'WizardView', ST.View, ->
     @_buttonBar = buttonbar
     if @_steps.length > 1
       @_backButton = buttonbar.button '&lt; Back', @method('lastStep')
-    @_nextButton = buttonbar.button 'Next &gt;', @method('nextStep')
-    @_cancelButton = buttonbar.button 'Cancel', @method('cancel')
+    @_nextButton = buttonbar.button 'Next &gt;', {default: true}, @method('nextStep')
+    @_cancelButton = buttonbar.button 'Cancel', {cancel: true}, @method('cancel')
     dialog.cancelFunction @method('cancel')
     buttonbar.load()
     @updateButtons()
     
   @method 'renderStep', (stepDefinition) ->
+    self = this
     element = @_stepElement
     data = @_data
     element.empty()
@@ -45,14 +48,23 @@ ST.class 'WizardView', ST.View, ->
         element.append "<p>#{text}</p>"
       radioGroup: (options) ->
         data[options.field] ||= options.default
+        ul = self.helper().tag('ul').addClass 'radio-group'
         for value, label of options.options
           do (value) ->
-            id = options.field + '_' + value
-            input = $ "<input type=\"radio\" id=\"#{id}\" name=\"#{options.field}\" />"
-            input.click ->
+            input = $ "<input type=\"radio\" name=\"#{options.field}\" value=\"#{value}\" />"
+            li = self.helper().tag('li').addClass('radio-item').append(
+              input, "<label> #{label}</label>"
+            )
+            li.click ->
               data[options.field] = value
-            input.attr 'checked', true if value == data[options.field]
-            element.append input, "<label for=\"#{id}\"> #{label}</label><br />"
+              $('input', this).attr 'checked', true
+              $(this).siblings('.radio-item-selected').removeClass('radio-item-selected')
+              $(this).addClass('radio-item-selected')
+            if value == data[options.field]
+              input.attr 'checked', true
+              li.addClass('radio-item-selected')
+            ul.append li
+        element.append ul
       checkbox: (options) ->
         data[options.field] ||= options.default
         input = $ "<input type=\"checkbox\" id=\"#{options.field}\" />"
@@ -63,6 +75,12 @@ ST.class 'WizardView', ST.View, ->
         element.append input, "<label for=\"#{options.field}\"> #{options.title}</label>"
     }
     stepDefinition.call components
+  
+  @method 'getHeight', ->
+    @_stepElement.css 'height'
+  
+  @method 'setHeight', (value) ->
+    @_stepElement.css 'height', value
   
   @method 'updateButtons', ->
     if @_buttonBar

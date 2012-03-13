@@ -1,17 +1,28 @@
 #= require ST/View
+#= require ST/ButtonBarView
 
 ST.class 'DialogView', 'View', ->
+  @DIALOG_ID      = 'dialog'
+  @DIALOG_CLASS   = 'dialog'
+  @HEADER_CLASS   = 'header'
+  @BODY_CLASS     = 'body'
+  @FOOTER_CLASS   = 'footer'
+  @BLANKER_CLASS  = 'blanker'
+  @SHOW_METHOD    = 'slide'
+  
   @_blankerCount = 0
   
   @initializer (args={}) ->
     @super()
-    @_element.attr 'id', 'dialog'
+    @_element.attr 'id', ST.DialogView.DIALOG_ID
+    @_element.addClass ST.DialogView.DIALOG_CLASS
     @_element.hide()
     @_element.mousedown (e) -> e.stopPropagation()
     @_element.appendTo document.body
     @load()
     @_children.add args.view
     @_subView = args.view
+    @_subView.element().wrap('<div class="' + ST.DialogView.BODY_CLASS + '" />')
     @_title = args.title
     @_autoFocus = args.autoFocus isnt false
     @makeHeader()
@@ -42,14 +53,17 @@ ST.class 'DialogView', 'View', ->
     view.release()
   
   @method 'makeHeader', ->
-    header = ST.View.createWithElement($ '<h3></h3>')
+    header = ST.View.create()
     header.load()
-    header.element().html @_title
+    header.element()
+      .addClass(ST.DialogView.HEADER_CLASS)
+      .html('<h3>' + @_title + '</h3>')
     @header header
     header.release()
   
   @method 'makeFooter', ->
     footer = ST.ButtonBarView.create()
+    footer.element().addClass ST.DialogView.FOOTER_CLASS
     if @_subView.dialogButtons
       @_subView.dialogButtons this, footer
     else
@@ -67,8 +81,8 @@ ST.class 'DialogView', 'View', ->
     ST.DialogView._blankerCount++
     
     # Add blanker div if it doesn't already exist
-    if $('#blanker').length < 1
-      blanker = $('<div id="blanker"></div>')
+    if $('.' + ST.DialogView.BLANKER_CLASS).length < 1
+      blanker = $('<div class="' + ST.DialogView.BLANKER_CLASS + '"></div>')
       blanker.css 'opacity', 0
       blanker.click (e) -> e.stopPropagation()
       $('body').append blanker
@@ -90,7 +104,7 @@ ST.class 'DialogView', 'View', ->
     ST.DialogView._blankerCount--
     if ST.DialogView._blankerCount <= 0
       # Get blanker div
-      blanker = $ '#blanker'
+      blanker = $('.' + ST.DialogView.BLANKER_CLASS)
       if blanker.length > 0
         # Fade blanker out
         if $.browser.webkit
@@ -104,35 +118,41 @@ ST.class 'DialogView', 'View', ->
   
   @method 'showDialog', ->
     self = this
-    if $.browser.webkit
-      @_element.css('top', 0 - @_element.height())
-          .show()
-          .css('-webkit-transition', 'top 200ms ease-in')
-          .css('top', 0)
-          .bind 'webkitTransitionEnd', ->
-            $(this).css('-webkit-transition', '')
-                .unbind('webkitTransitionEnd')
-            self.trigger 'opened'
-    else
-      @_element.css('top', '-' + @_element.height() + 'px')
-          .show()
-          .animate({top: 0}, 200, 'swing', ->
-            self.trigger 'opened'
-          )
+    if ST.DialogView.SHOW_METHOD is 'slide'
+      if $.browser.webkit
+        @_element.css('top', 0 - @_element.height())
+            .show()
+            .css('-webkit-transition', 'top 200ms ease-in')
+            .css('top', 0)
+            .bind 'webkitTransitionEnd', ->
+              $(this).css('-webkit-transition', '')
+                  .unbind('webkitTransitionEnd')
+              self.trigger 'opened'
+      else
+        @_element.css('top', '-' + @_element.height() + 'px')
+            .show()
+            .animate({top: 0}, 200, 'swing', ->
+              self.trigger 'opened'
+            )
+    else if ST.DialogView.SHOW_METHOD is 'fade'
+      @_element.fadeIn(200)
     
     if @_autoFocus && !ST.touch()
       $('textarea, input, button', @_element).slice(0,1).focus()
   
   @method 'hideDialog', (callback) ->
-    if $.browser.webkit
-      @_element.css('-webkit-transition', 'top 200ms ease-in')
-          .css('top', 0 - @_element.height())
-          .bind 'webkitTransitionEnd', ->
-            $(this).unbind('webkitTransitionEnd')
-            callback() if callback
-    else
-      @_element.animate {top: '-' + @_element.height() + 'px'}, 200, 'swing', ->
-        callback() if callback
+    if ST.DialogView.SHOW_METHOD is 'slide'
+      if $.browser.webkit
+        @_element.css('-webkit-transition', 'top 200ms ease-in')
+            .css('top', 0 - @_element.height())
+            .bind 'webkitTransitionEnd', ->
+              $(this).unbind('webkitTransitionEnd')
+              callback() if callback
+      else
+        @_element.animate {top: '-' + @_element.height() + 'px'}, 200, 'swing', ->
+          callback() if callback
+    else if ST.DialogView.SHOW_METHOD is 'fade'
+      @_element.fadeOut(200)
   
   @method 'close', ->
     self = this

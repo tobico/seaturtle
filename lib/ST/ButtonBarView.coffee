@@ -2,25 +2,53 @@
 #= require Popup
 
 ST.class 'ButtonBarView', 'View', ->
+  @BUTTON_BAR_CLASS = 'button_bar'
+  @BUTTON_CLASS = 'button'
+  @BUTTON_WRAPPER_CLASS = ''
+  @DEFAULT_BUTTON_CLASS = 'default'
+  @CANCEL_BUTTON_CLASS = 'cancel'
+  @SINGLE_BUTTON_CLASS = 'simple_button'
+  @ALT_BUTTON_MAIN_CLASS = 'alt_button_main'
+  @ALT_BUTTON_MORE_CLASS = 'alt_button_more'
+  @ALT_BUTTON_MORE_CONTENT = '<span class="dropdown">V</span>'
+  
   @initializer ->
     @super()
     @_buttons = []
+    @_element.addClass ST.ButtonBarView.BUTTON_BAR_CLASS
   
   @method 'render', ->
     self = this
     
     html = []
     for button, i in @_buttons
+      html.push '<span class="', ST.ButtonBarView.BUTTON_WRAPPER_CLASS, '">'
       if button.alternatives.length
-        html.push '<span class="alt_button"><a href="javascript:;" class="button alt_button_main" data-index="', i, '">', button.title, '</a><a href="javascript:;" class="button alt_button_more" data-index="', i, '"><span class="dropdown">V</span></a></span>'
+        html.push(
+          '<span class="alt_button"><a href="javascript:;" class="',
+          ST.ButtonBarView.BUTTON_CLASS, ' ',
+          ST.ButtonBarView.ALT_BUTTON_MAIN_CLASS, ' ',
+          '" data-index="', i, '">', button.title,
+          '</a><a href="javascript:;" class="',
+          ST.ButtonBarView.BUTTON_CLASS, ' ',
+          ST.ButtonBarView.ALT_BUTTON_MORE_CLASS, '" data-index="', i,
+          '">', ST.ButtonBarView.ALT_BUTTON_MORE_CONTENT, '</a></span>'
+        )
       else
-        html.push '<a href="javascript:;" class="button simple_button" data-index="', i, '">', button.title, '</a>'
+        html.push '<a href="javascript:;" class="',
+          ST.ButtonBarView.BUTTON_CLASS, ' ',
+          ST.ButtonBarView.SINGLE_BUTTON_CLASS
+        html.push ' ', ST.ButtonBarView.CANCEL_BUTTON_CLASS if button.cancel
+        html.push ' ', ST.ButtonBarView.DEFAULT_BUTTON_CLASS if button.default
+        html.push '" data-index="', i, '">',
+          button.title, '</a>'
+      html.push '</span>'
     
     @_element.html html.join('')
     
     $('a', @_element).each ->
       index = $(this).attr 'data-index'
-      if $(this).is('.alt_button_more')
+      if $(this).is('.' + ST.ButtonBarView.ALT_BUTTON_MORE_CLASS)
         items = []
         for alt in self._buttons[index].alternatives
           items.push [alt.title, alt.action]
@@ -31,12 +59,12 @@ ST.class 'ButtonBarView', 'View', ->
   @method 'reverse', ->
     @_buttons.reverse()
   
-  @method 'button', (title, action) ->
-    @_buttons.push {
+  @method 'button', (title, options={}, action) ->
+    @_buttons.push $.extend({
       title:  title
       action: action
       alternatives: []
-    }
+    }, options)
     @_buttons.length - 1
   
   @method 'alternative', (title, action) ->
