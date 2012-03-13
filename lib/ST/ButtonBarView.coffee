@@ -59,7 +59,11 @@ ST.class 'ButtonBarView', 'View', ->
   @method 'reverse', ->
     @_buttons.reverse()
   
-  @method 'button', (title, options={}, action) ->
+  @method 'button', (title, options, action) ->
+    if arguments.length is 2
+      action = options
+      options = {}
+    
     @_buttons.push $.extend({
       title:  title
       action: action
