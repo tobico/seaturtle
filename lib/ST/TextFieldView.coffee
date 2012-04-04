@@ -1,4 +1,4 @@
-#= require ST/View
+#= require ST/FieldView
 
 ST.class 'TextFieldView', 'FieldView', ->
   @initializer ->

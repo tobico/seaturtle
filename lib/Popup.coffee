@@ -14,7 +14,7 @@ window.Popup = {
   _view: null
   
   keyDown: (key) ->
-    if key == ST.View.VK_ESCAPE
+    if key == (if window.ST && ST.View then ST.View.VK_ESCAPE else 27)
       @close()
       true
   
@@ -24,7 +24,7 @@ window.Popup = {
       @_closeCallback = null
       @_popupID = null
       @_view.returnKeyboardFocus() if @_view
-      ST.View.method('returnKeyboardFocus').call(this) if ST.View
+      ST.View.method('returnKeyboardFocus').call(this) if window.ST && ST.View
       $('#popup').removeAttr('id').stop().fadeOut 100, ->
         onClose() if onClose
         if @_view
@@ -50,9 +50,9 @@ window.Popup = {
     @_closeCallback = ->
       options.close.call element, element if options.close
     
-    ST.View.method('takeKeyboardFocus').call(this) if ST.View
+    ST.View.method('takeKeyboardFocus').call(this) if window.ST && ST.View
     
-    if ST.View && (display instanceof ST.View)
+    if window.ST && ST.View && (display instanceof ST.View)
       @_view = display
       display.load()
       display.takeKeyboardFocus()
