@@ -71,9 +71,9 @@ ST.module 'Model', ->
       @super receiver
       @removeBindings() unless @isBound()
 
-    @method 'each', (yield) ->
+    @method 'each', (callback) ->
       @populate()
-      @super yield
+      @super callback
 
     @method 'count', ->
       @populate()
