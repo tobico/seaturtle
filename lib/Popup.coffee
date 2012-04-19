@@ -30,7 +30,12 @@ window.Popup = {
         if @_view
           @_view.release()
           @_view = null
-        $(this).children().detach() if @_detach
+        
+        if @_detach
+          $(this).children().detach()
+        else if @_reattach
+          $(document.body).append $(this).children().hide()
+        
         $(this).remove()
         
   nextId: ->
@@ -42,6 +47,7 @@ window.Popup = {
 
     @_popupID = id
     @_detach = options.detach
+    @_reattach = options.reattach
 
     offset = element.offset()
 
@@ -103,13 +109,20 @@ jQuery.fn.popup = (items, open, close, options) ->
   id = Popup.nextId()
   @mousedown (e) -> e.stopPropagation()
   
+  element = null
+  
+  options = $.extend({}, options);
+  options._close = options.close
+  options.close = ->
+    close.call element, element if close
+    options._close.call element, element if options._close
+  
   @click (e) ->
     e.preventDefault()
     element = this
-    options = $.extend({}, options);
-    options.close = -> close.call element if close
     if Popup._popupID == id
       Popup.close()
     else
       Popup.show $(this), id, (if items.call then items.call(element, e.altKey || e.shiftKey) else items), options
       open.call element, element if open
+      options.open.call element, element if options.open
