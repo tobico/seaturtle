@@ -31,9 +31,9 @@ window.Popup = {
           @_view.release()
           @_view = null
         
-        if @_detach
+        if Popup._detach
           $(this).children().detach()
-        else if @_reattach
+        else if Popup._reattach
           $(document.body).append $(this).children().hide()
         
         $(this).remove()
