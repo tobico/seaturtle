@@ -123,7 +123,7 @@ ST.class 'Object', null, ->
   # always returns the same instance of class.
   @classMethod 'singleton', ->
     @classMethod 'instance', ->
-      @_instance ||= @create()
+      @_instance ||= @create.apply(this, arguments)
     
   @UID = 0
   
