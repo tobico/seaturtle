@@ -11,12 +11,14 @@ ST.class 'TableView', 'View', ->
     @_id = ST.TableView.Instances.length - 1
     @_rowsByUid = {}
     @_columns = []
+    @_columnsByName = {}
     @_ordered = []
     @_sortColumn = null
     @_reverseSort = false
     @_tableClass = null
     @_tableElement = null
     @_canCustomizeColumns = true
+    @_lang = null
     @list list
     
   @property 'columns'
@@ -26,6 +28,7 @@ ST.class 'TableView', 'View', ->
   @property 'tableClass'
   @property 'tableElement'
   @property 'canCustomizeColumns'
+  @property 'lang'
   
   @destructor ->
     ST.TableView.Instances[@_id] = null
@@ -49,8 +52,10 @@ ST.class 'TableView', 'View', ->
 
   @method 'setColumns', (columns, sortColumnIndex=0, reverseSort=false) ->
     @_columns = columns
+    @_columnsByName = {}
     for column, i in columns
       column.index = i
+      @_columnsByName[column.name] = column if column.name
     @sortColumn sortColumnIndex, reverseSort if columns.length > sortColumnIndex && @_sortColumn isnt columns[sortColumnIndex]
     if @_loaded
       @refreshHeader()
@@ -141,8 +146,8 @@ ST.class 'TableView', 'View', ->
   
   @method 'generateColumnHeaderHTML', (column, html, media='screen') ->
     html.push '<th style="cursor:pointer" onclick="ST.TableView.Instances[' + @_id + '].setSortColumn(' + column.index + ')">'
-    html.push column.title
-    
+    html.push @titleForColumn(column, false)
+        
     if media == 'screen' && column == @_sortColumn
       html.push '<span class="sortLabel">'
       if @_reverseSort
@@ -228,6 +233,7 @@ ST.class 'TableView', 'View', ->
   
   @method 'toggleColumn', (column) ->
     column.hidden = !column.hidden
+    @saveColumns()        
     @refreshHeader()
     @refreshBody()
       
@@ -237,11 +243,23 @@ ST.class 'TableView', 'View', ->
     for column in @_columns
       unless (column.media && column.media != 'screen') || column.fixed
         a.push {
-          title:  column.fullTitle || column.title
-          action: ((column) -> -> self.toggleColumn column)(column)
-          className: if column.hidden then 'unchecked' else 'checked'
+          title:      @titleForColumn(column, true)
+          action:     ((column) -> -> self.toggleColumn column)(column)
+          className:  if column.hidden then 'unchecked' else 'checked'
         }
     a
+  
+  # Determines title to use for a column, looking first at specefied title,
+  # then into languague definitions matching the column name
+  @method 'titleForColumn', (column, full) ->
+    if full && column.fullTitle
+      column.fullTitle
+    else if full && @_lang && column.name && @_lang[column.name + "Full"]
+      @_lang[column.name + "Full"]
+    else if column.title
+      column.title
+    else if @_lang && column.name && @_lang[column.name]
+      @_lang[column.name]
   
   @method 'listItemAdded', (list, item) ->  
     item._uid ||= ST.Object.UID++
@@ -280,6 +298,25 @@ ST.class 'TableView', 'View', ->
     html.push '<h2>', options.heading, '</h2>' if options.heading
     @generatePrintHTML html, options
     @helper().print html.join(''), options
+  
+  @method 'persistColumns', (storage, key) ->
+    @_persistColumnsStorage = storage
+    @_persistColumnsKey = key
+    @loadColumns()
+  
+  @method 'loadColumns', ->
+    return unless @_persistColumnsStorage && @_persistColumnsKey
+    @_persistColumnsStorage.fetch @_persistColumnsKey, (value) =>
+      if value
+        for name, hidden of value
+          @_columnsByName[name].hidden = hidden if @_columnsByName[name]
+  
+  @method 'saveColumns', ->
+    return unless @_persistColumnsStorage && @_persistColumnsKey
+    value = {}
+    for column in @_columns
+      value[column.name] = column.hidden if column.name
+    @_persistColumnsStorage.set @_persistColumnsKey, value
   
   @method '_headerChanged', (oldValue, newValue) ->
     @super oldValue, newValue

@@ -4,11 +4,11 @@
 
 ST.module 'Model', ->
   @class 'Base', ->
-    @classMethod 'fetch', (uuid, yield) ->
+    @classMethod 'fetch', (uuid, callback) ->
       self = this
     
       if ST.Model._byUuid[uuid]
-        yield ST.Model._byUuid[uuid] if yield
+        callback ST.Model._byUuid[uuid] if callback
       else if @FETCH_URL
         $.ajax {
           url:      @FETCH_URL.replace('?', uuid)
@@ -16,7 +16,7 @@ ST.module 'Model', ->
           data:     @FETCH_DATA || {}
           success:  (data) ->
             model = self.createWithData data, {loaded: true}
-            yield model if yield
+            callback model if callback
         }
       else
         ST.error "No find URL for model: #{@_name}"

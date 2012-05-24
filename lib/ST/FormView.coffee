@@ -1,6 +1,9 @@
 #= require ST/View
 #= require ST/TextFieldView
 #= require ST/ModelFieldView
+#= require ST/EnumFieldView
+#= require ST/BoolFieldView
+#= require ST/DateTimeFieldView
 
 ST.class 'FormView', 'View', ->
   @initializer (options, definition) ->

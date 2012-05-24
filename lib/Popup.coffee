@@ -14,7 +14,7 @@ window.Popup = {
   _view: null
   
   keyDown: (key) ->
-    if key == ST.View.VK_ESCAPE
+    if key == (if window.ST && ST.View then ST.View.VK_ESCAPE else 27)
       @close()
       true
   
@@ -24,13 +24,18 @@ window.Popup = {
       @_closeCallback = null
       @_popupID = null
       @_view.returnKeyboardFocus() if @_view
-      ST.View.method('returnKeyboardFocus').call(this) if ST.View
+      ST.View.method('returnKeyboardFocus').call(this) if window.ST && ST.View
       $('#popup').removeAttr('id').stop().fadeOut 100, ->
         onClose() if onClose
         if @_view
           @_view.release()
           @_view = null
-        $(this).children().detach() if @_detach
+        
+        if Popup._detach
+          $(this).children().detach()
+        else if Popup._reattach
+          $(document.body).append $(this).children().hide()
+        
         $(this).remove()
         
   nextId: ->
@@ -42,6 +47,7 @@ window.Popup = {
 
     @_popupID = id
     @_detach = options.detach
+    @_reattach = options.reattach
 
     offset = element.offset()
 
@@ -50,9 +56,9 @@ window.Popup = {
     @_closeCallback = ->
       options.close.call element, element if options.close
     
-    ST.View.method('takeKeyboardFocus').call(this) if ST.View
+    ST.View.method('takeKeyboardFocus').call(this) if window.ST && ST.View
     
-    if ST.View && (display instanceof ST.View)
+    if window.ST && ST.View && (display instanceof ST.View)
       @_view = display
       display.load()
       display.takeKeyboardFocus()
@@ -103,13 +109,20 @@ jQuery.fn.popup = (items, open, close, options) ->
   id = Popup.nextId()
   @mousedown (e) -> e.stopPropagation()
   
+  element = null
+  
+  options = $.extend({}, options);
+  options._close = options.close
+  options.close = ->
+    close.call element, element if close
+    options._close.call element, element if options._close
+  
   @click (e) ->
     e.preventDefault()
     element = this
-    options = $.extend({}, options);
-    options.close = -> close.call element if close
     if Popup._popupID == id
       Popup.close()
     else
       Popup.show $(this), id, (if items.call then items.call(element, e.altKey || e.shiftKey) else items), options
       open.call element, element if open
+      options.open.call element, element if options.open

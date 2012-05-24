@@ -49,10 +49,7 @@ ST.class 'ButtonBarView', 'View', ->
     $('a', @_element).each ->
       index = $(this).attr 'data-index'
       if $(this).is('.' + ST.ButtonBarView.ALT_BUTTON_MORE_CLASS)
-        items = []
-        for alt in self._buttons[index].alternatives
-          items.push [alt.title, alt.action]
-        $(this).popup items
+        $(this).popup self.itemsForAlternatives(self._buttons[index].alternatives)
       else
         $(this).click self._buttons[index].action
   
@@ -71,10 +68,11 @@ ST.class 'ButtonBarView', 'View', ->
     }, options)
     @_buttons.length - 1
   
-  @method 'alternative', (title, action) ->
+  @method 'alternative', (title, action, secret=false) ->
     @_buttons[@_buttons.length - 1].alternatives.push {
       title:  title
       action: action
+      secret: secret
     }
     @_buttons.length - 1
   
@@ -95,3 +93,11 @@ ST.class 'ButtonBarView', 'View', ->
         disabled
       else
         !!button.is('.disabled')
+  
+  @method 'itemsForAlternatives', (alternatives) ->
+    (full) ->
+      items = []
+      for alt in alternatives
+        items.push [alt.title, alt.action] if !alt.secret || full
+      items
+  
