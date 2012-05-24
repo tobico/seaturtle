@@ -153,13 +153,15 @@ ST.class 'View', 'Destructable', ->
   @method 'hide', ->
     @visible false if @_visible
   
-  @method 'setVisible', (visible) ->
-    @_visible = visible
-    if visible
-      @load() unless @_loaded
-      @element().show()
-    else
-      @element().hide()
+  @method 'setVisible', (value) ->
+    if value isnt @_visible
+      if @_visible = value
+        @load() unless @_loaded
+        @element().show()
+        @trigger 'shown'
+      else
+        @element().hide()
+        @trigger 'hidden'
   
   @method 'takeKeyboardFocus', ->
     stack = ST.View.keyboardFocusStack()
