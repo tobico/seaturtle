@@ -30,7 +30,12 @@ ST.class 'View', 'Destructable', ->
         handled = false
         ST.View._keyboardFocusStack.each (view) ->
           if view.keyDown && view.keyDown(e.which)
-            console.log "Keydown: Key #{e.which} handled by #{view}" if window.console
+            if window.console
+              # Look up constant for key
+              key = e.which
+              for a, b of ST.View
+                key = a if b == key
+              console.log "Keydown: Key #{key} handled by #{view}" 
             handled = true
             'break'
         if handled
