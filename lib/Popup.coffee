@@ -86,13 +86,24 @@ window.Popup = {
 
     popup.mousedown (e) -> e.stopPropagation()
 
-    style = if (offset.left < $(window).width() - 150) && !options.right
-      "left: #{Math.round offset.left}px"
+    popup.appendTo document.body
+    
+    css = {
+      display:  'none'
+      position: 'absolute'
+    }
+    
+    if (offset.left < $(window).width() - 150) && !options.right
+      css.left = Math.round offset.left
     else
-      "right: #{Math.round($(window).width() - offset.left - element.outerWidth())}px"
-    popup.attr 'style', "#{style}; top: #{Math.floor(offset.top + element.outerHeight())}px; display: none; position: absolute"
-
-    popup.appendTo(document.body).fadeIn(100)
+      css.right = Math.round($(window).width() - offset.left - element.outerWidth())
+    
+    if !options.bottom
+      css.top = Math.floor(offset.top + element.outerHeight())
+    else
+      css.top = Math.floor(offset.top - popup.outerHeight() - (options.offsetY || 0))
+    
+    popup.css(css).fadeIn(100)
   
   toString: ->
     'Popup'
