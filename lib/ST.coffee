@@ -135,6 +135,9 @@ window.ST = {
       console.error message
     else
       alert message
+
+  presence: (value) ->
+    value isnt null and value isnt undefined and value isnt ''
   
   template: (template, values) ->
     s = template
@@ -190,9 +193,10 @@ window.ST = {
   
   command: (name, forward, reverse=null) ->
     command = @beginCommand name
-    forward()
+    result = forward()
     command.reverse = reverse
     @endCommand()
+    result
   
   undo: ->
     if command = ST._history.pop()
