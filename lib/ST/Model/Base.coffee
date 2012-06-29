@@ -27,6 +27,8 @@ ST.module 'Model', ->
     @classDelegate 'first', 'scoped'
     @classDelegate 'count', 'scoped'
     
+    @include ST.Model.Validates
+
     @include ST.Model.Callbacks
     @callback 'create'
     @callback 'destroy'

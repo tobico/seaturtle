@@ -6,6 +6,8 @@
 #= require ST/DateTimeFieldView
 
 ST.class 'FormView', 'View', ->
+  @retainedProperty 'errors'
+
   @initializer (options, definition) ->
     self = this
     
@@ -74,8 +76,14 @@ ST.class 'FormView', 'View', ->
           details.default
       )
   
+  @method 'clearValidationErrors', ->
+    @_errors.element().empty() if @_errors
+
   @method 'detailsFor', (attribute) ->
     @_model._attributes[attribute]
+
+  @method 'fieldById', (id) ->
+    @_fields.find (field) -> field.id() is id
   
   @method 'generateTableHTML', ->
     self = this
@@ -97,6 +105,11 @@ ST.class 'FormView', 'View', ->
       cell = $ "#cell_for_#{field.id()}", self._element
       field.load()
       cell.append field.element()
+
+    errors = ST.View.create()
+    @errors errors
+    @_children.add @_errors
+    errors.release()
   
   @method 'data', ->
     data = {}
@@ -108,28 +121,47 @@ ST.class 'FormView', 'View', ->
     
     # Read field values into data
     @_fields.each (field) ->
-      data[field.id()] = field.value()
+      data[field.id()] = field.value() || null
     
     data
   
-  @method 'save', ->
-    item = if @_item
-      if @_item.set
-        @_item.set @data()
-      else
-        for key, value of @data()
-          @_item[key] = value
-      
-      @_item
-    else if @_scope
-      @_scope.build(@data())
+  @method 'save', -> 
+    data = @data()
+    if errors = @_model.validate data
+      @showValidationErrors errors
+      false
     else
-      @_model.createWithData(@data())
-    @trigger 'saved', item
-    
+      item = if @_item
+        if @_item.set
+          @_item.set data
+        else
+          for key, value of data
+            @_item[key] = value
+        @_item
+      else if @_scope
+        @_scope.build data
+      else
+        @_model.createWithData data
+      @trigger 'saved', item
+      true
+  
+  @method 'showValidationErrors', (errors) ->
+    @clearValidationErrors()
+    for fieldId, fieldErrors of errors
+      field = @fieldById fieldId
+      hint = $('<div class="error-hint">' + fieldErrors[0] + '</div>')
+      hint.css 'top', field.element().parent().position().top
+      @_errors.element().append hint
+
+    # Focus on first error
+    @_fields.each (field) ->
+      if errors[field.id()]
+        field.focus()
+        'break'
+
   @method 'submit', ->
-    ST.command @_command, @method('save')
-    @_dialog.close() if @_dialog
+    if ST.command @_command, @method('save')
+      @_dialog.close() if @_dialog
   
   @method 'cancel', ->
     @trigger 'cancelled'

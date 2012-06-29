@@ -1,5 +1,6 @@
 #= require ST/Model/Searchable
 #= require ST/Model/Callbacks
+#= require ST/Model/Validates
 #= require ST/Model/Base
 #= require ST/Model/Scope
 #= require ST/Model/Index
