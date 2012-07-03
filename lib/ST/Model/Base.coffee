@@ -359,7 +359,7 @@ ST.module 'Model', ->
       }
   
     @classMethod 'belongsTo', (name, options={}) ->
-      @string "#{name}Uuid"
+      @string "#{name}Uuid", null: options.null
     
       ucName = ST.ucFirst name
       options.model ||= ucName
