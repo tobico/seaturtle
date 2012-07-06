@@ -17,6 +17,13 @@ ST.class 'WizardView', ST.View, ->
   @property 'steps'
   @property 'stepIndex'
   
+  # Adds a step to the wizard process
+  #
+  # DSL:
+  #   @paragraph    text
+  #   @checkbox     field:, title:, default:
+  #   @radioGroup   field:, options:, default:
+  #   @textbox      field:, placeholder:, default:
   @method 'addStep', (stepDefinition) ->
     @_steps.push stepDefinition
     @stepIndex 0 if @stepIndex() == -1
@@ -45,7 +52,7 @@ ST.class 'WizardView', ST.View, ->
     element.empty()
     components = {
       paragraph: (text) ->
-        element.append "<p>#{text}</p>"
+        $("<p>#{text}</p>").appendTo(element)
       radioGroup: (options) ->
         data[options.field] ||= options.default
         ul = self.helper().tag('ul').addClass 'radio-group'
@@ -64,7 +71,7 @@ ST.class 'WizardView', ST.View, ->
               input.attr 'checked', true
               li.addClass('radio-item-selected')
             ul.append li
-        element.append ul
+        ul.appendTo element
       checkbox: (options) ->
         data[options.field] ||= options.default
         input = $ "<input type=\"checkbox\" id=\"#{options.field}\" />"
@@ -73,6 +80,22 @@ ST.class 'WizardView', ST.View, ->
           undefined
         input.attr 'checked', true if data[options.field]
         element.append input, "<label for=\"#{options.field}\"> #{options.title}</label>"
+        input
+      textbox: (options) ->
+        data[options.field] ||= options.default
+        input = $ "<textarea id=\"#{options.field}\" />"
+        input.css(
+          display:  'block'
+          width:    '450px'
+          height:   '60px'
+          margin:   '10px 0'
+        )
+        input.attr 'placeholder', options.placeholder if options.placeholder
+        input.val data[options.field]
+        input.bind 'keypress change', ->
+          data[options.field] = input.val()
+          undefined
+        input.appendTo(element)
     }
     stepDefinition.call components
   
@@ -114,3 +137,6 @@ ST.class 'WizardView', ST.View, ->
   @method 'cancel', ->
     @_dialog.close() if @_dialog
     @trigger 'cancelled'
+
+  @method 'present', (title) ->
+    ST.DialogView.createWithTitleView(title, this)
