@@ -27,7 +27,7 @@ ST.class 'DialogView', 'View', ->
     @_autoFocus = args.autoFocus isnt false
     @makeHeader()
     @makeFooter()
-    @showBlanker()
+    ST.DialogView.showBlanker()
     @showDialog()
     @takeKeyboardFocus()
     args.view.takeKeyboardFocus()
@@ -46,12 +46,55 @@ ST.class 'DialogView', 'View', ->
     view = ST.View.create()
     view.element().html description
     view.dialogButtons = (dialog, buttonbar) ->
-      buttonbar.button confirm, fn
+      buttonbar.button confirm, ->
+        dialog.close()
+        fn()
       buttonbar.button cancel, -> dialog.close()
       buttonbar.reverse() if ST.mac()
     dialog = @createWithTitleView title, view
     view.release()
   
+  @classMethod 'showBlanker', ->
+    @_blankerCount++
+    
+    # Add blanker div if it doesn't already exist
+    if $('.' + @BLANKER_CLASS).length < 1
+      blanker = $('<div class="' + ST.DialogView.BLANKER_CLASS + '"></div>')
+      blanker.css 'opacity', 0
+      blanker.click (e) -> e.stopPropagation()
+      $('body').append blanker
+      blanker.bind 'touchstart touchmove touchend', (e) -> e.preventDefault()
+    
+      # Fade blanker in
+      if $.browser.webkit
+        blanker.css('height', $(document).height())
+            .css('width', $(document).width())
+            .css('-webkit-transition', 'opacity 100ms linear')
+            .css('opacity', 0.6)
+      else
+        blanker.show().animate {opacity: 0.6}, 100, 'linear'
+    else
+      # Prevent currently visible blanker from hiding
+      $('#blanker').stop().css('opacity', 0.6)
+  
+  @classMethod 'hideBlanker', ->
+    @_blankerCount--
+    setTimeout =>
+      if ST.DialogView._blankerCount <= 0
+        # Get blanker div
+        blanker = $('.' + @BLANKER_CLASS)
+        if blanker.length > 0
+          # Fade blanker out
+          if $.browser.webkit
+            blanker.css('-webkit-transition', 'opacity 100ms linear')
+              .css('opacity', 0.0)
+              .bind 'webkitTransitionEnd', ->
+                $(this).unbind('webkitTransitionEnd')
+                blanker.remove()
+          else
+            blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
+    , 50
+
   @method 'makeHeader', ->
     header = ST.View.create()
     header.load()
@@ -76,45 +119,6 @@ ST.class 'DialogView', 'View', ->
     if key == ST.View.VK_ESCAPE
       @_cancelFunction() if @_cancelFunction
       true
-  
-  @method 'showBlanker', ->
-    ST.DialogView._blankerCount++
-    
-    # Add blanker div if it doesn't already exist
-    if $('.' + ST.DialogView.BLANKER_CLASS).length < 1
-      blanker = $('<div class="' + ST.DialogView.BLANKER_CLASS + '"></div>')
-      blanker.css 'opacity', 0
-      blanker.click (e) -> e.stopPropagation()
-      $('body').append blanker
-      blanker.bind 'touchstart touchmove touchend', (e) -> e.preventDefault()
-    
-      # Fade blanker in
-      if $.browser.webkit
-        blanker.css('height', $(document).height())
-            .css('width', $(document).width())
-            .css('-webkit-transition', 'opacity 100ms linear')
-            .css('opacity', 0.6)
-      else
-        blanker.show().animate {opacity: 0.6}, 100, 'linear'
-    else
-      # Prevent currently visible blanker from hiding
-      $('#blanker').stop().css('opacity', 0.6)
-  
-  @method 'hideBlanker', ->
-    ST.DialogView._blankerCount--
-    if ST.DialogView._blankerCount <= 0
-      # Get blanker div
-      blanker = $('.' + ST.DialogView.BLANKER_CLASS)
-      if blanker.length > 0
-        # Fade blanker out
-        if $.browser.webkit
-          blanker.css('-webkit-transition', 'opacity 100ms linear')
-            .css('opacity', 0.0)
-            .bind 'webkitTransitionEnd', ->
-              $(this).unbind('webkitTransitionEnd')
-              blanker.remove()
-        else
-          blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
   
   @method 'showDialog', ->
     self = this
@@ -159,5 +163,5 @@ ST.class 'DialogView', 'View', ->
     @_subView.returnKeyboardFocus()
     @returnKeyboardFocus()
     @trigger 'closed'
-    @hideBlanker()
+    ST.DialogView.hideBlanker()
     @hideDialog -> self.release()
