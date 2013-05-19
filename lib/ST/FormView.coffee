@@ -10,13 +10,13 @@ ST.class 'FormView', 'View', ->
 
   @initializer (options, definition) ->
     self = this
-    
+
     @super()
-    
+
     @_command   = options.command || 'Save Form'
     @_defaults  = options.defaults || null
     @_fields    = ST.List.create()
-    
+
     if options.scope
       @_scope = options.scope
       @_model = options.scope.model()
@@ -25,14 +25,14 @@ ST.class 'FormView', 'View', ->
       @_model = options.item._class
     else
       @_model   = options.model
-    
+
     dsl = {
       _add: (field, attribute, options={}) ->
         field.id attribute
         field.label options.label if options.label
         field.bind 'submit', self
         self._fields.add field
-        field.release()        
+        field.release()
       text: (attribute, options={}) ->
         @_add ST.TextFieldView.create(), attribute, options
       enum: (attribute, options={}) ->
@@ -55,11 +55,11 @@ ST.class 'FormView', 'View', ->
   @property 'model'
   @property 'item'
   @property 'command'
-  
+
   @destructor ->
     @_fields.empty()
     @super()
-  
+
   @method 'loadFieldValues', ->
     self = this
     @_fields.each (field) ->
@@ -75,7 +75,7 @@ ST.class 'FormView', 'View', ->
         else if details = self.detailsFor(attribute)
           details.default
       )
-  
+
   @method 'clearValidationErrors', ->
     @_errors.element().empty() if @_errors
 
@@ -84,7 +84,7 @@ ST.class 'FormView', 'View', ->
 
   @method 'fieldById', (id) ->
     @_fields.find (field) -> field.id() is id
-  
+
   @method 'generateTableHTML', ->
     self = this
     html = ['<table class="formView">']
@@ -96,11 +96,11 @@ ST.class 'FormView', 'View', ->
         '"></td></tr>'
     html.push '</table>'
     html.join ''
-  
+
   @method 'render', ->
     self = this
     @_element.html @generateTableHTML()
-    
+
     @_fields.each (field) ->
       cell = $ "#cell_for_#{field.id()}", self._element
       field.load()
@@ -110,24 +110,24 @@ ST.class 'FormView', 'View', ->
     @errors errors
     @_children.add @_errors
     errors.release()
-  
+
   @method 'data', ->
     data = {}
-    
+
     # Copy default values into data
     for attribute of @_defaults
       if @_defaults.hasOwnProperty attribute
         data[attribute] = @_defaults[attribute]
-    
+
     # Read field values into data
     @_fields.each (field) ->
       data[field.id()] = field.value() || null
-    
+
     data
-  
-  @method 'save', -> 
+
+  @method 'save', ->
     data = @data()
-    if errors = @_model.validate data
+    if @_model && errors = @_model.validate(data)
       @showValidationErrors errors
       false
     else
@@ -144,7 +144,7 @@ ST.class 'FormView', 'View', ->
         @_model.createWithData data
       @trigger 'saved', item
       true
-  
+
   @method 'showValidationErrors', (errors) ->
     @clearValidationErrors()
     for fieldId, fieldErrors of errors
@@ -162,11 +162,11 @@ ST.class 'FormView', 'View', ->
   @method 'submit', ->
     if ST.command @_command, @method('save')
       @_dialog.close() if @_dialog
-  
+
   @method 'cancel', ->
     @trigger 'cancelled'
     @_dialog.close() if @_dialog
-  
+
   @method 'dialogButtons', (dialog, buttonbar) ->
     @_dialog = dialog
     self = this
