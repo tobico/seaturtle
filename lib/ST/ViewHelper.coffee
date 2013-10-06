@@ -27,7 +27,9 @@ ST.class 'ViewHelper', ->
       stylesheets = [stylesheets] unless stylesheets.push
       for stylesheet in stylesheets
         s += '<link type="text/css" rel="stylesheet" href="' + stylesheet + '" />'
-    s += '</head><body class="print" onload="print(); close();">' + html + '</body></html>'
+    s += '</head><body class="print"'
+    s += ' onload="print(); close();"' unless options.preview
+    s += '>' + html + '</body></html>'
 
     o = window.open()
     o.document.open()
