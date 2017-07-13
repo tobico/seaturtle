@@ -2,9 +2,9 @@
   "name": "seaturtle",
   "version": "1.0.0",
   "description": "##Introduction",
-  "main": "lib/ST.js",
+  "main": "lib/index.js",
   "directories": {
-    "example": "examples"
+    "lib": "lib"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
