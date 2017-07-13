@@ -1,26 +1,40 @@
-#= require ST/Controller
-#= require ST/View
+/*
+ * decaffeinate suggestions:
+ * DS102: Remove unnecessary code created because of implicit returns
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+//= require ST/Controller
+//= require ST/View
 
-Spec.describe 'Controller', ->
-  beforeEach ->
-    @controller = ST.Controller.create()
+Spec.describe('Controller', function() {
+  beforeEach(function() {
+    return this.controller = ST.Controller.create();
+  });
   
-  describe "#_viewChanged", ->
-    it "should unbind old view", ->
-      view = ST.View.create()
-      @controller._view = view
-      view.shouldReceive 'unbindAll'
-      @controller.view null
+  describe("#_viewChanged", function() {
+    it("should unbind old view", function() {
+      const view = ST.View.create();
+      this.controller._view = view;
+      view.shouldReceive('unbindAll');
+      return this.controller.view(null);
+    });
     
-    it "should bind new view", ->
-      view = ST.View.create()
-      view.shouldReceive('bind').twice()
-      @controller.view view
+    return it("should bind new view", function() {
+      const view = ST.View.create();
+      view.shouldReceive('bind').twice();
+      return this.controller.view(view);
+    });
+  });
   
-  describe "#viewLoaded", ->
-    it "should exist", ->
-      @controller.viewLoaded.should beAFunction
+  describe("#viewLoaded", () =>
+    it("should exist", function() {
+      return this.controller.viewLoaded.should(beAFunction);
+    })
+  );
   
-  describe "#viewUnloaded", ->
-    it "should exist", ->
-      @controller.viewUnloaded.should beAFunction
+  return describe("#viewUnloaded", () =>
+    it("should exist", function() {
+      return this.controller.viewUnloaded.should(beAFunction);
+    })
+  );
+});

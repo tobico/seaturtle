@@ -1,328 +1,413 @@
-#= require ST/Model
+/*
+ * decaffeinate suggestions:
+ * DS102: Remove unnecessary code created because of implicit returns
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+//= require ST/Model
 
-NextUUID = 0
-ST.Model._generateUUID = -> NextUUID++
+let NextUUID = 0;
+ST.Model._generateUUID = () => NextUUID++;
 
-Spec.describe "Model/Base", ->
-  beforeEach ->
-    ST.class 'TestModel', ST.Model.Base, ->
-      @string 'foo', {default: 'bacon'}
-      @index 'foo'
-    @model = ST.TestModel.create()
+Spec.describe("Model/Base", function() {
+  beforeEach(function() {
+    ST.class('TestModel', ST.Model.Base, function() {
+      this.string('foo', {default: 'bacon'});
+      return this.index('foo');
+    });
+    return this.model = ST.TestModel.create();
+  });
     
-  describe ".scoped", ->
-    it "should return a new scope", ->
-      scope = ST.TestModel.scoped()
-      scope.should beAnInstanceOf(ST.Model.Scope)
+  describe(".scoped", () =>
+    it("should return a new scope", function() {
+      const scope = ST.TestModel.scoped();
+      return scope.should(beAnInstanceOf(ST.Model.Scope));
+    })
+  );
   
-  describe ".find", ->
-    it "should find model by uuid", ->
-      ST.TestModel.find(@model.uuid()).should be(@model)
+  describe(".find", () =>
+    it("should find model by uuid", function() {
+      return ST.TestModel.find(this.model.uuid()).should(be(this.model));
+    })
+  );
   
-  describe ".load", ->
-    it "should create a new model with data", ->
-      model = ST.TestModel.load {uuid: 'test'}
-      model.should beAnInstanceOf(ST.TestModel)
-      model.uuid().should equal('test')
+  describe(".load", function() {
+    it("should create a new model with data", function() {
+      const model = ST.TestModel.load({uuid: 'test'});
+      model.should(beAnInstanceOf(ST.TestModel));
+      return model.uuid().should(equal('test'));
+    });
     
-    it "should load an array of models", ->
-      ST.TestModel.load [
+    return it("should load an array of models", function() {
+      ST.TestModel.load([
           {uuid: 'test-1'},
           {uuid: 'test-2'}
-      ]
-      ST.TestModel.find('test-1').shouldNot be(null)
-      ST.TestModel.find('test-2').shouldNot be(null)
+      ]);
+      ST.TestModel.find('test-1').shouldNot(be(null));
+      return ST.TestModel.find('test-2').shouldNot(be(null));
+    });
+  });
   
-  describe ".index", ->
-    it "should create an index", ->
-      index = ST.TestModel.index 'foo'
-      index.should beAnInstanceOf(ST.Model.Index)
+  describe(".index", function() {
+    it("should create an index", function() {
+      const index = ST.TestModel.index('foo');
+      return index.should(beAnInstanceOf(ST.Model.Index));
+    });
     
-    it "should return existing index", ->
-      index = ST.TestModel.index 'foo'
-      ST.TestModel.index('foo').should be(index)
+    return it("should return existing index", function() {
+      const index = ST.TestModel.index('foo');
+      return ST.TestModel.index('foo').should(be(index));
+    });
+  });
       
-  describe ".saveToServer", ->
-    it "should be tested"
+  describe(".saveToServer", () => it("should be tested"));
   
-  describe "#init", ->
-    it "should call #initWithData", ->
-      model = new ST.TestModel()
-      model.shouldReceive 'initWithData'
-      model.init()
+  describe("#init", () =>
+    it("should call #initWithData", function() {
+      const model = new ST.TestModel();
+      model.shouldReceive('initWithData');
+      return model.init();
+    })
+  );
   
-  describe "#initWithData", ->
-    beforeEach ->
-      @model = new ST.TestModel()
+  describe("#initWithData", function() {
+    beforeEach(function() {
+      return this.model = new ST.TestModel();
+    });
     
-    it "should generate a new UUID", ->
-      ST.Model._generateUUID = -> 'foo'
-      @model.initWithData {}
-      @model.uuid().should equal('foo')
+    it("should generate a new UUID", function() {
+      ST.Model._generateUUID = () => 'foo';
+      this.model.initWithData({});
+      return this.model.uuid().should(equal('foo'));
+    });
       
-    it "should accept an existing UUID", ->
-      @model.initWithData {uuid: 'bar'}
-      @model.uuid().should equal('bar')
+    it("should accept an existing UUID", function() {
+      this.model.initWithData({uuid: 'bar'});
+      return this.model.uuid().should(equal('bar'));
+    });
       
-    it "should set attributes to their defaults", ->
-      @model.initWithData {}
-      @model.foo().should equal('bacon')
+    it("should set attributes to their defaults", function() {
+      this.model.initWithData({});
+      return this.model.foo().should(equal('bacon'));
+    });
       
-    it "should load provided attributes", ->
-      @model.initWithData {foo: 'waffles'}
-      @model.foo().should equal('waffles')
+    it("should load provided attributes", function() {
+      this.model.initWithData({foo: 'waffles'});
+      return this.model.foo().should(equal('waffles'));
+    });
     
-    it "should apply bindings on one-to-many associations"
+    return it("should apply bindings on one-to-many associations");
+  });
   
-  describe ".createWithData", ->
-    it "should create using correct model type if specified", ->
-      model = ST.Model.Base.createWithData {model: 'TestModel'}
-      model.should beAnInstanceOf(ST.TestModel)
+  describe(".createWithData", function() {
+    it("should create using correct model type if specified", function() {
+      const model = ST.Model.Base.createWithData({model: 'TestModel'});
+      return model.should(beAnInstanceOf(ST.TestModel));
+    });
     
-    it "should not create if specified model type is not found", ->
-      model = ST.Model.Base.createWithData {model: 'Bacon'}
-      expect(model).to be(null)
+    it("should not create if specified model type is not found", function() {
+      const model = ST.Model.Base.createWithData({model: 'Bacon'});
+      return expect(model).to(be(null));
+    });
     
-    it "should return an existing object with same ID", ->
-      model = ST.TestModel.createWithData {uuid: 'recreate', foo: 'bacon'}
-      another = ST.TestModel.createWithData {uuid: 'recreate', foo: 'waffles'}
-      another.should be(model)
+    it("should return an existing object with same ID", function() {
+      const model = ST.TestModel.createWithData({uuid: 'recreate', foo: 'bacon'});
+      const another = ST.TestModel.createWithData({uuid: 'recreate', foo: 'waffles'});
+      return another.should(be(model));
+    });
     
-    it "should create a new object", ->
-      model = ST.TestModel.createWithData {foo: 'bacon'}
-      model.should beAnInstanceOf(ST.TestModel)
+    return it("should create a new object", function() {
+      const model = ST.TestModel.createWithData({foo: 'bacon'});
+      return model.should(beAnInstanceOf(ST.TestModel));
+    });
+  });
   
-  describe "#setUuid", ->
-    it "should add object to global index", ->
-      model = new ST.TestModel()
-      model.uuid 'test'
-      ST.Model._byUuid['test'].should be(model)
+  describe("#setUuid", function() {
+    it("should add object to global index", function() {
+      const model = new ST.TestModel();
+      model.uuid('test');
+      return ST.Model._byUuid['test'].should(be(model));
+    });
     
-    it "should add object to model index", ->
-      model = new ST.TestModel()
-      model.uuid 'test'
-      ST.TestModel._byUuid['test'].should be(model)
+    it("should add object to model index", function() {
+      const model = new ST.TestModel();
+      model.uuid('test');
+      return ST.TestModel._byUuid['test'].should(be(model));
+    });
     
-    it "should do nothing if model already has ID", ->
-      model = new ST.TestModel()
-      model._uuid = "test"
-      model.uuid 'test'
-      ST.Model._byUuid['test'].shouldNot be(model)
+    return it("should do nothing if model already has ID", function() {
+      const model = new ST.TestModel();
+      model._uuid = "test";
+      model.uuid('test');
+      return ST.Model._byUuid['test'].shouldNot(be(model));
+    });
+  });
   
-  describe "#matches", ->
-    it "should match when meets conditions", ->
-      @model.matches([ST.TestModel.foo.equals('bacon')]).should beTrue
+  describe("#matches", function() {
+    it("should match when meets conditions", function() {
+      return this.model.matches([ST.TestModel.foo.equals('bacon')]).should(beTrue);
+    });
 
-    it "should not match when fails condition", ->
-      @model.matches([ST.TestModel.foo.equals('waffles')]).should beFalse
+    return it("should not match when fails condition", function() {
+      return this.model.matches([ST.TestModel.foo.equals('waffles')]).should(beFalse);
+    });
+  });
   
-  describe "#getManyList", ->
-    it "needs to be tested"
+  describe("#getManyList", () => it("needs to be tested"));
       
-  describe "#data", ->
-    it "should return data representation of object", ->
-      data = @model.data()
-      expect(data).to beAnInstanceOf(Object)
-      data.foo.should equal('bacon')
+  describe("#data", () =>
+    it("should return data representation of object", function() {
+      const data = this.model.data();
+      expect(data).to(beAnInstanceOf(Object));
+      return data.foo.should(equal('bacon'));
+    })
+  );
   
-  describe "#persist", ->
-    it "should save object in persistant storage", ->
-      ST.Model._storage = new SpecObject()
-      @model._uuid = 'test'
-      ST.Model._storage.shouldReceive('set').with('test', JSON.stringify(@model.data()))
-      @model.persist()
-      delete ST.Model._storage
+  describe("#persist", () =>
+    it("should save object in persistant storage", function() {
+      ST.Model._storage = new SpecObject();
+      this.model._uuid = 'test';
+      ST.Model._storage.shouldReceive('set').with('test', JSON.stringify(this.model.data()));
+      this.model.persist();
+      return delete ST.Model._storage;
+    })
+  );
   
-  describe "#forget", ->
-    it "should remove object from global index", ->
-      uuid = @model.uuid()
-      @model.forget()
-      expect(ST.Model._byUuid[uuid]).to be(undefined)
+  describe("#forget", function() {
+    it("should remove object from global index", function() {
+      const uuid = this.model.uuid();
+      this.model.forget();
+      return expect(ST.Model._byUuid[uuid]).to(be(undefined));
+    });
     
-    it "should remove object from model index", ->
-      uuid = @model.uuid()
-      @model.forget()
-      expect(ST.TestModel._byUuid[uuid]).to be(undefined)
+    it("should remove object from model index", function() {
+      const uuid = this.model.uuid();
+      this.model.forget();
+      return expect(ST.TestModel._byUuid[uuid]).to(be(undefined));
+    });
     
-    it "should remove object from attribute indexes", ->
-      ST.TestModel.index('foo').shouldReceive('remove').with 'bacon', @model
-      @model.forget()
+    it("should remove object from attribute indexes", function() {
+      ST.TestModel.index('foo').shouldReceive('remove').with('bacon', this.model);
+      return this.model.forget();
+    });
       
-    it "should remove from persistant storage", ->
-      ST.Model._storage = new SpecObject()
-      @model._uuid = 'test'
-      ST.Model._storage.shouldReceive('remove').with('test')
-      @model.forget()
-      delete ST.Model._storage
+    return it("should remove from persistant storage", function() {
+      ST.Model._storage = new SpecObject();
+      this.model._uuid = 'test';
+      ST.Model._storage.shouldReceive('remove').with('test');
+      this.model.forget();
+      return delete ST.Model._storage;
+    });
+  });
 
-  describe "#destroy", ->
-    it "should forget object", ->
-      @model.shouldReceive 'forget'
-      @model.destroy()
+  describe("#destroy", () =>
+    it("should forget object", function() {
+      this.model.shouldReceive('forget');
+      return this.model.destroy();
+    })
+  );
   
-  describe ".convertValueToType", ->
-    it "should convert to string", ->
-      value = ST.Model.Base.convertValueToType 10, 'string'
-      (typeof value).should equal('string')
+  describe(".convertValueToType", function() {
+    it("should convert to string", function() {
+      const value = ST.Model.Base.convertValueToType(10, 'string');
+      return (typeof value).should(equal('string'));
+    });
   
-    it "should convert to real", ->
-      value = ST.Model.Base.convertValueToType '5.5', 'real'
-      (typeof value).should equal('number')
-      value.should equal(5.5)
+    it("should convert to real", function() {
+      const value = ST.Model.Base.convertValueToType('5.5', 'real');
+      (typeof value).should(equal('number'));
+      return value.should(equal(5.5));
+    });
   
-    it "should convert to integer", ->
-      value = ST.Model.Base.convertValueToType '5.3', 'integer'
-      (typeof value).should equal('number')
-      value.should equal(5)
+    it("should convert to integer", function() {
+      const value = ST.Model.Base.convertValueToType('5.3', 'integer');
+      (typeof value).should(equal('number'));
+      return value.should(equal(5));
+    });
 
-    it "should convert to datetime", ->
-      value = ST.Model.Base.convertValueToType '01 Jan 2010 12:15:00', 'datetime'
-      value.should beAnInstanceOf(Date)
-      value.getTime().should equal(1262308500000)
+    it("should convert to datetime", function() {
+      const value = ST.Model.Base.convertValueToType('01 Jan 2010 12:15:00', 'datetime');
+      value.should(beAnInstanceOf(Date));
+      return value.getTime().should(equal(1262308500000));
+    });
   
-    it "should convert to bool", ->
-      value = ST.Model.Base.convertValueToType 17, 'bool'
-      value.should equal(true)
+    it("should convert to bool", function() {
+      const value = ST.Model.Base.convertValueToType(17, 'bool');
+      return value.should(equal(true));
+    });
     
-    it "should not convert null", ->
-      value = ST.Model.Base.convertValueToType null, 'integer'
-      expect(value).to be(null)
+    return it("should not convert null", function() {
+      const value = ST.Model.Base.convertValueToType(null, 'integer');
+      return expect(value).to(be(null));
+    });
+  });
   
-  describe ".attribute", ->
-    beforeEach ->
-      ST.TestModel.attribute 'bar', 'string', {default: 'bacon'}
+  describe(".attribute", function() {
+    beforeEach(() => ST.TestModel.attribute('bar', 'string', {default: 'bacon'}));
     
-    it "should register default value for attribute", ->
-      ST.TestModel._attributes['bar'].default.should equal('bacon')
+    it("should register default value for attribute", () => ST.TestModel._attributes['bar'].default.should(equal('bacon')));
     
-    it "should register type for attribute", ->
-      ST.TestModel._attributes['bar'].type.should equal('string')
+    it("should register type for attribute", () => ST.TestModel._attributes['bar'].type.should(equal('string')));
     
-    it "should create a getter method", ->
-      @model.getBar.should beAFunction
+    it("should create a getter method", function() {
+      return this.model.getBar.should(beAFunction);
+    });
       
-    it "should create a setter method", ->
-      @model.setBar.should beAFunction
+    it("should create a setter method", function() {
+      return this.model.setBar.should(beAFunction);
+    });
       
-    it "should create an accessor method", ->
-      @model.bar.should beAFunction
+    it("should create an accessor method", function() {
+      return this.model.bar.should(beAFunction);
+    });
     
-    describe "#set(Attribute)", ->
-      it "should set new value", ->
-        @model.bar 'waffles'
-        @model.bar().should equal('waffles')
+    describe("#set(Attribute)", function() {
+      it("should set new value", function() {
+        this.model.bar('waffles');
+        return this.model.bar().should(equal('waffles'));
+      });
         
-      it "should update attribute index", ->
-        index = ST.TestModel.index 'bar'
-        @model.bar 'bacon'
-        index.shouldReceive('remove').with('bacon', @model)
-        index.shouldReceive('add').with('waffles', @model)
-        @model.bar 'waffles'
+      it("should update attribute index", function() {
+        const index = ST.TestModel.index('bar');
+        this.model.bar('bacon');
+        index.shouldReceive('remove').with('bacon', this.model);
+        index.shouldReceive('add').with('waffles', this.model);
+        return this.model.bar('waffles');
+      });
         
-      it "should trigger _changed event", ->
-        @model.bar 'bacon'
-        @model.shouldReceive('_changed').with('bar', 'bacon', 'waffles')
-        @model.bar 'waffles'
+      return it("should trigger _changed event", function() {
+        this.model.bar('bacon');
+        this.model.shouldReceive('_changed').with('bar', 'bacon', 'waffles');
+        return this.model.bar('waffles');
+      });
+    });
     
-    describe "#get(Attribute)", ->
-      it "should return attribute value", ->
-        @model.bar 'waffles'
-        @model.bar().should equal('waffles')
+    describe("#get(Attribute)", () =>
+      it("should return attribute value", function() {
+        this.model.bar('waffles');
+        return this.model.bar().should(equal('waffles'));
+      })
+    );
     
-    it "should create condition generators", ->
-      expect(ST.TestModel.bar).notTo be(null)
-      ST.TestModel.bar.equals.should beAFunction
+    it("should create condition generators", function() {
+      expect(ST.TestModel.bar).notTo(be(null));
+      return ST.TestModel.bar.equals.should(beAFunction);
+    });
       
-    describe "equals condition generator", ->
-      beforeEach ->
-        @condition = ST.TestModel.bar.equals('bacon')
+    return describe("equals condition generator", function() {
+      beforeEach(function() {
+        return this.condition = ST.TestModel.bar.equals('bacon');
+      });
     
-      it "should have correct attribute name", ->
-        @condition.attribute.should equal('bar')
+      it("should have correct attribute name", function() {
+        return this.condition.attribute.should(equal('bar'));
+      });
         
-      it "should have correct value", ->
-        @condition.value.should equal('bacon')
+      it("should have correct value", function() {
+        return this.condition.value.should(equal('bacon'));
+      });
       
-      it "should test correct value", ->
-        @condition.test({bar: -> 'bacon'}).should beTrue
+      it("should test correct value", function() {
+        return this.condition.test({bar() { return 'bacon'; }}).should(beTrue);
+      });
       
-      it "should test incorrect value", ->
-        @condition.test({bar: -> 'waffles'}).should beFalse
+      return it("should test incorrect value", function() {
+        return this.condition.test({bar() { return 'waffles'; }}).should(beFalse);
+      });
+    });
+  });
   
-  context "with an associated model", ->
-    beforeEach ->
-      ST.class 'OtherModel', ST.Model.Base, ->
+  context("with an associated model", function() {
+    beforeEach(() => ST.class('OtherModel', ST.Model.Base, function() {}));
     
-    describe ".belongsTo", ->
-      beforeEach ->
-        ST.TestModel.belongsTo 'other', {model: 'OtherModel'}
+    describe(".belongsTo", function() {
+      beforeEach(() => ST.TestModel.belongsTo('other', {model: 'OtherModel'}));
       
-      it "should create a Uuid attribute", ->
-        @model.otherUuid.should beAFunction
+      it("should create a Uuid attribute", function() {
+        return this.model.otherUuid.should(beAFunction);
+      });
       
-      it "should create a getter method", ->
-        @model.getOther.should beAFunction
+      it("should create a getter method", function() {
+        return this.model.getOther.should(beAFunction);
+      });
       
-      it "should create a setter method", ->
-        @model.setOther.should beAFunction
+      it("should create a setter method", function() {
+        return this.model.setOther.should(beAFunction);
+      });
       
-      it "should create an accessor method", ->
-        @model.other.should beAFunction
+      it("should create an accessor method", function() {
+        return this.model.other.should(beAFunction);
+      });
       
-      it "should register virtual attribute", ->
-        attr = ST.TestModel._attributes['other']
-        attr.virtual.should beTrue
-        attr.type.should equal('belongsTo')
-        attr.model.should equal('OtherModel')
+      it("should register virtual attribute", function() {
+        const attr = ST.TestModel._attributes['other'];
+        attr.virtual.should(beTrue);
+        attr.type.should(equal('belongsTo'));
+        return attr.model.should(equal('OtherModel'));
+      });
 
-      it "should apply bindings"
+      it("should apply bindings");
       
-      describe "getter method", ->
-        it "should find object by uuid", ->
-          other = ST.OtherModel.create()
-          @model.otherUuid other.uuid()
-          @model.other().should be(other)
+      describe("getter method", function() {
+        it("should find object by uuid", function() {
+          const other = ST.OtherModel.create();
+          this.model.otherUuid(other.uuid());
+          return this.model.other().should(be(other));
+        });
         
-        it "should be null when no uuid", ->
-          expect(@model.other()).to be(null)
+        it("should be null when no uuid", function() {
+          return expect(this.model.other()).to(be(null));
+        });
         
-        it "should be null when no model with uuid", ->
-          @model._attributes.otherUuid = 'nothing'
-          expect(@model.other()).to be(null)
+        return it("should be null when no model with uuid", function() {
+          this.model._attributes.otherUuid = 'nothing';
+          return expect(this.model.other()).to(be(null));
+        });
+      });
       
-      describe "setter method", ->
-        it "should set uuid", ->
-          other = ST.OtherModel.create()
-          @model.other other
-          @model.otherUuid().should equal(other.uuid())
+      return describe("setter method", () =>
+        it("should set uuid", function() {
+          const other = ST.OtherModel.create();
+          this.model.other(other);
+          return this.model.otherUuid().should(equal(other.uuid()));
+        })
+      );
+    });
   
-    describe ".hasMany", ->
-      beforeEach ->
-        ST.OtherModel.belongsTo 'test', {model: 'TestModel'}
-        ST.TestModel.hasMany 'others', {model: 'OtherModel', foreign: 'test'}
+    return describe(".hasMany", function() {
+      beforeEach(function() {
+        ST.OtherModel.belongsTo('test', {model: 'TestModel'});
+        return ST.TestModel.hasMany('others', {model: 'OtherModel', foreign: 'test'});});
       
-      it "should create a getter method for scope", ->
-        @model.others.should beAFunction
+      it("should create a getter method for scope", function() {
+        return this.model.others.should(beAFunction);
+      });
         
-      it "should store details of binding", ->
-        ST.TestModel.hasMany 'boundOthers', {
-          model:    'OtherModel'
-          foreign:  'test'
+      it("should store details of binding", function() {
+        ST.TestModel.hasMany('boundOthers', {
+          model:    'OtherModel',
+          foreign:  'test',
           bind:     { changed: 'otherChanged' }
-        }
-        ST.TestModel._manyBinds.length.should equal(1)
-        ST.TestModel._manyBinds[0].assoc.should equal('boundOthers')
-        ST.TestModel._manyBinds[0].from.should equal('changed')
-        ST.TestModel._manyBinds[0].to.should equal('otherChanged')
+        });
+        ST.TestModel._manyBinds.length.should(equal(1));
+        ST.TestModel._manyBinds[0].assoc.should(equal('boundOthers'));
+        ST.TestModel._manyBinds[0].from.should(equal('changed'));
+        return ST.TestModel._manyBinds[0].to.should(equal('otherChanged'));
+      });
       
-      describe "getter method", ->
-        it "should return a scope with conditions to match foreign key", ->
-          scope = @model.others()
-          scope._model.should be(ST.OtherModel)
-          scope._conditions.length.should equal(1)
-          scope._conditions[0].attribute.should equal('testUuid')
+      return describe("getter method", () =>
+        it("should return a scope with conditions to match foreign key", function() {
+          const scope = this.model.others();
+          scope._model.should(be(ST.OtherModel));
+          scope._conditions.length.should(equal(1));
+          return scope._conditions[0].attribute.should(equal('testUuid'));
+        })
+      );
+    });
+  });
   
-  describe ".setStorage", ->
-    it "should set the persistant store"
-    it "should save an existing model to persistant storage"
-    it "should load a model from persistant storage"
+  return describe(".setStorage", function() {
+    it("should set the persistant store");
+    it("should save an existing model to persistant storage");
+    return it("should load a model from persistant storage");
+  });
+});

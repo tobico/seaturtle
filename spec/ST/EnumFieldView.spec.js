@@ -1,99 +1,133 @@
-#= require ST/EnumFieldView
+/*
+ * decaffeinate suggestions:
+ * DS102: Remove unnecessary code created because of implicit returns
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+//= require ST/EnumFieldView
 
-Spec.describe 'EnumFieldView', ->
-  beforeEach ->
-    @enumField = ST.EnumFieldView.createWithValuesNull [['Bacon', 'bacon'], ['Waffles', 'waffles']], true
+Spec.describe('EnumFieldView', function() {
+  beforeEach(function() {
+    return this.enumField = ST.EnumFieldView.createWithValuesNull([['Bacon', 'bacon'], ['Waffles', 'waffles']], true);
+  });
   
-  describe "initializer", ->
-    it "should set defaults", ->
-      expect(@enumField._value).to be(null)
-      expect(@enumField._valueIndex).to equal({})
-      expect(@enumField._selectElement).to be(null)
-      expect(@enumField._id).to be(null)
+  describe("initializer", function() {
+    it("should set defaults", function() {
+      expect(this.enumField._value).to(be(null));
+      expect(this.enumField._valueIndex).to(equal({}));
+      expect(this.enumField._selectElement).to(be(null));
+      return expect(this.enumField._id).to(be(null));
+    });
     
-    it "should set values", ->
-      expect(@enumField._values).to equal([['Bacon', 'bacon'], ['Waffles', 'waffles']])
+    return it("should set values", function() {
+      return expect(this.enumField._values).to(equal([['Bacon', 'bacon'], ['Waffles', 'waffles']]));
+    });
+  });
   
-  describe "#isValueValid", ->
-    it "should be false when null and not allowed", ->
-      @enumField.allowNull false
-      @enumField.isValueValid(null).should beFalse
+  describe("#isValueValid", function() {
+    it("should be false when null and not allowed", function() {
+      this.enumField.allowNull(false);
+      return this.enumField.isValueValid(null).should(beFalse);
+    });
     
-    it "should be true when null and allowed", ->
-      @enumField.isValueValid(null).should beTrue
+    it("should be true when null and allowed", function() {
+      return this.enumField.isValueValid(null).should(beTrue);
+    });
     
-    it "should be true when value is in values", ->
-      @enumField.isValueValid('bacon').should beTrue
+    it("should be true when value is in values", function() {
+      return this.enumField.isValueValid('bacon').should(beTrue);
+    });
   
-    it "should be false when value is not in values", ->
-      @enumField.isValueValid('avacado').should beFalse
+    return it("should be false when value is not in values", function() {
+      return this.enumField.isValueValid('avacado').should(beFalse);
+    });
+  });
   
-  describe "#render", ->
-    it "should create select element", ->
-      @enumField.render()
-      @enumField.selectElement().shouldNot be(null)
+  describe("#render", function() {
+    it("should create select element", function() {
+      this.enumField.render();
+      return this.enumField.selectElement().shouldNot(be(null));
+    });
     
-    it "should set ID for select element", ->
-      @enumField.id 'foo'
-      @enumField.render()
-      @enumField.selectElement().attr('id').should equal('foo')
+    it("should set ID for select element", function() {
+      this.enumField.id('foo');
+      this.enumField.render();
+      return this.enumField.selectElement().attr('id').should(equal('foo'));
+    });
     
-    it "should render options", ->
-      @enumField.shouldReceive 'renderOptions'
-      @enumField.render()
+    return it("should render options", function() {
+      this.enumField.shouldReceive('renderOptions');
+      return this.enumField.render();
+    });
+  });
   
-  describe "#renderOptions", ->
-    it "should render options", ->
-      @enumField.load()
-      @enumField.selectElement().should haveHtml('<option value="" selected="selected"></option><option value="bacon">Bacon</option><option value="waffles">Waffles</option>')
+  describe("#renderOptions", function() {
+    it("should render options", function() {
+      this.enumField.load();
+      return this.enumField.selectElement().should(haveHtml('<option value="" selected="selected"></option><option value="bacon">Bacon</option><option value="waffles">Waffles</option>'));
+    });
     
-    it "should mark value as selected", ->
-      @enumField.value 'bacon'
-      @enumField.load()
-      @enumField.selectElement().should haveHtml('<option value=""></option><option value="bacon" selected="selected">Bacon</option><option value="waffles">Waffles</option>')
+    return it("should mark value as selected", function() {
+      this.enumField.value('bacon');
+      this.enumField.load();
+      return this.enumField.selectElement().should(haveHtml('<option value=""></option><option value="bacon" selected="selected">Bacon</option><option value="waffles">Waffles</option>'));
+    });
+  });
   
-  describe "#selectChanged", ->
-    it "should trigger submit on enter key", ->
-      @enumField.shouldReceive('trigger').with('submit')
-      @enumField.selectChanged {which: 13}
+  describe("#selectChanged", function() {
+    it("should trigger submit on enter key", function() {
+      this.enumField.shouldReceive('trigger').with('submit');
+      return this.enumField.selectChanged({which: 13});
+  });
     
-    it "should update value with value of select", ->
-      @enumField.load()
-      @enumField.selectElement()[0].selectedIndex = 1
-      @enumField.selectChanged()
-      @enumField.value().should equal('bacon')
+    it("should update value with value of select", function() {
+      this.enumField.load();
+      this.enumField.selectElement()[0].selectedIndex = 1;
+      this.enumField.selectChanged();
+      return this.enumField.value().should(equal('bacon'));
+    });
           
-    it "should report change", ->
-      @enumField.load()
-      @enumField.shouldReceive 'setValue'
-      @enumField.selectElement()[0].selectedIndex = 1
-      @enumField.selectChanged()
+    return it("should report change", function() {
+      this.enumField.load();
+      this.enumField.shouldReceive('setValue');
+      this.enumField.selectElement()[0].selectedIndex = 1;
+      return this.enumField.selectChanged();
+    });
+  });
   
-  describe "#_setValue", ->
-    it "should update selected value", ->
-      @enumField.load()
-      @enumField.value 'waffles'
-      @enumField.selectElement()[0].selectedIndex.should equal(2)
+  describe("#_setValue", () =>
+    it("should update selected value", function() {
+      this.enumField.load();
+      this.enumField.value('waffles');
+      return this.enumField.selectElement()[0].selectedIndex.should(equal(2));
+    })
+  );
   
-  describe "#_valuesChanged", ->
-    it "should rerender options", ->
-      @enumField.load()
-      @enumField.shouldReceive 'renderOptions'
-      @enumField.values ['Spam', 'spam']
+  describe("#_valuesChanged", function() {
+    it("should rerender options", function() {
+      this.enumField.load();
+      this.enumField.shouldReceive('renderOptions');
+      return this.enumField.values(['Spam', 'spam']);
+  });
     
-    it "should set value to null if no longer valid", ->
-      @enumField.value 'bacon'
-      @enumField.values ['Spam', 'spam']
-      expect(@enumField.value()).to be(null)
+    it("should set value to null if no longer valid", function() {
+      this.enumField.value('bacon');
+      this.enumField.values(['Spam', 'spam']);
+      return expect(this.enumField.value()).to(be(null));
+    });
     
-    it "should keep value if it's still valid", ->
-      @enumField.value 'waffles'
-      @enumField.values [['Waffles', 'waffles'], ['Pancakes', 'pancakes']]
-      @enumField.value().should equal('waffles')
+    return it("should keep value if it's still valid", function() {
+      this.enumField.value('waffles');
+      this.enumField.values([['Waffles', 'waffles'], ['Pancakes', 'pancakes']]);
+      return this.enumField.value().should(equal('waffles'));
+    });
+  });
   
-  describe "#_idChanged", ->
-    it "should update ID for input element", ->
-      @enumField.id 'foo'
-      @enumField.load()
-      @enumField.id 'bar'
-      @enumField.selectElement().attr('id').should equal('bar')
+  return describe("#_idChanged", () =>
+    it("should update ID for input element", function() {
+      this.enumField.id('foo');
+      this.enumField.load();
+      this.enumField.id('bar');
+      return this.enumField.selectElement().attr('id').should(equal('bar'));
+    })
+  );
+});

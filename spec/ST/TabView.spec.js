@@ -1,49 +1,67 @@
-#= require ST/TabView
+/*
+ * decaffeinate suggestions:
+ * DS102: Remove unnecessary code created because of implicit returns
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+//= require ST/TabView
 
-Spec.describe "TabView", ->
-  describe "#initializer", ->
-    it "should create a UL element", ->
-      view = ST.TabView.create()
-      view.element().is('ul').should beTrue
+Spec.describe("TabView", () =>
+  describe("#initializer", function() {
+    it("should create a UL element", function() {
+      const view = ST.TabView.create();
+      return view.element().is('ul').should(beTrue);
+    });
     
-    it "should set initial values for instance variables", ->
-      view = ST.TabView.create()
-      view._tabs.should equal([])
-      view._tabIndex.should equal(0)
-      view._truncateLength.should beFalse
-      expect(view._canClose).to be(null)
+    return it("should set initial values for instance variables", function() {
+      const view = ST.TabView.create();
+      view._tabs.should(equal([]));
+      view._tabIndex.should(equal(0));
+      view._truncateLength.should(beFalse);
+      return expect(view._canClose).to(be(null));
+    });
+  })
+);
 
-context "with a new tab view", ->
-  beforeEach ->
-    @view = ST.TabView.create()
-    @sandbox.append @view.element()
+context("with a new tab view", function() {
+  beforeEach(function() {
+    this.view = ST.TabView.create();
+    return this.sandbox.append(this.view.element());
+  });
   
-  describe "#render", ->
-    it "should render one tab", ->
-      @view.tabs ['Test']
-      @view.load()
-      @view.element().should haveHtml('<li class="hl"><span class="title active_title">Test</span></li>')
+  describe("#render", function() {
+    it("should render one tab", function() {
+      this.view.tabs(['Test']);
+      this.view.load();
+      return this.view.element().should(haveHtml('<li class="hl"><span class="title active_title">Test</span></li>'));
+    });
     
-    it "should render two tabs, first active by default", ->
-      @view.tabs ['Active', 'Inactive']
-      @view.load()
-      @view.element().should haveHtml('<li class="hl"><span class="title active_title">Active</span></li><li><span class="title inactive_title">Inactive</span></li>')
+    it("should render two tabs, first active by default", function() {
+      this.view.tabs(['Active', 'Inactive']);
+      this.view.load();
+      return this.view.element().should(haveHtml('<li class="hl"><span class="title active_title">Active</span></li><li><span class="title inactive_title">Inactive</span></li>'));
+    });
     
-    it "should render two tabs, second set as active", ->
-      @view.tabs ['Inactive', 'Active']
-      @view.tabIndex 1
-      @view.load()
-      @view.element().should haveHtml('<li><span class="title inactive_title">Inactive</span></li><li class="hl"><span class="title active_title">Active</span></li>')
+    it("should render two tabs, second set as active", function() {
+      this.view.tabs(['Inactive', 'Active']);
+      this.view.tabIndex(1);
+      this.view.load();
+      return this.view.element().should(haveHtml('<li><span class="title inactive_title">Inactive</span></li><li class="hl"><span class="title active_title">Active</span></li>'));
+    });
     
-    it "should switch tabs when inactive tab mousedown", ->
-      @view.tabs ['Active', 'Inactive']
-      @view.load()
-      @view.shouldReceive('switchToTab').with(1)
-      $('span.inactive_title', @view.element()).mousedown()
+    return it("should switch tabs when inactive tab mousedown", function() {
+      this.view.tabs(['Active', 'Inactive']);
+      this.view.load();
+      this.view.shouldReceive('switchToTab').with(1);
+      return $('span.inactive_title', this.view.element()).mousedown();
+    });
+  });
   
-  describe "#setTabs", ->
-    it "should update tabs", ->
-      @view.tabs ['Test']
-      @view.load()
-      @view.tabs ['Waffles']
-      @view.element().should haveHtml('<li class="hl"><span class="title active_title">Waffles</span></li>')
+  return describe("#setTabs", () =>
+    it("should update tabs", function() {
+      this.view.tabs(['Test']);
+      this.view.load();
+      this.view.tabs(['Waffles']);
+      return this.view.element().should(haveHtml('<li class="hl"><span class="title active_title">Waffles</span></li>'));
+    })
+  );
+});

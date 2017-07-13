@@ -1,130 +1,164 @@
-#= require ST/Model
-#= require ST/ModelFieldView
+/*
+ * decaffeinate suggestions:
+ * DS102: Remove unnecessary code created because of implicit returns
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+//= require ST/Model
+//= require ST/ModelFieldView
 
-Spec.describe 'ModelFieldView', ->
-  beforeEach ->
-    ST.class 'TestModel', ST.Model.Base, ->
-      @string 'title'
-      @searchesOn 'title'
-      @method 'toListItem', -> [@title()]
-      @method 'toFieldText', -> @title()
-    @model = ST.TestModel
-    @modelField = ST.ModelFieldView.createWithModel @model
-    @item = ST.TestModel.createWithData({title: 'test'})
+Spec.describe('ModelFieldView', function() {
+  beforeEach(function() {
+    ST.class('TestModel', ST.Model.Base, function() {
+      this.string('title');
+      this.searchesOn('title');
+      this.method('toListItem', function() { return [this.title()]; });
+      return this.method('toFieldText', function() { return this.title(); });
+    });
+    this.model = ST.TestModel;
+    this.modelField = ST.ModelFieldView.createWithModel(this.model);
+    return this.item = ST.TestModel.createWithData({title: 'test'});
+  });
 
-  describe "initializer", ->
-    it "should set model", ->
-      @modelField._model.should be(@model)
+  describe("initializer", function() {
+    it("should set model", function() {
+      return this.modelField._model.should(be(this.model));
+    });
     
-    it "should set defaults", ->
-      expect(@modelField._value).to be(null)
-      expect(@modelField._inputValue).to be(null)
-      @modelField._searching.should beFalse
-      @modelField._searchValue.should equal('')
-      expect(@modelField._results).to be(null)
-      @modelField._canCreate.should beFalse
+    return it("should set defaults", function() {
+      expect(this.modelField._value).to(be(null));
+      expect(this.modelField._inputValue).to(be(null));
+      this.modelField._searching.should(beFalse);
+      this.modelField._searchValue.should(equal(''));
+      expect(this.modelField._results).to(be(null));
+      return this.modelField._canCreate.should(beFalse);
+    });
+  });
   
-  describe "#initWithScope", ->
-    beforeEach ->
-      @field = new ST.ModelFieldView()
-      @scope = ST.TestModel.where(ST.TestModel.title.equals('bananas'))
+  describe("#initWithScope", function() {
+    beforeEach(function() {
+      this.field = new ST.ModelFieldView();
+      return this.scope = ST.TestModel.where(ST.TestModel.title.equals('bananas'));
+    });
     
-    it "should call initWithModel", ->
-      @field.shouldReceive('initWithModel').with(ST.TestModel)
-      @field.initWithScope @scope
+    it("should call initWithModel", function() {
+      this.field.shouldReceive('initWithModel').with(ST.TestModel);
+      return this.field.initWithScope(this.scope);
+    });
     
-    it "should set scope", ->
-      @field.initWithScope @scope
-      @field._scope.should be(@scope)
+    return it("should set scope", function() {
+      this.field.initWithScope(this.scope);
+      return this.field._scope.should(be(this.scope));
+    });
+  });
   
-  describe "#render", ->
-    it "should put current value in field", ->
-      @modelField.value @item
-      @modelField.render()
-      @modelField.inputElement().val().should equal('test')
+  describe("#render", function() {
+    it("should put current value in field", function() {
+      this.modelField.value(this.item);
+      this.modelField.render();
+      return this.modelField.inputElement().val().should(equal('test'));
+    });
     
-    it "should create result list element", ->
-      @modelField.render()
-      @modelField._resultListElement.should beAnInstanceOf(jQuery)
+    return it("should create result list element", function() {
+      this.modelField.render();
+      return this.modelField._resultListElement.should(beAnInstanceOf(jQuery));
+    });
+  });
   
-  describe "#inputFocus", ->
-    it "should perform search when field has text", ->
-      @modelField.load()
-      @modelField.inputElement().val 'test'
-      @modelField.shouldReceive 'performSearch'
-      @modelField.inputFocus()
+  describe("#inputFocus", function() {
+    it("should perform search when field has text", function() {
+      this.modelField.load();
+      this.modelField.inputElement().val('test');
+      this.modelField.shouldReceive('performSearch');
+      return this.modelField.inputFocus();
+    });
     
-    it "should select all when field has a value", ->
-      @modelField.render()
-      @modelField.inputElement().val 'test'
-      @modelField.value @item
-      @modelField.inputElement().shouldReceive 'select'
-      @modelField.inputFocus()
+    return it("should select all when field has a value", function() {
+      this.modelField.render();
+      this.modelField.inputElement().val('test');
+      this.modelField.value(this.item);
+      this.modelField.inputElement().shouldReceive('select');
+      return this.modelField.inputFocus();
+    });
+  });
   
-  describe "#inputBlur", ->
-    it "should set value to null when input empty", ->
-      @modelField.render()
-      @modelField.value @item
-      @modelField._focused = true
-      @modelField.inputValue ''
-      @modelField.inputBlur()
-      expect(@modelField.value()).to be(null)
+  describe("#inputBlur", function() {
+    it("should set value to null when input empty", function() {
+      this.modelField.render();
+      this.modelField.value(this.item);
+      this.modelField._focused = true;
+      this.modelField.inputValue('');
+      this.modelField.inputBlur();
+      return expect(this.modelField.value()).to(be(null));
+    });
     
-    it "should choose selected result", ->
-      @modelField.render()
-      @modelField.inputElement().val 'test'
-      @modelField._results = [[@item, 1]]
-      @modelField._selectedResult = 0
-      @modelField.inputBlur()
-      @modelField.value().should be(@item)
+    it("should choose selected result", function() {
+      this.modelField.render();
+      this.modelField.inputElement().val('test');
+      this.modelField._results = [[this.item, 1]];
+      this.modelField._selectedResult = 0;
+      this.modelField.inputBlur();
+      return this.modelField.value().should(be(this.item));
+    });
     
-    it "should display current value if no result selected", ->
-      @modelField.render()
-      @modelField.value @item
-      @modelField.inputElement().val 'testing'
-      @modelField.inputBlur()
-      @modelField.inputElement().val().should equal('test')
+    return it("should display current value if no result selected", function() {
+      this.modelField.render();
+      this.modelField.value(this.item);
+      this.modelField.inputElement().val('testing');
+      this.modelField.inputBlur();
+      return this.modelField.inputElement().val().should(equal('test'));
+    });
+  });
   
-  describe "#inputChanged", ->
-    it "should update inputValue", ->
-      @modelField.render()
-      @modelField.inputElement().val 'bacon'
-      @modelField.inputChanged()
-      @modelField.inputValue().should equal('bacon')
+  describe("#inputChanged", () =>
+    it("should update inputValue", function() {
+      this.modelField.render();
+      this.modelField.inputElement().val('bacon');
+      this.modelField.inputChanged();
+      return this.modelField.inputValue().should(equal('bacon'));
+    })
+  );
   
-  describe "#_inputValueChanged", ->
-    it "should perform serach", ->
-      @modelField.load()
-      @modelField._focused = true
-      @modelField.shouldReceive 'performSearch'
-      @modelField._inputValueChanged 'bacon', 'waffles'
+  describe("#_inputValueChanged", () =>
+    it("should perform serach", function() {
+      this.modelField.load();
+      this.modelField._focused = true;
+      this.modelField.shouldReceive('performSearch');
+      return this.modelField._inputValueChanged('bacon', 'waffles');
+    })
+  );
   
-  describe "#_valueChanged", ->
-    it "should display value in field", ->
-      @modelField.load()
-      @modelField.value @item
-      @modelField.inputValue().should equal('test')
+  describe("#_valueChanged", () =>
+    it("should display value in field", function() {
+      this.modelField.load();
+      this.modelField.value(this.item);
+      return this.modelField.inputValue().should(equal('test'));
+    })
+  );
   
-  describe "#_selectedResultChanged", ->
-    it "should add 'selected' class to selected row"
-    it "should remove 'selected' class from unselected row"
+  describe("#_selectedResultChanged", function() {
+    it("should add 'selected' class to selected row");
+    return it("should remove 'selected' class from unselected row");
+  });
   
-  describe "#inputKeyDown", ->
-    it "should go to previous result when I press up"
-    it "should wrap around when I press up"
-    it "should go to next result when I press down"
-    it "should wrap around when I press down"
-    it "should blur input when I press enter"
-    it "should deselect result and blur input when I press escape"
-    it "should select corresponsing result when I press a number key"
+  describe("#inputKeyDown", function() {
+    it("should go to previous result when I press up");
+    it("should wrap around when I press up");
+    it("should go to next result when I press down");
+    it("should wrap around when I press down");
+    it("should blur input when I press enter");
+    it("should deselect result and blur input when I press escape");
+    return it("should select corresponsing result when I press a number key");
+  });
   
-  describe "#performSearch", ->
-    it "should start search for keyword"
-    it "should hide results with blank keyword"
+  describe("#performSearch", function() {
+    it("should start search for keyword");
+    return it("should hide results with blank keyword");
+  });
   
-  describe "#showResults", ->
-    it "should display results"
+  describe("#showResults", () => it("should display results"));
   
-  describe "#chooseResult", ->
-    it "should display toFieldText text in input"
-    it "should update value"
+  return describe("#chooseResult", function() {
+    it("should display toFieldText text in input");
+    return it("should update value");
+  });
+});
