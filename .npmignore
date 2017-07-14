@@ -1,0 +1,7 @@
+.vscode
+src/
+yarn.lock
+*.tgz
+.npmignore
+.babelrc
+.editorconfig

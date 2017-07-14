@@ -1,3 +1,4 @@
 .DS_Store
 compiled
 node_modules
+lib
