@@ -5,6 +5,13 @@ export const makeClass = (className, superClass, definition) => {
     return this;
   };
 
+  Object.defineProperty(newClass, 'name', {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+  })
+  delete newClass.name
+
   newClass._classMethods = [];
 
   // Inherit superclass
