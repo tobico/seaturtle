@@ -18,12 +18,12 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     this._registry = modelRegistry
     modelRegistry.registerModel(this, this._name)
   })
-  
+
   def.property('registry', 'read')
-  
+
   def.classMethod('fetch', function(uuid, callback) {
     const self = this;
-  
+
     if (Model._byUuid[uuid]) {
       if (callback) { return callback(Model._byUuid[uuid]); }
     } else if (this.FETCH_URL) {
@@ -46,18 +46,18 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
   def.classDelegate('each',  'scoped');
   def.classDelegate('first', 'scoped');
   def.classDelegate('count', 'scoped');
-  
+
   def.include(Validates);
   def.include(Callbacks);
   def.callback('create');
   def.callback('destroy');
-  
+
   def.classMethod('scoped', function() {
     return Scope.createWithModel(this);
   });
 
   def.classMethod('find', uuid => Model._byUuid[uuid]);
-  
+
   def.classMethod('load', function(data) {
     const self = this;
     if (data instanceof Array) {
@@ -69,11 +69,11 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       return this.createWithData(data);
     }
   });
-  
+
   def.classMethod('master', function() {
     return this._master || (this._master = List.create());
   });
-  
+
   def.classMethod('index', function(attribute) {
     if (!this._indexes) { this._indexes = {}; }
     return this._indexes[attribute] || (this._indexes[attribute] = Index.createWithModelAttribute(this, attribute));
@@ -89,11 +89,11 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
   def.initializer('withData', function(data, options) {
     if (options == null) { options = {}; }
     const self = this;
-    
+
     if (!options.loaded) { this.callBefore('create'); }
-    
+
     BaseObject.prototype.init.call(this);
-    
+
     this.uuid(data.uuid || Model._generateUUID());
     this._creating = true;
     this._attributes = {};
@@ -107,32 +107,32 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
         }
       }
     }
-    
+
     // Add class to indexes
     if (this._class._indexes) {
       for (attribute in this._class._attributes) {
         if (this._class._attributes.hasOwnProperty(attribute)) {
           var index;
           if (index = this._class._indexes[attribute]) {
-            index.add(this._attributes[attribute], this); 
+            index.add(this._attributes[attribute], this);
           }
         }
       }
     }
-  
+
     if (this._class._manyBinds) {
       for (let binding of Array.from(this._class._manyBinds)) {
         this.get(binding.assoc).bind(binding.from, self, binding.to);
       }
     }
-    
+
     if (!options.loaded && !this._class.ReadOnly) {
       Model.recordChange('create', this._uuid, this._class._name, this.data());
     }
-    
+
     this._creating = false;
     this._class.master().add(this);
-    
+
     if (!options.loaded) { return this.callAfter('create'); }
   });
 
@@ -154,14 +154,14 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
   def.method('setUuid', function(newUuid) {
     if (!this._uuid) {
       newUuid = String(newUuid);
-      
+
       // Insert object in global index
       Model._byUuid[newUuid] = this;
-  
+
       // Insert object in model-specific index
       if (!this._class._byUuid) { this._class._byUuid = {}; }
       this._class._byUuid[newUuid] = this;
-  
+
       return this._uuid = newUuid;
     }
   });
@@ -180,7 +180,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
   def.method('_changed', function(member, oldValue, newValue) {
     this.super(member, oldValue, newValue);
     this._class.trigger('itemChanged', this);
-    
+
     if (this._attributes[member] !== undefined) {
       if (!this._creating && (String(oldValue) !== String(newValue)) && !this._class.ReadOnly) {
         const data = {};
@@ -189,10 +189,10 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       }
     }
   });
-  
+
   def.method('writeAttribute', function(name, rawValue) {
     const oldValue = this._attributes[name];
-  
+
     // Convert new value to correct type
     const details = this._class._attributes[name];
     const newValue = this._class.convertValueToType(rawValue, details.type);
@@ -217,7 +217,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       return this.trigger('changed', name, oldValue, newValue);
     }
   });
-  
+
   // Returns saveable object containing model data.
   def.method('data', function() {
     const output = {};
@@ -237,24 +237,24 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       return Model._storage.set(this.uuid(), JSON.stringify(this.data()));
     }
   });
-  
+
   // Removes all local data for model.
-  def.method('forget', function(destroy) {  
+  def.method('forget', function(destroy) {
     if (destroy == null) { destroy = false; }
     if (destroy) { this.callBefore('destroy'); }
-  
+
     // Record destruction in change list, if destroy is true
     if (destroy && !this._class.ReadOnly) {
       Model.recordChange('destroy', this._uuid, this._class._name);
     }
-    
+
     // Unbind any loose bindings
     if (this._boundTo) {
       for (let binding of Array.from(this._boundTo)) {
         binding.source.unbindOne(binding.trigger, this);
       }
     }
-    
+
     // Propagate to dependent associated objects
     if (this._class._dependent) {
       for (let dependent of Array.from(this._class._dependent)) {
@@ -264,10 +264,10 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
 
     // Remove from global index
     delete Model._byUuid[this._uuid];
-  
+
     // Remove from model index
     delete this._class._byUuid[this._uuid];
-  
+
     // Remove from attribute indexes
     if (this._class._indexes) {
       for (let attribute in this._class._indexes) {
@@ -275,18 +275,18 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
         if (index.remove) { index.remove(this._attributes[attribute], this); }
       }
     }
-  
+
     // Remove from persistant storage
     if (Model._storage) { Model._storage.remove(this._uuid); }
-  
+
     this._class.master().remove(this);
-    
+
     if (destroy) { this._destroyed = true; }
-    
+
     if (destroy) { return this.callAfter('destroy'); }
   });
-  
-  // Marks model as destroyed, destroy to be propagated to server when 
+
+  // Marks model as destroyed, destroy to be propagated to server when
   // possible.
   def.method('destroy', function() {
     return this.forget(true);
@@ -313,10 +313,10 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       }
     }
   });
-  
+
   def.classMethod('attribute', function(name, type, options) {
     const ucName = ucFirst(name);
-  
+
     if (!this._attributes) { this._attributes = {}; }
     this._attributes[name] = {
       type,
@@ -328,17 +328,17 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       const value = options[option];
         this._attributes[name][option] = value;
     }
-    
+
     this.method(`set${ucName}`, function(rawValue) {
       return this.writeAttribute(name, rawValue);
     });
-  
+
     this.method(`get${ucName}`, function() { return this._attributes[name]; });
-  
+
     this.accessor(name);
     return this.matchers(name);
   });
-  
+
   // Create convenience attribute method for each data type
   for (let type of ['string', 'integer', 'real', 'bool', 'datetime', 'enum']) {
     def.classMethod(type, (type =>
@@ -348,7 +348,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     )(type)
     );
   }
-  
+
   def.classMethod('virtual', function(name, type, defaultValue) {
     this.accessor(name);
     if (!this._attributes) { this._attributes = {}; }
@@ -359,7 +359,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     };
     return this.matchers(name);
   });
-  
+
   def.classMethod('matchers', function(name) {
     const _not = function() {
       const oldTest = this.test;
@@ -368,8 +368,13 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
         test(item) { return !oldTest(item); }
       };
     };
-  
-    return this[name] = {
+
+    Object.defineProperty(this, name, {
+      configurable: true,
+      writable: true,
+      enumerable: true
+    })
+    this[name] = {
       null() {
         return {
           attribute:  name,
@@ -444,28 +449,28 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
 
   def.classMethod('belongsTo', function(name, options={}) {
     this.string(`${name}Uuid`, {null: options.null});
-  
+
     const ucName = ucFirst(name);
     if (!options.model) { options.model = ucName; }
-  
+
     this.method(`get${ucName}`, function() {
       const uuid = this[`${name}Uuid`]();
       return Model._byUuid[uuid] || null;
     });
-  
+
     this.method(`set${ucName}`, function(value) {
       if (value && (value._class._name !== options.model)) { error('Invalid object specified for association'); }
       return this[`${name}Uuid`](value && value.uuid());
     });
-  
+
     this.virtual(name, 'belongsTo', null);
-    
+
     for (let option in options) {
       if (options.hasOwnProperty(option)) {
         this._attributes[name][option] = options[option];
       }
     }
-    
+
     const matchers = this[`${name}Uuid`];
     this[name] = {
       is(value) {
@@ -504,7 +509,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     if (options == null) { options = {}; }
     const foreign = options.foreign || this._name.toLowerCase();
     const modelName = options.model || ucFirst(singularize(name));
-  
+
     // One-to-many assocation through a Model and foreign key
     this.method(name, function() {
       if (!this[`_${name}`]) {
@@ -517,7 +522,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       }
       return this[`_${name}`];
   });
-  
+
     if (options.bind) {
       for (let key in options.bind) {
         if (!this._manyBinds) { this._manyBinds = []; }
@@ -528,13 +533,13 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
         });
       }
     }
-    
+
     if (options.dependent) {
       if (!this._dependent) { this._dependent = []; }
       return this._dependent.push(name);
     }
   });
-  
+
   def.classMethod('labelForAttribute', attribute => ucFirst(attribute.replace(/([A-Z])/g, " $1").replace(/\sUuid$/, '')));
 
   def.include(Searchable);
