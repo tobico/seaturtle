@@ -19,20 +19,20 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
   def.VK_UP        = 38;
   def.VK_RIGHT     = 39;
   def.VK_DOWN      = 40;
-  
+
   def.ViewWithContent = function(content) {
     const view = this.create();
     view.load();
     view.element().append(content);
     return view;
   };
-  
+
   def.classMethod('keyboardFocusStack', function() {
-    if (!View._keyboardFocusStack) {
-      View._keyboardFocusStack = List.create();
+    if (!def._keyboardFocusStack) {
+      def._keyboardFocusStack = List.create();
       jQuery('html').keydown(function(e) {
         let handled = false;
-        View._keyboardFocusStack.each(function(view) {
+        def._keyboardFocusStack.each(function(view) {
           if (view.keyDown && view.keyDown(e.which)) {
             if (window.console) {
               // Look up constant for key
@@ -41,7 +41,7 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
                 const b = View[a];
                 if (b === key) { key = a; }
               }
-              console.log(`Keydown: Key ${key} handled by ${view}`); 
+              console.log(`Keydown: Key ${key} handled by ${view}`);
             }
             handled = true;
             return 'break';
@@ -53,16 +53,16 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
         }
       });
     }
-    
-    return View._keyboardFocusStack;
+
+    return def._keyboardFocusStack;
   });
-  
+
   def.initializer(function() {
     const element = ViewHelper.instance().tag('div');
     element.addClass(this._class._name);
     return this.initWithElement(element);
   });
-  
+
   def.initializer('withElement', function(element) {
     Destructable.method('init').call(this);
     this._element = element;
@@ -72,16 +72,16 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
     this._children.bind('itemAdded',   this, 'childAdded');
     return this._children.bind('itemRemoved', this, 'childRemoved');
   });
-  
+
   def.property('parent');
   def.property('children', 'read');
   def.property('element',  'read');
   def.property('loaded',   'read');
   def.property('visible');
-  
+
   def.retainedProperty('header');
   def.retainedProperty('footer');
-  
+
   def.delegate('add', 'children', 'addChild');
   def.delegate('remove', 'children', 'removeChild');
 
@@ -92,9 +92,9 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
     this._element.remove();
     return this.super();
   });
-  
+
   def.method('helper', () => ViewHelper.instance());
-    
+
   // Sets a view as the header for this view. Headers always remain above
   // any content and all child views for a view.
   def.method('_headerChanged', function(oldHeader, newHeader) {
@@ -104,7 +104,7 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
       return this._element.prepend(newHeader.element());
     }
   });
-  
+
   // Sets a view as the footer for this view. Footers always remain below
   // any content and all child views for a view.
   def.method('_footerChanged', function(oldFooter, newFooter) {
@@ -114,7 +114,7 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
       return this._element.append(newFooter.element());
     }
   });
-  
+
   def.method('childAdded', function(children, child) {
     child.parent(this);
     if (this._loaded) {
@@ -126,33 +126,33 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
       }
     }
   });
-  
+
   def.method('childRemoved', function(children, child) {
     if (this._loaded) { return child.element().detach(); }
   });
-  
+
   def.method('load', function() {
     if (!this._loaded) {
       this.trigger('loading');
-    
+
       if (this._header) {
         this.element().append(this._header.element());
         this._header.load();
       }
-        
+
       if (this.render) { this.render(); }
       this.loadChildren();
-      
+
       if (this._footer) {
         this._element.append(this._footer.element());
         this._footer.load();
       }
-    
+
       this._loaded = true;
       return this.trigger('loaded');
     }
   });
-    
+
   def.method('loadChildren', function() {
     const element = this._element;
     return this._children.each(function(child) {
@@ -160,7 +160,7 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
       return child.load();
     });
   });
-  
+
   def.method('unload', function() {
     if (this._loaded) {
       this.trigger('unloading');
@@ -173,27 +173,27 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
       return this.trigger('unloaded');
     }
   });
-    
+
   def.method('unloadChildren', function() {
     return this._children.each(function(child) {
       child.unload();
       return child.element().detach();
     });
   });
-    
+
   def.method('reload', function() {
     this.unload();
     return this.load();
   });
-  
+
   def.method('show', function() {
     if (!this._visible) { return this.visible(true); }
   });
-  
+
   def.method('hide', function() {
     if (this._visible) { return this.visible(false); }
   });
-  
+
   def.method('setVisible', function(value) {
     if (value !== this._visible) {
       if (this._visible = value) {
@@ -206,19 +206,19 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
       }
     }
   });
-  
+
   def.method('takeKeyboardFocus', function() {
-    const stack = View.keyboardFocusStack();
+    const stack = def.keyboardFocusStack();
     return stack.insertAt(0, this);
   });
-  
+
   def.method('returnKeyboardFocus', function() {
-    const stack = View.keyboardFocusStack();
+    const stack = def.keyboardFocusStack();
     return stack.remove(this);
   });
-  
+
   def.method('scrollTo', function() { return jQuery.scrollTo(this._element); });
-  
+
   def.method('showDialog', function(events) { return Dialog.showView(this, events); });
 });
 
