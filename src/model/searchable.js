@@ -147,6 +147,7 @@ export const Searchable = (def) => {
     const url = options.url || this._remoteSearchURL;
     if (url) {
       const self = this;
+      const registry = self.registry();
       jQuery.ajax({
         url,
         method:   'get',
@@ -154,7 +155,7 @@ export const Searchable = (def) => {
         success(data) {
           const results = [];
           for (let itemData of Array.from(data)) {
-            const item = BaseModel.createWithData(itemData, {loaded: true});
+            const item = registry.loadData(itemData, {loaded: true});
             if (item instanceof self) { results.push([item]); }
           }
           return callback(results);

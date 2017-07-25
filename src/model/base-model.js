@@ -19,7 +19,8 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     modelRegistry.registerModel(this, this._name)
   })
 
-  def.property('registry', 'read')
+  def.classMethod('registry', function() { return this.getRegistry() })
+  def.classMethod('getRegistry', function() { return this._registry })
 
   def.classMethod('fetch', function(uuid, callback) {
     const self = this;
