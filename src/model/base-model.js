@@ -337,7 +337,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     this.method(`get${ucName}`, function() { return this._attributes[name]; });
 
     this.accessor(name);
-    return this.matchers(name);
+    this.matchers(name);
   });
 
   // Create convenience attribute method for each data type
@@ -370,12 +370,8 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       };
     };
 
-    Object.defineProperty(this, name, {
-      configurable: true,
-      writable: true,
-      enumerable: true
-    })
-    this[name] = {
+    this.M = this.M || {}
+    this.M[name] = {
       null() {
         return {
           attribute:  name,

@@ -62,11 +62,11 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
     if (value) {
       this._text = trim(value.toFieldText());
       this._inputElement.val(this._text);
-      return this._inputElement.removeClass('placeholder');
+      this._inputElement.removeClass('placeholder');
     } else {
       this._text = '';
       this._inputElement.val(this._placeholder);
-      return this._inputElement.addClass('placeholder');
+      this._inputElement.addClass('placeholder');
     }
   });
   
@@ -79,26 +79,20 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
       'autocomplete': 'off',
       'autocorrect':  'off'
     });
-    this._inputElement.bind('choose', (e, text) => {
-      this.blur();
-      this.hideResultList();
-      this._focused = false;
-      this._searchNext = null;
-      return this.chooseByText(text);
-    });
+    this._inputElement[0]._view = this
     
     this._resultListElement = jQuery('<div class="ModelFieldViewResults"></div>');
     this._resultListElement.hide();
     this._resultListElement.mouseout(() => {
       if (!this._hiding) { return this.selectedResult(-1); }
     });
-    return jQuery(document.body).append(this._resultListElement);
+    jQuery(document.body).append(this._resultListElement);
   });
   
   def.method('inputFocus', function() {
     this._focused = true;
     if (this._value) {
-      if (this._value) { this._inputElement.select(); }
+      this._inputElement.select();
     } else {
       this._inputElement.val('');
       this._inputElement.removeClass('placeholder');
@@ -304,14 +298,26 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
     }
     return this._results = null;
   });
+
+  // Test helpers
+
+  def.method('_searchText', function(text) {
+    this.inputFocus()
+    this._inputElement[0].value = text
+    this.inputChanged()
+  })
   
-  def.method('chooseByText', function(text) {
+  def.method('_chooseByText', function(text) {
+    this.blur();
+    this.hideResultList();
+    this._focused = false;
+    this._searchNext = null;
     if (text === 'new') {
-      return this.chooseResult('new');
+      this.chooseResult('new');
     } else if (this._results) {
-      for (let result of Array.from(this._results)) {
-        if (result[0].toFieldText().indexOf(text) >= 0) { return this.chooseResult(result); }
-      }
+      this._results.forEach(result => {
+        if (result[0].toFieldText().indexOf(text) >= 0) { this.chooseResult(result); }
+      })
     }
   });
 });

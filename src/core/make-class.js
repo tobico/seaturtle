@@ -5,13 +5,6 @@ export const makeClass = (className, superClass, definition) => {
     return this;
   };
 
-  Object.defineProperty(newClass, 'name', {
-    configurable: true,
-    enumerable: true,
-    writable: true,
-  })
-  delete newClass.name
-
   newClass._classMethods = [];
 
   // Inherit superclass
@@ -21,9 +14,11 @@ export const makeClass = (className, superClass, definition) => {
     newClass._superclass = superClass;
 
     // Inherit class methods
-    for (let methodName of Array.from(superClass._classMethods)) {
-      newClass[methodName] = superClass[methodName];
-      newClass._classMethods.push(methodName);
+    if (superClass._classMethods) {
+      superClass._classMethods.forEach(methodName => {
+        newClass[methodName] = superClass[methodName];
+        newClass._classMethods.push(methodName);
+      })
     }
   }
 
