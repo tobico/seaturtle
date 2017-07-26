@@ -1,3 +1,4 @@
+import { addView } from './util/add-view'
 import { Command } from './util/command'
 import { compare } from './util/compare'
 import { detectTouch, detectMac } from './util/detect'
@@ -18,6 +19,7 @@ import { trim } from './util/trim'
 import { ucFirst } from './util/uc-first'
 
 export {
+  addView,
   Command,
   compare,
   detectMac,

@@ -222,8 +222,3 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
   def.method('showDialog', function(events) { return Dialog.showView(this, events); });
 });
 
-// jQuery.fn.addView = function(view) {
-//   this.append(view.element());
-//   view.load();
-//   return this;
-// };

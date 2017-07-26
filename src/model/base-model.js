@@ -370,8 +370,8 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       };
     };
 
-    this.M = this.M || {}
-    this.M[name] = {
+    this.FIELDS = this.FIELDS || {}
+    this.FIELDS[name] = {
       null() {
         return {
           attribute:  name,
@@ -514,7 +514,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
         if (!model) {
           throw `Unable to find model ${modelName} with hasMany association to ${this._class._name}`
         }
-        const scope = (this[`_${name}`] = model.where(model[`${foreign}Uuid`].equals(this.uuid())));
+        const scope = (this[`_${name}`] = model.where(model.FIELDS[`${foreign}Uuid`].equals(this.uuid())));
         scope.addBindings();
       }
       return this[`_${name}`];
