@@ -135,10 +135,10 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
       return cell.append(field.element());
     });
 
-    const errors = View.create();
+    const errors = BaseView.create();
     this.errors(errors);
     this._children.add(this._errors);
-    return errors.release();
+    errors.release();
   });
 
   def.method('data', function() {

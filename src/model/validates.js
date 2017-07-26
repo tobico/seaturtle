@@ -37,7 +37,7 @@ export const Validates = (def) => {
       const errors = [];
       for (let name in validations) {
         const options = validations[name];
-        Validates._validators[name](value, errors, options);
+        def._validators[name](value, errors, options);
       }
       if (errors.length) { return errors; }
     }
@@ -51,9 +51,10 @@ export const Validates = (def) => {
 
   // Define validators
 
+  def._validators = {};
+
   def.validator = function(name, definition) {
-    if (!this._validators) { this._validators = {}; }
-    return this._validators[name] = definition;
+    return def._validators[name] = definition;
   };
 
   def.validator('presence', function(value, errors) {

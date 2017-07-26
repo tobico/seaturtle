@@ -35,7 +35,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
     DialogView.showBlanker();
     this.showDialog();
     this.takeKeyboardFocus();
-    return args.view.takeKeyboardFocus();
+    args.view.takeKeyboardFocus();
   });
   
   def.initializer('withTitleView', function(title, view) {
@@ -51,7 +51,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
   def.property('cancelFunction');
   
   def.classMethod('confirm', function(title, description, confirm, cancel, fn) {
-    const view = View.create();
+    const view = BaseView.create();
     view.element().html(description);
     view.dialogButtons = function(dialog, buttonbar) {
       buttonbar.button(confirm, function() {
@@ -116,7 +116,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
   });
 
   def.method('makeHeader', function() {
-    const header = View.create();
+    const header = BaseView.create();
     header.load();
     header.element()
       .addClass(DialogView.HEADER_CLASS)
@@ -139,7 +139,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
   });
   
   def.method('keyDown', function(key) {
-    if (key === View.VK_ESCAPE) {
+    if (key === BaseView.VK_ESCAPE) {
       if (this._cancelFunction) { this._cancelFunction(); }
       return true;
     }

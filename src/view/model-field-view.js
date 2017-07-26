@@ -45,7 +45,7 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
   
   def.method('allowCreateWithLabel', function(label) {
     this._canCreate = true;
-    return this._createLabel = label;
+    this._createLabel = label;
   });
   
   def.method('convertValue', function(value) {
@@ -316,8 +316,12 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
       this.chooseResult('new');
     } else if (this._results) {
       this._results.forEach(result => {
-        if (result[0].toFieldText().indexOf(text) >= 0) { this.chooseResult(result); }
+        if (result[0].toFieldText && result[0].toFieldText().indexOf(text) >= 0) { this.chooseResult(result); }
       })
     }
   });
+
+  def.method('_chooseNew', function() {
+    this.chooseResult('new')
+  })
 });
