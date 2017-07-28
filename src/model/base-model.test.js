@@ -223,9 +223,9 @@ describe("BaseModel", function() {
     })
 
     it("should convert to datetime", function() {
-      const value = BaseModel.convertValueToType('01 Jan 2010 12:15:00', 'datetime')
+      const value = BaseModel.convertValueToType('01 Jan 2010 12:15:00 UTC', 'datetime')
       expect(value).toBeInstanceOf(Date)
-      expect(value.getTime()).toEqual(1262308500000)
+      expect(value.getTime()).toEqual(1262348100000)
     })
   
     it("should convert to bool", function() {
