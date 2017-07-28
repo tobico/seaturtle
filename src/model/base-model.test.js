@@ -139,11 +139,11 @@ describe("BaseModel", function() {
   
   describe("#matches", function() {
     it("should match when meets conditions", function() {
-      expect(model.matches([TestModel.foo.equals('bacon')])).toBe(true)
+      expect(model.matches([TestModel.FIELDS.foo.equals('bacon')])).toBe(true)
     })
 
     it("should not match when fails condition", function() {
-      expect(model.matches([TestModel.foo.equals('waffles')])).toBe(false)
+      expect(model.matches([TestModel.FIELDS.foo.equals('waffles')])).toBe(false)
     })
   })
   
@@ -293,15 +293,15 @@ describe("BaseModel", function() {
       })
     )
     
-    it("should create condition generators", function() {
-      expect(TestModel.bar).not.toBe(null)
-      expect(TestModel.bar.equals).toBeInstanceOf(Function)
+    it("should create matchers", function() {
+      expect(TestModel.FIELDS.bar).not.toBe(null)
+      expect(TestModel.FIELDS.bar.equals).toBeInstanceOf(Function)
     })
       
-    describe("equals condition generator", function() {
+    describe("equals matcher", function() {
       let condition
       beforeEach(function() {
-        condition = TestModel.bar.equals('bacon')
+        condition = TestModel.FIELDS.bar.equals('bacon')
       })
     
       it("should have correct attribute name", function() {

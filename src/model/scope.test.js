@@ -106,7 +106,7 @@ describe("Scope", function() {
     it("should iterate over items matched by scope", function() {
       const model = TestModel.createWithData({foo: 'bacon'})
       let found = false
-      TestModel.where(TestModel.foo.equals('bacon')).each((item) => {
+      TestModel.where(TestModel.FIELDS.foo.equals('bacon')).each((item) => {
         found = true
         expect(item).toBe(model)
       })
@@ -147,7 +147,7 @@ describe("Scope", function() {
 
   describe("#build", () =>
     it("should create a new object using scope conditions as base data", function() {
-      const model = TestModel.where(TestModel.foo.equals('banana')).build()
+      const model = TestModel.where(TestModel.FIELDS.foo.equals('banana')).build()
       expect(model.foo()).toEqual('banana')
     })
   )
