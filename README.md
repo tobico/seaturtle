@@ -1,5 +1,7 @@
 # SeaTurtle
 
+[![Build Status](https://travis-ci.org/tobico/seaturtle.svg?branch=master)](https://travis-ci.org/tobico/seaturtle)
+
 ## Introduction
 
 SeaTurtle is a pure-JavaScript MVC framework that sits atop jQuery, with a design heavily inspired by Cocoa and Ruby.
