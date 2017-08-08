@@ -468,8 +468,8 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       }
     }
 
-    const matchers = this[`${name}Uuid`];
-    this[name] = {
+    const matchers = this.FIELDS[`${name}Uuid`];
+    this.FIELDS[name] = {
       is(value) {
         return matchers.equals(value && String(value.uuid()));
       }
