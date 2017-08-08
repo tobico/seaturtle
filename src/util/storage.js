@@ -1,5 +1,3 @@
-import * as $ from 'jquery'
-
 import { makeClass } from '../core/make-class'
 import { BaseObject } from '../core/base-object'
 
@@ -24,13 +22,7 @@ export const Storage = makeClass('Storage', BaseObject, (def) => {
       this._storageType = 'local';
       
       const storageEvent = this.method('storageEvent');
-      $(function() {
-        if ($.browser.safari) {
-          return window.addEventListener('storage', storageEvent, false);
-        } else {
-          return $(document).bind('storage', storageEvent);
-        }
-      });
+      window.addEventListener('storage', storageEvent, false);
       this._changesMade = 1;
       
       // Make a dummy change, to catch out any other instances of
