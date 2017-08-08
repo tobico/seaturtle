@@ -1,6 +1,6 @@
 {
   "name": "seaturtle",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "##Introduction",
   "main": "lib/index.js",
   "directories": {
