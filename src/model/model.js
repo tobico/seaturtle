@@ -5,7 +5,7 @@ import { BaseModel } from './base-model'
 export const Model = {
   _byUuid: {},
   _notFound: {},
-  _generateUUID: Math.uuid || (function() { if (!this.NextUUID) { this.NextUUID = 0; } return this.NextUUID++; }),
+  _generateUUID: function b(a){return a?(a^Math.random()*16>>a/4).toString(16):([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,b)},
   _storage: null,
   _changes: {},
   _changesCount: 0,
@@ -81,12 +81,20 @@ export const Model = {
     this.onConnectionError(function(status) {
       setTimeout(() => sync(true)
       , 5000);
-      if (delegate && delegate.onConnectionError) { return delegate.onConnectionError(status); }
+      if (delegate && delegate.onConnectionError) { delegate.onConnectionError(status); }
     });
-    this.onSyncStart(function(count) { if (delegate.onSyncStart) { return delegate.onSyncStart(count); } });
-    this.onSyncComplete(function() { if (delegate.onSyncComplete) { return delegate.onSyncComplete(); } });
-    this.onFatalError(function(status) { if (delegate.onFatalError) { return delegate.onFatalError(status); } });
-    this.onSyncError(function() { if (delegate.onSyncError) { return delegate.onSyncError(); } });
+    this.onSyncStart((count) => {
+      if (delegate.onSyncStart) { delegate.onSyncStart(count); }
+    });
+    this.onSyncComplete(() => {
+      if (delegate.onSyncComplete) { delegate.onSyncComplete(); }
+    });
+    this.onFatalError((status) => {
+      if (delegate.onFatalError) { delegate.onFatalError(status); }
+    });
+    this.onSyncError((errors) => {
+      if (delegate.onSyncError) { delegate.onSyncError(errors); }
+    });
     
     this.onHasChanges(() => setTimeout((() => sync(true)), 100));
     
@@ -119,49 +127,52 @@ export const Model = {
   
   ackSync(data) {
     const errors = [];
+
     if (data.ack) {
-      for (var id in data.ack) {
+      Object.keys(data.ack).forEach(id => {
         const status = data.ack[id];
-        if (data.ack.hasOwnProperty(id)) {
-          const change = this._changes[id];
-          if (status === 'ok') {
-            delete this._changes[id];
-            this._changesCount--;
-          } else if (status === 'notfound') {
-            errors.push(`${change.model} with UUID ${change.uuid} not found`);
-          } else if (status === 'unauthorized') {
-            errors.push(`Access denied to ${change.model} with UUID ${change.uuid}`);
-          } else if (status === 'exists') {
-            errors.push(`${change.model} with UUID ${change.uuid} already exists`);
-          } else if (status === 'invalid') {
-            const base = `${change.model} with UUID ${change.uuid} failed to validate`;
-            if (data.errors[id]) {
-              for (let number in data.errors[id]) {
-                const message = data.errors[id][number];
-                errors.push(`${base} with message ${message}`);
-              }
-            } else {
-              errors.push(base);
+        const change = this._changes[id];
+        if (status === 'ok') {
+          delete this._changes[id];
+          this._changesCount--;
+        } else if (status === 'notfound') {
+          errors.push(`${change.model} with UUID ${change.uuid} not found`);
+        } else if (status === 'unauthorized') {
+          errors.push(`Access denied to ${change.model} with UUID ${change.uuid}`);
+        } else if (status === 'exists') {
+          errors.push(`${change.model} with UUID ${change.uuid} already exists`);
+        } else if (status === 'invalid') {
+          const base = `${change.model} with UUID ${change.uuid} failed to validate`;
+          if (data.errors[id]) {
+            for (let number in data.errors[id]) {
+              const message = data.errors[id][number];
+              errors.push(`${base} with message ${message}`);
             }
+          } else {
+            errors.push(base);
           }
         }
-      }
-      for (id in this._changes) {
-        if (this._changes.hasOwnProperty(id) && this._changes[id].submitted) {
+      })
+      Object.keys(this._changes).forEach(id => {
+        if (this._changes[id].submitted) {
           this._changes[id].submitted = false;
-          if (this._onSyncError) { this._onSyncError(errors); }
-          return false;
+          errors.push(`Failed to submit change with id ${id}`)
         }
-      }
+      })
+    } else {
+      errors.push('No "Ack" field in server response')
+    }
+
+    if (errors.length > 0) {
+      if (this._onSyncError) { this._onSyncError(errors); }
+      return false
+    } else {
       if (this._changesCount) {
         if (this._onSyncContinue) { this._onSyncContinue(); }
       } else {
         if (this._onSyncComplete) { this._onSyncComplete(); }
       }
       return true;
-    } else {
-      if (this._onSyncError) { this._onSyncError(errors); }
-      return false;
     }
   },
   
