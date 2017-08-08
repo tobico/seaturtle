@@ -152,7 +152,14 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
   });
   
   def.method('renderColumnsButton', function() {
-    this.element().append('<a class="columnsButton" onmouseover="jQuery(this).addClass(\'columnsButtonHover\')" onmouseout="jQuery(this).removeClass(\'columnsButtonHover\')" href="javascript:;">C</a>');
+    const columnsButton = jQuery('<a class="columnsButton" href="javascript:;">C</a>')
+      .mouseover(function() {
+        jQuery(this).addClass('columnsButtonHover')
+      })
+      .mouseout(function() {
+        jQuery(this).removeClass('columnsButtonHover')
+      })
+    this.element().append(columnsButton);
     const button = jQuery('.columnsButton', this.element())
     makePopup(button, this.method('generateColumnsPopup'));
     return button
