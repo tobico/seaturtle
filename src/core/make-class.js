@@ -1,9 +1,12 @@
 // Creates a new class
 export const makeClass = (className, superClass, definition) => {
-  var newClass = function() {
-    this._class = newClass;
-    return this;
-  };
+  const newClass = new Function(`
+    var f = function ${className}() {
+      this._class = f;
+      return this;
+    };
+    return f;
+  `)()
 
   newClass._classMethods = [];
 
