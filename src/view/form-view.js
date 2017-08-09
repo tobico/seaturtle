@@ -22,6 +22,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
     this._command   = options.command || 'Save Form';
     this._defaults  = options.defaults || null;
     this._fields    = List.create();
+    this._saved = false
 
     if (options.scope) {
       this._scope = options.scope;
@@ -81,7 +82,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
     return this._fields.each(function(field) {
       const attribute = field.id();
       return field.value((() => {
-        
+
         let details;
         if (self._item) {
           if (jQuery.isFunction(self._item[attribute])) {
@@ -94,7 +95,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
         } else if (details = self.detailsFor(attribute)) {
           return details.default;
         }
-      
+
       })());
     });
   });
@@ -206,8 +207,13 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
   });
 
   def.method('submit', function() {
+    if (this._saved) { return }
+
     if (Command.command(this._command, this.method('save'))) {
-      if (this._dialog) { return this._dialog.close(); }
+      this._saved = true
+      if (this._dialog) {
+        this._dialog.close();
+      }
     }
   });
 

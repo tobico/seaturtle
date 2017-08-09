@@ -13,9 +13,9 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
   def.FOOTER_CLASS   = 'footer';
   def.BLANKER_CLASS  = 'blanker';
   def.SHOW_METHOD    = 'slide';
-  
+
   def._blankerCount = 0;
-  
+
   def.initializer(function(args) {
     if (args == null) { args = {}; }
     this.super();
@@ -37,26 +37,30 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
     this.takeKeyboardFocus();
     args.view.takeKeyboardFocus();
   });
-  
+
   def.initializer('withTitleView', function(title, view) {
     return this.init({title, view});
   });
-      
+
   def.initializer('withTitleController', function(title, controller) {
     this.controller(controller);
     return this.init({title, view: controller.view()});
   });
-  
+
   def.retainedProperty('controller');
   def.property('cancelFunction');
-  
+
   def.classMethod('confirm', function(title, description, confirm, cancel, fn) {
     const view = BaseView.create();
+    let fnCalled = false
     view.element().html(description);
     view.dialogButtons = function(dialog, buttonbar) {
       buttonbar.button(confirm, function() {
         dialog.close();
-        return fn();
+        if (!fnCalled) {
+          fn()
+          fnCalled = true
+        }
       });
       buttonbar.button(cancel, () => dialog.close());
       if (detectMac()) { return buttonbar.reverse(); }
@@ -64,10 +68,10 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
     const dialog = this.createWithTitleView(title, view);
     return view.release();
   });
-  
+
   def.classMethod('showBlanker', function() {
     this._blankerCount++;
-    
+
     // Add blanker div if it doesn't already exist
     if (jQuery(`.${this.BLANKER_CLASS}`).length < 1) {
       const blanker = jQuery(`<div class="${DialogView.BLANKER_CLASS}"></div>`);
@@ -75,7 +79,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
       blanker.click(e => e.stopPropagation());
       jQuery('body').append(blanker);
       blanker.bind('touchstart touchmove touchend', e => e.preventDefault());
-    
+
       // Fade blanker in
       if (jQuery.browser.webkit) {
         return blanker.css('height', jQuery(document).height())
@@ -90,7 +94,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
       return jQuery('#blanker').stop().css('opacity', 0.6);
     }
   });
-  
+
   def.classMethod('hideBlanker', function() {
     this._blankerCount--;
     return setTimeout(() => {
@@ -124,7 +128,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
     this.header(header);
     return header.release();
   });
-  
+
   def.method('makeFooter', function() {
     const footer = ButtonBarView.create();
     footer.element().addClass(DialogView.FOOTER_CLASS);
@@ -137,14 +141,14 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
     this.footer(footer);
     return footer.release();
   });
-  
+
   def.method('keyDown', function(key) {
     if (key === BaseView.VK_ESCAPE) {
       if (this._cancelFunction) { this._cancelFunction(); }
       return true;
     }
   });
-  
+
   def.method('showDialog', function() {
     const self = this;
     if (DialogView.SHOW_METHOD === 'slide') {
@@ -166,12 +170,12 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
     } else if (DialogView.SHOW_METHOD === 'fade') {
       this._element.fadeIn(200);
     }
-    
+
     if (this._autoFocus && !detectTouch()) {
       return jQuery('textarea, input, button', this._element).slice(0,1).focus();
     }
   });
-  
+
   def.method('hideDialog', function(callback) {
     if (DialogView.SHOW_METHOD === 'slide') {
       if (jQuery.browser.webkit) {
@@ -190,7 +194,7 @@ export const DialogView = makeClass('DialogView', BaseView, (def) => {
       return this._element.fadeOut(200);
     }
   });
-  
+
   def.method('close', function() {
     const self = this;
     this._subView.returnKeyboardFocus();
