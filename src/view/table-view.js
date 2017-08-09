@@ -9,12 +9,9 @@ import { makePopup } from '../util/popup'
 
 export const TableView = makeClass('TableView', BaseView, (def) => {
   def.GroupingEnabled = false;
-  def.Instances = [];
-  
+
   def.initializer('withList', function(list) {
     this.init();
-    TableView.Instances.push(this);
-    this._id = TableView.Instances.length - 1;
     this._rowsByUid = {};
     this._columns = [];
     this._columnsByName = {};
@@ -25,9 +22,14 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     this._tableElement = null;
     this._canCustomizeColumns = true;
     this._lang = null;
-    return this.list(list);
+    this.list(list);
+    this.element().on('click', 'th.sortHeader', (event) => {
+      const target = jQuery(event.target)
+      const columnIndex = target.data('column-index')
+      this.setSortColumn(columnIndex)
+    })
   });
-    
+
   def.property('columns');
   def.property('list');
   def.property('sortColumn');
@@ -36,21 +38,20 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
   def.property('tableElement');
   def.property('canCustomizeColumns');
   def.property('lang');
-  
+
   def.destructor(function() {
-    TableView.Instances[this._id] = null;
     return this.super();
   });
-  
+
   def.method('setList', function(newList) {
     const self = this;
-    if (newList !== this.list) {    
+    if (newList !== this.list) {
       if (this._list) {
         this._list.unbindAll(this);
       }
-      
+
       this._list = newList;
-      
+
       if (this._list) {
         this._list.each(function(item) {
           if (!item._uid) { item._uid = BaseObject.UID++; }
@@ -79,7 +80,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return this.refreshBody();
     }
   });
-    
+
   def.method('sortFunction', function(sortColumn) {
     let column;
     const self = this;
@@ -102,24 +103,24 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
   def.method('setSortColumn', function(sortColumn, reverseSort) {
     const self = this;
     if (typeof sortColumn === 'number') { sortColumn = this._columns[sortColumn]; }
-    
+
     const oldSortColumn = this._sortColumn;
-    
+
     if (reverseSort !== undefined) { this._reverseSort = reverseSort; }
-      
+
     if (oldSortColumn === sortColumn) {
       this._reverseSort = !this._reverseSort;
     } else {
       this._reverseSort = !!(sortColumn && sortColumn.reverse);
     }
-      
+
     this._sortColumn = sortColumn;
-    
+
     this.sort();
-    
+
     if (this._loaded) { return this.refreshHeader(); }
   });
-  
+
   def.method('sort', function() {
     let sortFunction;
     const self = this;
@@ -131,17 +132,17 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       }
     }
   });
-  
+
   def.method('rowFor', function(item) {
     return item && item._uid && this._rowsByUid[item._uid];
   });
-  
+
   def.method('render', function() {
     this.renderTable();
     this.element().append(this._tableElement);
     if (this._canCustomizeColumns) { return this.renderColumnsButton(); }
   });
-  
+
   def.method('renderTable', function() {
     this._tableElement = this.helper().tag('table').addClass('tableView');
     if (this._tableClass) { this._tableElement.addClass(this._tableClass); }
@@ -150,7 +151,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     this._tableElement.html(html.join(''));
     return this.activateBody();
   });
-  
+
   def.method('renderColumnsButton', function() {
     const columnsButton = jQuery('<a class="columnsButton" href="javascript:;">C</a>')
       .mouseover(function() {
@@ -164,7 +165,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     makePopup(button, this.method('generateColumnsPopup'));
     return button
   });
-  
+
   def.method('positionColumnsButton', function() {
     if (this._loaded) {
       const self = this;
@@ -181,7 +182,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     this.generateBodyInnerHTML(html, rows, media);
     return html.push('</tbody>');
   });
-  
+
   def.method('generateHeaderInnerHTML', function(html, media) {
     if (media == null) { media = 'screen'; }
     html.push('<tr>');
@@ -192,25 +193,25 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     }
     return html.push('</tr>');
   });
-  
+
   def.method('generateColumnHeaderHTML', function(column, html, media) {
     if (media == null) { media = 'screen'; }
-    html.push(`<th style="cursor:pointer" onclick="TableView.Instances[${this._id}].setSortColumn(${column.index})">`);
+    html.push(`<th style="cursor:pointer" class="sortHeader" data-column-index="${column.index}">`);
     html.push(this.titleForColumn(column, false));
-        
+
     if ((media === 'screen') && (column === this._sortColumn)) {
       html.push('<span class="sortLabel">');
       if (this._reverseSort) {
-        html.push(' &#x2191;'); 
+        html.push(' &#x2191;');
       } else {
         html.push(' &#x2193;');
       }
       html.push('</span>');
     }
-    
+
     return html.push('</th>');
   });
-  
+
   def.method('generateBodyInnerHTML', function(html, rows=null, media) {
     if (media == null) { media = 'screen'; }
     const self = this;
@@ -218,7 +219,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     return Array.from(rows).map((item) =>
       self.generateRowHTML(item, html, media));
   });
-  
+
   def.method('activateBody', function() {
     const self = this;
     this._tbody = jQuery('tbody', this._tableElement);
@@ -227,7 +228,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     });
     return this._list.each(this.method('activateRow'));
   });
-  
+
   def.method('generateRowHTML', function(item, html, media) {
     if (media == null) { media = 'screen'; }
     html.push('<tr data-uid="', item._uid, '">');
@@ -239,7 +240,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     if (media == null) { media = 'screen'; }
     return (() => {
       const result = [];
-      for (let column of Array.from(this._columns)) {      
+      for (let column of Array.from(this._columns)) {
         if (!column.hidden && (!column.media || (column.media === media))) {
           html.push('<td>');
           html.push(
@@ -256,13 +257,13 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return result;
     })();
   });
-  
+
   def.method('activateRow', function(item) {
     const cells = jQuery("td", this._rowsByUid[item._uid]);
     let i = 0;
     return (() => {
       const result = [];
-      for (let column of Array.from(this._columns)) {      
+      for (let column of Array.from(this._columns)) {
         if (!column.hidden && (!column.media || (column.media === 'screen'))) {
           if (column.activate && cells[i]) { column.activate(item, cells[i]); }
           result.push(i++);
@@ -273,7 +274,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return result;
     })();
   });
-  
+
   def.method('cellValue', function(item, column, media) {
     if (media == null) { media = 'screen'; }
     if (column.value) {
@@ -286,14 +287,14 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       }
     }
   });
-  
+
   def.method('refreshTable', function() {
     if (this._loaded) {
       this.refreshHeader();
       return this.refreshBody();
     }
   });
-  
+
   def.method('refreshHeader', function() {
     if (this._loaded) {
       const thead = jQuery('thead', this._tableElement);
@@ -311,7 +312,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return this.activateBody();
     }
   });
-  
+
   def.method('refreshRow', function(item) {
     let row;
     if (row = this._rowsByUid[item._uid]) {
@@ -321,14 +322,14 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return this.activateRow(item);
     }
   });
-  
+
   def.method('toggleColumn', function(column) {
     column.hidden = !column.hidden;
-    this.saveColumns();        
+    this.saveColumns();
     this.refreshHeader();
     return this.refreshBody();
   });
-      
+
   def.method('generateColumnsPopup', function() {
     const self = this;
     const a = [];
@@ -343,7 +344,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     }
     return a;
   });
-  
+
   // Determines title to use for a column, looking first at specefied title,
   // then into languague definitions matching the column name
   def.method('titleForColumn', function(column, full) {
@@ -357,8 +358,8 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return this._lang[column.name];
     }
   });
-  
-  def.method('listItemAdded', function(list, item) {  
+
+  def.method('listItemAdded', function(list, item) {
     if (!item._uid) { item._uid = BaseObject.UID++; }
     this._ordered.push(item);
 
@@ -371,26 +372,26 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       return Command.once(`sort${this._uid}`, this.method('sort'));
     }
   });
-  
+
   def.method('listItemRemoved', function(list, item) {
     let index, row;
     if ((index = this._ordered.indexOf(item)) != null) {
       this._ordered.splice(index, 1);
     }
-    
+
     if (row = this._rowsByUid[item._uid]) {
       jQuery(row).remove();
       return delete this._rowsByUid[item._uid];
     }
   });
-  
+
   def.method('listItemChanged', function(list, item) {
     if (this._loaded) {
       this.refreshRow(item);
       return Command.once(`sort${this._uid}`, this.method('sort'));
     }
   });
-  
+
   def.method('generatePrintHTML', function(html, options) {
     if (options == null) { options = {}; }
     const rows = this._ordered.slice(0);
@@ -407,13 +408,13 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     this.generatePrintHTML(html, options);
     return this.helper().print(html.join(''), options);
   });
-  
+
   def.method('persistColumns', function(storage, key) {
     this._persistColumnsStorage = storage;
     this._persistColumnsKey = key;
     return this.loadColumns();
   });
-  
+
   def.method('loadColumns', function() {
     if (!this._persistColumnsStorage || !this._persistColumnsKey) { return; }
     return this._persistColumnsStorage.fetch(this._persistColumnsKey, value => {
@@ -431,7 +432,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       }
     });
   });
-  
+
   def.method('saveColumns', function() {
     if (!this._persistColumnsStorage || !this._persistColumnsKey) { return; }
     const value = {};
@@ -440,7 +441,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     }
     return this._persistColumnsStorage.set(this._persistColumnsKey, value);
   });
-  
+
   def.method('_headerChanged', function(oldValue, newValue) {
     this.super(oldValue, newValue);
     if (this._loaded) { return this.positionColumnsButton(); }
