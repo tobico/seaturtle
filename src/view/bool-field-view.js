@@ -7,7 +7,7 @@ export const BoolFieldView = makeClass('BoolFieldView', FieldView, (def) => {
   def.method('convertValue', value => !!value);
   
   def.method('getInputValue', function() {
-    return this._inputElement.is(':checked');
+    return Boolean(this._inputElement.is(':checked'));
   });
   
   def.method('setInputValue', function(value) {

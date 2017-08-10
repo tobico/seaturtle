@@ -60,7 +60,11 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
   
   def.method('setInputValue', function(value) {
     if (value) {
-      this._text = trim(value.toFieldText());
+      const fieldText = value.toFieldText() 
+      if (!fieldText) {
+        throw(`ModelFieldView value ${value} did not return valid field text`)
+      }
+      this._text = trim(fieldText);
       this._inputElement.val(this._text);
       this._inputElement.removeClass('placeholder');
     } else {

@@ -153,7 +153,10 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
     }
 
     // Read field values into data
-    this._fields.each(field => data[field.id()] = field.value() || null);
+    this._fields.each(field => {
+      const value = field.value()
+      data[field.id()] = value === undefined ? null : value
+    });
 
     return data;
   });

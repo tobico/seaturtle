@@ -17,6 +17,10 @@ export const List = makeClass('List', BaseObject, (def) => {
 
   def.property('retains');
 
+  def.method('toArray', function() {
+    return this._array.splice(0)
+  });
+
   def.method('each', function(fn) {
     fn = toProc(fn);
     return (() => {
