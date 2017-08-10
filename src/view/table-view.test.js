@@ -28,12 +28,6 @@ describe('TableView', function() {
       tableView.initWithList(list)
     })
     
-    it("should add instance to TableView.Instances", function() {
-      const id = tableView._id
-      expect(typeof id).toEqual('number')
-      expect(TableView.Instances[id]).toBe(tableView)
-    })
-    
     it("should set defaults", function() {
       expect(tableView.columns()).toEqual([])
       expect(tableView._ordered).toEqual([])
@@ -48,14 +42,6 @@ describe('TableView', function() {
       expect(tableView._list).toBe(list)
     })
   })
-  
-  describe('#destroy', () =>
-    it("should remove instance from TableView.Instances", function() {
-      const id = tableView._id
-      tableView.release()
-      expect(TableView.Instances[id]).toBe(null)
-    })
-  )
   
   describe('#setList', function() {
     it("should set list", function() {
@@ -265,13 +251,6 @@ describe('TableView', function() {
       html = html.join('')
       expect(html.indexOf('<th')).toEqual(0)
       expect(html.indexOf('</th>')).not.toEqual(-1)
-    })
-    
-    it("should generate onclick event to sort by column", function() {
-      let html = []
-      tableView.generateColumnHeaderHTML(tableView.columns()[0], html)
-      html = html.join('')
-      expect(html.indexOf('onclick')).not.toEqual(-1)
     })
     
     it("should include column title", function() {

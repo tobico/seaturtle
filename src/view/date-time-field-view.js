@@ -34,12 +34,12 @@ export const DateTimeFieldView = makeClass('DateTimeFieldView', FieldView, (def)
   });
   
   def.method('render', function() {
-    this._dateElement = $('<input type="text" class="text" style="width: 100px; margin-right: 15px" />');
+    this._dateElement = jQuery('<input type="text" class="text" style="width: 100px; margin-right: 15px" />');
     this._dateElement.val(this.dateValue(this._value));
-    this._timeElement = $('<input type="text" class="text" style="width: 100px" />');
+    this._timeElement = jQuery('<input type="text" class="text" style="width: 100px" />');
     this._timeElement.val(this.timeValue(this._value));
     this.element().append(this._dateElement, this._timeElement);
-    $('input', this.element()).bind('click keyup change', this.method('inputChanged'));
+    jQuery('input', this.element()).bind('click keyup change', this.method('inputChanged'));
     this._dateElement.calendricalDate();
     return this._timeElement.calendricalTime();
   });
