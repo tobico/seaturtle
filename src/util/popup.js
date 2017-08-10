@@ -9,6 +9,7 @@ export const Popup = {
   _popupIDs: 1,
   
   _detach: false,
+  _clickAwayBound: false,
   
   // Keeps track of callback function to execute on closing the popup
   _closeCallback: null,
@@ -55,6 +56,10 @@ export const Popup = {
     if (options == null) { options = {}; }
     if (this._popupID === id) { return this.close(); }  
     this.close();
+
+    if (!this._clickAwayBound) {
+      this.bindClickAway()
+    }
 
     this._popupID = id;
     this._detach = options.detach;
@@ -127,6 +132,11 @@ export const Popup = {
   
   toString() {
     return 'Popup';
+  },
+
+  bindClickAway() {
+    jQuery(document.body).mousedown(() => Popup.close())
+    this._clickAwayBound = true
   }
 };
 
