@@ -1,4 +1,5 @@
 import jQuery from 'jquery'
+import { format } from 'date-fns'
 
 import { makeClass } from '../core/make-class'
 import { FieldView } from './field-view'
@@ -68,7 +69,7 @@ export const DateTimeFieldView = makeClass('DateTimeFieldView', FieldView, (def)
   });
   
   def.method('dateValue', function(value) {
-    const date = value && value.toString('d/M/yyyy');
+    const date = value && format(value, 'D/M/YYYY');
     if (date === '1/1/1970') {
       return '';
     } else {
@@ -77,7 +78,7 @@ export const DateTimeFieldView = makeClass('DateTimeFieldView', FieldView, (def)
   });
   
   def.method('timeValue', function(value) {
-    const time = value && value.toString('h:mmtt').toLowerCase();
+    const time = value && format(value, 'h:mma');
     if (time === '0:00am') {
       return '';
     } else {

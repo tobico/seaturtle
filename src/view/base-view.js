@@ -37,8 +37,8 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
             if (window.console) {
               // Look up constant for key
               let key = e.which;
-              for (let a in View) {
-                const b = View[a];
+              for (let a in def) {
+                const b = def[a];
                 if (b === key) { key = a; }
               }
               console.log(`Keydown: Key ${key} handled by ${view}`);
