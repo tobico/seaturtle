@@ -70,6 +70,9 @@ export const WizardView = makeClass('WizardView', BaseView, (def) => {
         Object.keys(options.options).forEach(value => {
           var label = options.options[value]
           const input = jQuery(`<input type=\"radio\" name=\"${options.field}\" value=\"${value}\" />`)
+          if (options.inputStyles) {
+            input.css(options.inputStyles)
+          }
           const li = self.helper().tag('li').addClass('radio-item').append(
             jQuery('<label>').append(input, ' ', label)
           )
@@ -95,6 +98,9 @@ export const WizardView = makeClass('WizardView', BaseView, (def) => {
           return undefined
         })
         if (data[options.field]) { input.attr('checked', true) }
+        if (options.inputStyles) {
+          input.css(options.inputStyles)
+        }
         jQuery('<label>')
           .append(input, ' ', options.title)
           .appendTo(element)
@@ -106,8 +112,11 @@ export const WizardView = makeClass('WizardView', BaseView, (def) => {
           display:  'block',
           width:    '450px',
           height:   '60px',
-          margin:   '10px 0'
+          margin:   '10px 0',
         })
+        if (options.inputStyles) {
+          input.css(options.inputStyles)
+        }
         if (options.placeholder) { input.attr('placeholder', options.placeholder) }
         input.val(data[options.field])
         input.bind('keypress change', function() {
@@ -117,7 +126,7 @@ export const WizardView = makeClass('WizardView', BaseView, (def) => {
         input.appendTo(element)
       }
     }
-    return stepDefinition.call(components)
+    stepDefinition.call(components)
   })
   
   def.method('getHeight', function() {
