@@ -89,13 +89,7 @@ ST.class 'DialogView', 'View', ->
       blanker.bind 'touchstart touchmove touchend', (e) -> e.preventDefault()
     
       # Fade blanker in
-      if $.browser.webkit
-        blanker.css('height', $(document).height())
-            .css('width', $(document).width())
-            .css('-webkit-transition', 'opacity 100ms linear')
-            .css('opacity', 0.6)
-      else
-        blanker.show().animate {opacity: 0.6}, 100, 'linear'
+      blanker.show().animate {opacity: 0.6}, 100, 'linear'
     else
       # Prevent currently visible blanker from hiding
       $('#blanker').stop().css('opacity', 0.6)
@@ -107,33 +101,16 @@ ST.class 'DialogView', 'View', ->
       blanker = $('.' + ST.DialogView.BLANKER_CLASS)
       if blanker.length > 0
         # Fade blanker out
-        if $.browser.webkit
-          blanker.css('-webkit-transition', 'opacity 100ms linear')
-            .css('opacity', 0.0)
-            .bind 'webkitTransitionEnd', ->
-              $(this).unbind('webkitTransitionEnd')
-              blanker.remove()
-        else
-          blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
+        blanker.animate {opacity : 0}, 300, 'linear', -> blanker.remove()
   
   @method 'showDialog', ->
     self = this
     if ST.DialogView.SHOW_METHOD is 'slide'
-      if $.browser.webkit
-        @_element.css('top', 0 - @_element.height())
-            .show()
-            .css('-webkit-transition', 'top 200ms ease-in')
-            .css('top', 0)
-            .bind 'webkitTransitionEnd', ->
-              $(this).css('-webkit-transition', '')
-                  .unbind('webkitTransitionEnd')
-              self.trigger 'opened'
-      else
-        @_element.css('top', '-' + @_element.height() + 'px')
-            .show()
-            .animate({top: 0}, 200, 'swing', ->
-              self.trigger 'opened'
-            )
+      @_element.css('top', '-' + @_element.height() + 'px')
+          .show()
+          .animate({top: 0}, 200, 'swing', ->
+            self.trigger 'opened'
+          )
     else if ST.DialogView.SHOW_METHOD is 'fade'
       @_element.fadeIn(200)
     
@@ -142,15 +119,8 @@ ST.class 'DialogView', 'View', ->
   
   @method 'hideDialog', (callback) ->
     if ST.DialogView.SHOW_METHOD is 'slide'
-      if $.browser.webkit
-        @_element.css('-webkit-transition', 'top 200ms ease-in')
-            .css('top', 0 - @_element.height())
-            .bind 'webkitTransitionEnd', ->
-              $(this).unbind('webkitTransitionEnd')
-              callback() if callback
-      else
-        @_element.animate {top: '-' + @_element.height() + 'px'}, 200, 'swing', ->
-          callback() if callback
+      @_element.animate {top: '-' + @_element.height() + 'px'}, 200, 'swing', ->
+        callback() if callback
     else if ST.DialogView.SHOW_METHOD is 'fade'
       @_element.fadeOut(200)
   
