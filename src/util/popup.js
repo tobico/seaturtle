@@ -15,6 +15,19 @@ export const Popup = {
   _closeCallback: null,
   
   _view: null,
+
+  classNames: {
+    root: 'popup',
+    leftAligned: 'popup--left-aligned',
+    rightAligned: 'popup--right-aligned',
+    topAligned: 'popup--top-aligned',
+    bottomAligned: 'popup--bottom-aligned',
+    menu: 'popup__menu',
+    menuItem: 'popup__menu-item',
+    menuSeparator: 'popup__menu-separator',
+    menuHr: 'popup__menu-hr',
+    menuLink: 'popup__menu-link',
+  },
   
   keyDown(key) {
     if (key === BaseView.VK_ESCAPE) {
@@ -30,7 +43,7 @@ export const Popup = {
       this._popupID = null;
       if (this._view) { this._view.returnKeyboardFocus(); }
       BaseView.method('returnKeyboardFocus').call(this);
-      return jQuery('#popup').removeAttr('id').stop().fadeOut(100, function() {
+      return jQuery(`.${this.classNames.root}`).removeAttr('id').stop().fadeOut(100, function() {
         if (onClose) { onClose(); }
         if (this._view) {
           this._view.release();
@@ -67,7 +80,7 @@ export const Popup = {
 
     const offset = element.offset();
 
-    const popup = jQuery('<div id="popup" class="popup"></div>');
+    const popup = jQuery(`<div class="${this.classNames.root}"></div>`);
 
     this._closeCallback = function() {
       if (options.close) { return options.close.call(element, element); }
@@ -83,17 +96,17 @@ export const Popup = {
     } else if (display instanceof jQuery) {
       popup.append(display.show());
     } else {
-      const ul = jQuery("<ul class=\"popupMenu\"></ul>");
+      const ul = jQuery(`<ul class="${this.classNames.menu}"></ul>`);
       popup.append(ul);
 
       for (let item of Array.from(display)) {
         if (item === '-') {
-          ul.append('<li style="height: 6px"><hr style="margin: 2px" /></li>');
+          ul.append(`<li class="${this.classNames.menuSeparator}"><hr class="${this.classNames.menuHr}" /></li>`);
         } else {
           (item => {
-            const li = jQuery('<li></li>');
+            const li = jQuery(`<li class="${this.classNames.menuItem}"></li>`);
             if (item.className) { li.addClass(item.className); }
-            const a = jQuery(`<a href="javascript:;">${item.title || item[0]}</a>`);
+            const a = jQuery(`<a class="${this.classNames.menuLink}" href="javascript:;">${item.title || item[0]}</a>`);
             a.click(e => {
               this.close();
               if (item.action) { item.action(); }
@@ -117,14 +130,18 @@ export const Popup = {
     
     if ((offset.left < (jQuery(window).width() - 150)) && !options.right) {
       css.left = Math.round(offset.left);
+      popup.addClass(this.classNames.leftAligned);
     } else {
       css.right = Math.round(jQuery(window).width() - offset.left - element.outerWidth());
+      popup.addClass(this.classNames.rightAligned);
     }
     
     if (!options.bottom) {
       css.top = Math.floor(offset.top + element.outerHeight());
+      popup.addClass(this.classNames.topAligned);
     } else {
       css.top = Math.floor(offset.top - popup.outerHeight() - (options.offsetY || 0));
+      popup.addClass(this.classNames.bottomAligned);
     }
     
     return popup.css(css).fadeIn(100);
