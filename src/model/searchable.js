@@ -134,39 +134,56 @@ export const Searchable = (def) => {
   // If related models are required to display the searched models, you can
   // include them in the same array, and they will be loaded too, but not
   // returned in the results.
-  def.classMethod('searchesRemotelyAt', function(url) {
-    return this._remoteSearchURL = url;
+  def.classMethod('searchesRemotelyAt', function(url, options={}) {
+    this._remoteSearchOptions = Object.assign({ url }, options)
   });
   
   // Performs a remote search for the given keyword, and calls the callback
   // function with an array of results when the search is complete.
   //
-  // Specify the “url” option to override the default class search URL.
+  // Options:
+  //    url: URL to connect to
+  //    method: request method
+  //    param: name of the query param to send
+  //    data: extra param data to send
   def.classMethod('searchRemotely', function(keyword, options, callback) {
-    if (options == null) { options = {}; }
-    const url = options.url || this._remoteSearchURL;
-    if (url) {
-      const self = this;
-      const registry = self.registry();
-      jQuery.ajax({
-        url,
-        method:   'get',
-        data:     {query: keyword},
-        success(data) {
-          const results = [];
-          for (let itemData of Array.from(data)) {
-            const item = registry.loadData(itemData, {loaded: true});
-            if (item instanceof self) { results.push([item]); }
-          }
-          return callback(results);
-        },
-        error() {
-          return callback([]);
-        }
-      });
-      return true;
-    } else {
+    const {
+      url,
+      method,
+      param,
+      data
+    } = Object.assign(
+      { method: 'get', param: 'query', data: {} },
+      this._remoteSearchOptions || {},
+      options || {}
+    );
+
+    if (!url) {
       return false;
     }
+
+    const fullData = Object.assign({}, data);
+    fullData[param] = keyword;
+
+    const self = this;
+    const registry = self.registry();
+    
+    jQuery.ajax({
+      url,
+      method,
+      data: fullData,
+      success(data) {
+        const results = [];
+        data.forEach(itemData => {
+          const item = registry.loadData(itemData, { loaded: true });
+          if (item instanceof self) { results.push([item]); }
+        })
+        callback(results);
+      },
+      error() {
+        callback([]);
+      }
+    });
+    return true;
   });
 }

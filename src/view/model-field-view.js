@@ -14,6 +14,16 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
   
   // Mappings from result index to label for key
   def.KEY_LABELS = '123456789'.split('');
+
+  def.classNames = {
+    root: 'model-field-view',
+    results: 'model-field-view__results',
+    resultsTable: 'model-field-view__results-table',
+    resultsRow: 'model-field-view__results-row',
+    selectedResultsRow: 'model-field-view__results-row--selected',
+    resultsCell: 'model-field-view__results-cell',
+    hotkeyResultsCell: 'model-field-view__results-cell--hotkey',
+  },
   
   def.initializer('withModel', function(model) {
     this.init();
@@ -27,7 +37,8 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
     this._canCreate = false;
     this._createLabel = null;
     this._focused = false;
-    return this._searchRemotelyAt = null;
+    this._remoteSearchOptions = null;
+    this.element().addClass(def.classNames.root)
   });
   
   def.initializer('withScope', function(scope) {
@@ -41,7 +52,7 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
   def.property('selectedResult');
   def.property('acceptsNull');
   def.property('resultListElement');
-  def.property('searchRemotelyAt');
+  def.property('remoteSearchOptions')
   
   def.method('allowCreateWithLabel', function(label) {
     this._canCreate = true;
@@ -85,7 +96,7 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
     });
     this._inputElement[0]._view = this
     
-    this._resultListElement = jQuery('<div class="ModelFieldViewResults"></div>');
+    this._resultListElement = jQuery(`<div class="${def.classNames.results}"></div>`);
     this._resultListElement.hide();
     this._resultListElement.mouseout(() => {
       if (!this._hiding) { return this.selectedResult(-1); }
@@ -138,8 +149,8 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
   def.method('_selectedResultChanged', function(oldValue, newValue) {
     if (this._resultListElement) {
       const rows = jQuery('tr', this._resultListElement);
-      if (oldValue >= 0) { rows.eq(oldValue).removeClass('selected'); }
-      if (newValue >= 0) { return rows.eq(newValue).addClass('selected'); }
+      if (oldValue >= 0) { rows.eq(oldValue).removeClass(def.classNames.selectedResultsRow); }
+      if (newValue >= 0) { return rows.eq(newValue).addClass(def.classNames.selectedResultsRow); }
     }
   });
   
@@ -205,7 +216,7 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
     if (this._searching) {
       return this._searchForNext = search;
     } else if (search.length) {
-      const remote = !this._scope && this._model.searchRemotely(search, {url: this._searchRemotelyAt}, function(results) {
+      const remote = !this._scope && this._model.searchRemotely(search, this._remoteSearchOptions, function(results) {
         self._searching = false;
         if (!self._focused) {
           if (self._resultListElement) { self.hideResultList(); }
@@ -247,7 +258,12 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
   });
   
   def.method('showSearchProgress', function() {
-    this._resultListElement.html('<table><tr><td>Searching...</td></tr></table>');
+    this._resultListElement.html(`<table class="${def.classNames.resultsTable}">
+      <tr class="${def.classNames.resultsRow}">
+        <td class="${def.classNames.resultsCell}">Searching...
+        </td>
+      </tr>
+    </table>`);
     return this.showResultList();
   });
   
@@ -260,22 +276,27 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
         this._results.splice(ModelFieldView.RESULT_LIMIT);
       }
       
-      const html = ['<table><tbody>'];
+      const html = [`<table class="${def.classNames.resultsTable}"><tbody>`];
       let maxCols = 1;
       for (let i = 0; i < this._results.length; i++) {
         const result = this._results[i];
-        html.push(`<tr style="cursor: default" onmouseover="selectResult(${i})"><td class="hotkey">`);
+        html.push(`<tr class="${def.classNames.resultsRow}" onmouseover="selectResult(${i})"><td class="${def.classNames.resultsCell} ${def.classNames.hotkeyResultsCell}">`);
         html.push(ModelFieldView.KEY_LABELS[i]);
-        html.push('</td><td>');
+        html.push(`</td><td class=${def.classNames.resultsCell}>`);
         const cols = result[0].toListItem();
         if (cols.length > maxCols) { maxCols = cols.length; }
-        html.push(cols.join('</td><td>'));
+        html.push(cols.join(`</td><td class="${def.classNames.resultsCell}">`));
         html.push('</td></tr>');
       }
       
       if (this._canCreate) {
-        html.push('<tr style="cursor: default" onmouseover="selectResult(', results.length, ')"><td class="hotkey">0</td><td colspan="', maxCols, '">Create new ', this._model._name.toLowerCase());
-        html.push(' ', this._createLabel.replace('$1', this._text));
+        html.push(`<tr class="${def.classNames.resultsRow}" onmouseover="selectResult(${results.length})">
+          <td class="${def.classNames.resultsCell} ${def.classNames.hotkeyResultsCell}">0</td>
+          <td class="${def.classNames.resultsCell}" colspan="${maxCols}">
+            Create new ${this._model._name.toLowerCase()}
+            ${this._createLabel.replace('$1', this._text)}
+          </td>
+        </tr>`);
         results.push('new');
       }
       
@@ -302,6 +323,10 @@ export const ModelFieldView = makeClass('ModelFieldView', FieldView, (def) => {
     }
     return this._results = null;
   });
+
+  def.method('searchRemotelyAt', function(url, options={}) {
+    this._remoteSearchOptions = Object.assign({ url }, options)
+  })
 
   // Test helpers
 
