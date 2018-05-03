@@ -48,7 +48,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
       },
       enum(attribute, options={}) {
         jQuery.extend(options, self.detailsFor(attribute));
-        this._add(EnumFieldView.createWithValuesNull(options.values, options.null), attribute, options);
+        this._add(EnumFieldView.createWithValues(options.values, options), attribute, options);
       },
       bool(attribute, options={}) {
         this._add(BoolFieldView.create(), attribute, options);
