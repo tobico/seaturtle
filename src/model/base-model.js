@@ -183,7 +183,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     this._class.trigger('itemChanged', this);
 
     if (this._attributes[member] !== undefined) {
-      if (!this._creating && (String(oldValue) !== String(newValue)) && !this._class.ReadOnly) {
+      if (!this._creating && !this._class.ReadOnly && JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
         const data = {};
         data[member] = newValue;
         return Model.recordChange('update', this._uuid, this._class._name, data);
