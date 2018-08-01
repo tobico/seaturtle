@@ -59,7 +59,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
       model(attribute, options={}) {
         const details = self.detailsFor(attribute);
         const field = ModelFieldView.createWithModel(self._model.registry().getModel(details.model))
-        if (details.searchesRemotelyAt) { field.searchRemotelyAt(details.searchesRemotelyAt); }
+        if (details.searchesRemotelyAt) { field.searchRemotelyAt(details.searchesRemotelyAt, details.remoteSearchOptions); }
         this._add(field, attribute, options);
       }
     };
