@@ -36,12 +36,12 @@ export const ViewHelper = makeClass('ViewHelper', BaseObject, (def) => {
       }
     }
     s += '</head><body class="print"';
-    if (!options.preview) { s += ' onload="print(); close();"'; }
+    if (!options.preview) { s += ' onload="print(); setTimeout(function(){ close() }, 0)" onafterprint="close()"'; }
     s += `>${html}</body></html>`;
 
     const o = window.open();
     o.document.open();
     o.document.write(s);
-    return o.document.close();
+    o.document.close();
   });
 });
