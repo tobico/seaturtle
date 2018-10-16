@@ -27,7 +27,7 @@ export const Scope = makeClass('Scope', List, (def) => {
     if (block) { block.call(scope); }
     return scope;
   });
-  
+
   def.method('where', function(...conditions) {
     return this.fork(function() {
       return Array.from(conditions).map((condition) =>
@@ -52,11 +52,11 @@ export const Scope = makeClass('Scope', List, (def) => {
       })();
     });
   });
-  
+
   def.method('index', function() {
     if (!this._index) {
       this._index = this._model.master();
-      
+
       if (this._model._indexes) {
         let cardinality = -1;
         for (let condition of Array.from(this._conditions)) {
@@ -110,7 +110,7 @@ export const Scope = makeClass('Scope', List, (def) => {
     this.populate();
     return this.super();
   });
-  
+
   def.method('sort', function() {
     if (this._orders) {
       const orders = this._orders;
@@ -131,20 +131,20 @@ export const Scope = makeClass('Scope', List, (def) => {
       });
     }
   });
-  
+
   def.method('populate', function() {
     if (!this._populated && !this._array.length) {
       this._populated = true;
-      
+
       const self = this;
       this.index().each(function(candidate) {
         if (candidate.matches(self._conditions)) { return self.add(candidate); }
       });
-      
+
       return this.sort();
     }
   });
-  
+
   def.method('forgetAll', function(destroy) {
     if (destroy == null) { destroy = false; }
     return (() => {
@@ -157,20 +157,20 @@ export const Scope = makeClass('Scope', List, (def) => {
       return result;
     })();
   });
-  
+
   def.method('destroyAll', function() {
     return this.forgetAll(true);
   });
-  
-  def.method('build', function(data) {
-    const defaults = {};
+
+  def.method('build', function(attributes) {
+    const data = {};
     for (let condition of Array.from(this._conditions)) {
       if (condition.attribute && condition.value) {
-        defaults[condition.attribute] = condition.value;
+        data[condition.attribute] = condition.value;
       }
     }
-    if (data) { jQuery.extend(defaults, data); }
-    return this._model.createWithData(defaults);
+    if (attributes) Object.assign(data, attributes);
+    return this._model.createWithData(data);
   });
 
   def.method('search', function(keywords, limit) {
@@ -186,7 +186,7 @@ export const Scope = makeClass('Scope', List, (def) => {
     return this.sort();
   });
 
-  def.method('targetItemRemoved', function(target, item) {  
+  def.method('targetItemRemoved', function(target, item) {
     return this.remove(item);
   });
 });

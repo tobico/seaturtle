@@ -101,7 +101,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     for (var attribute in this._class._attributes) {
       const details = this._class._attributes[attribute];
       if (this._class._attributes.hasOwnProperty(attribute)) {
-        if (data[attribute] != null) {
+        if (data[attribute] !== undefined) {
           this[attribute](data[attribute]);
         } else if (!details.virtual) {
           this[attribute](details.default);

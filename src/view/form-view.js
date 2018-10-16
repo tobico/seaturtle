@@ -63,7 +63,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
         this._add(field, attribute, options);
       }
     };
-    definition.call(dsl);
+    definition.call(dsl, dsl);
     this.loadFieldValues();
   });
 
@@ -155,7 +155,7 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
     // Read field values into data
     this._fields.each(field => {
       const value = field.value()
-      data[field.id()] = value === undefined ? null : value
+      data[field.id()] = (value === undefined) ? null : value
     });
 
     return data;
