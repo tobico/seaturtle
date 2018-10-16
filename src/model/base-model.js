@@ -196,7 +196,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
 
     // Convert new value to correct type
     const details = this._class._attributes[name];
-    const newValue = this._class.convertValueToType(rawValue, details.type);
+    const newValue = this._class.convertValueToType(rawValue, details);
 
     // Set new value
     this._attributes[name] = newValue;
@@ -293,11 +293,11 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     return this.forget(true);
   });
 
-  def.classMethod('convertValueToType', function(value, type) {
-    if (value === null) {
+  def.classMethod('convertValueToType', function(value, details) {
+    if (details.null !== false && (value === null || value === '')) {
       return null;
     } else {
-      switch (type) {
+      switch (details.type) {
         case 'string':
           return String(value);
         case 'real':
