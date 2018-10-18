@@ -7,13 +7,13 @@ export const Popup = {
   // of the popup, in the event of a second click on the associated element
   _popupID:  -1,
   _popupIDs: 1,
-  
+
   _detach: false,
   _clickAwayBound: false,
-  
+
   // Keeps track of callback function to execute on closing the popup
   _closeCallback: null,
-  
+
   _view: null,
 
   classNames: {
@@ -28,14 +28,14 @@ export const Popup = {
     menuHr: 'popup__menu-hr',
     menuLink: 'popup__menu-link',
   },
-  
+
   keyDown(key) {
     if (key === BaseView.VK_ESCAPE) {
       this.close();
       return true;
     }
   },
-  
+
   close() {
     if (this._popupID) {
       const onClose = this._closeCallback;
@@ -49,25 +49,25 @@ export const Popup = {
           this._view.release();
           this._view = null;
         }
-        
+
         if (Popup._detach) {
           jQuery(this).children().detach();
         } else if (Popup._reattach) {
           jQuery(document.body).append(jQuery(this).children().hide());
         }
-        
+
         return jQuery(this).remove();
       });
     }
   },
-        
+
   nextId() {
     return this._popupIDs++;
   },
-  
+
   show(element, id, display, options) {
     if (options == null) { options = {}; }
-    if (this._popupID === id) { return this.close(); }  
+    if (this._popupID === id) { return this.close(); }
     this.close();
 
     if (!this._clickAwayBound) {
@@ -85,9 +85,9 @@ export const Popup = {
     this._closeCallback = function() {
       if (options.close) { return options.close.call(element, element); }
     };
-    
+
     BaseView.method('takeKeyboardFocus').call(this);
-    
+
     if (display instanceof BaseView) {
       this._view = display;
       display.load();
@@ -109,8 +109,8 @@ export const Popup = {
             const a = jQuery(`<a class="${this.classNames.menuLink}" href="javascript:;">${item.title || item[0]}</a>`);
             a.click(e => {
               this.close();
-              if (item.action) { item.action(); }
-              if (item[1]) { return item[1](); }
+              const action = item.action || item[1]
+              if (action) action.call(item, e)
           });
             li.append(a);
             return ul.append(li);
@@ -122,12 +122,12 @@ export const Popup = {
     popup.mousedown(e => e.stopPropagation());
 
     popup.appendTo(document.body);
-    
+
     const css = {
       display:  'none',
       position: 'absolute'
     };
-    
+
     if ((offset.left < (jQuery(window).width() - 150)) && !options.right) {
       css.left = Math.round(offset.left);
       popup.addClass(this.classNames.leftAligned);
@@ -135,7 +135,7 @@ export const Popup = {
       css.right = Math.round(jQuery(window).width() - offset.left - element.outerWidth());
       popup.addClass(this.classNames.rightAligned);
     }
-    
+
     if (!options.bottom) {
       css.top = Math.floor(offset.top + element.outerHeight());
       popup.addClass(this.classNames.topAligned);
@@ -143,10 +143,10 @@ export const Popup = {
       css.top = Math.floor(offset.top - popup.outerHeight() - (options.offsetY || 0));
       popup.addClass(this.classNames.bottomAligned);
     }
-    
+
     return popup.css(css).fadeIn(100);
   },
-  
+
   toString() {
     return 'Popup';
   },
@@ -164,16 +164,16 @@ export const Popup = {
 export const makePopup = (element, items, open, close, options) => {
   const id = Popup.nextId();
   element.mousedown(e => e.stopPropagation());
-  
+
   let el = null;
-  
+
   options = jQuery.extend({}, options);
   options._close = options.close;
   options.close = function() {
     if (close) { close.call(element, element); }
     if (options._close) { return options._close.call(element, element); }
   };
-  
+
   element.click(function(e) {
     e.preventDefault();
     if (Popup._popupID === id) {
