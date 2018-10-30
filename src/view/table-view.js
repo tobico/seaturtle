@@ -24,10 +24,16 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     this._lang = null;
     this.list(list);
     this.element().on('click', 'th.sortHeader', (event) => {
-      const target = jQuery(event.target)
-      const columnIndex = target.data('column-index')
-      this.setSortColumn(columnIndex)
-    })
+      const target = jQuery(event.target);
+      let columnIndex = target.data('column-index');
+      if (columnIndex === undefined) {
+        columnIndex = target.parent().data('column-index');
+      }
+      const column = this._columns[columnIndex];
+      if (column) {
+        this.setSortColumn(column.name);
+      }
+    });
   });
 
   def.property('columns');
@@ -74,36 +80,52 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
       column.index = i;
       if (column.name) { this._columnsByName[column.name] = column; }
     }
-    if ((columns.length > sortColumnIndex) && (this._sortColumn !== columns[sortColumnIndex])) { this.sortColumn(sortColumnIndex, reverseSort); }
+    if (columns.length) {
+      const sortColumn = columns[sortColumnIndex].name;
+      if (this._sortColumn !== sortColumn) {
+        this.setSortColumn(sortColumn, reverseSort);
+      }
+    }
     if (this._loaded) {
       this.refreshHeader();
       return this.refreshBody();
     }
   });
 
+  def.method('addColumn', function(column) {
+    this._columns.push(column);
+    column.index = this._columns.length - 1;
+    this._columnsByName[column.name] = column;
+  });
+
+  def.method('removeColumn', function(name) {
+    delete this._columnsByName[name];
+    this._columns = this._columns.filter(x => x.name !== name);
+    for (let i = 0; i < this._columns.length; i++) {
+      const column = this._columns[i];
+      column.index = i;
+    }
+  });
+
   def.method('sortFunction', function(sortColumn) {
-    let column;
-    const self = this;
-    if (column = sortColumn || this._sortColumn) {
+    const column = this._columnsByName[sortColumn || this._sortColumn];
+    if (column) {
       if (column.sortBy) {
-        return makeSortFn(column.sortBy, this._reverseSort);
+        return makeSortFn(x => column.sortBy(x), this._reverseSort);
       } else if (column.sort) {
         if (this._reverseSort) {
           return (a, b) => column.sort(b, a);
         } else {
-          return column.sort;
+          return (a, b) => column.sort(a, b);
         }
       } else {
-        return makeSortFn(item => self.cellValue(item, column)
+        return makeSortFn(item => this.cellValue(item, column)
         , this._reverseSort);
       }
     }
   });
 
   def.method('setSortColumn', function(sortColumn, reverseSort) {
-    const self = this;
-    if (typeof sortColumn === 'number') { sortColumn = this._columns[sortColumn]; }
-
     const oldSortColumn = this._sortColumn;
 
     if (reverseSort !== undefined) { this._reverseSort = reverseSort; }
@@ -122,13 +144,13 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
   });
 
   def.method('sort', function() {
-    let sortFunction;
-    const self = this;
-    if (sortFunction = this.sortFunction()) {
+    const sortFunction = this.sortFunction();
+    if (sortFunction) {
       this._ordered.sort(sortFunction);
       if (this._loaded) {
-        return Array.from(this._ordered).map((item) =>
-          this._tbody.append(this._rowsByUid[item._uid]));
+        this._ordered.forEach(item =>
+          this._tbody.append(this._rowsByUid[item._uid])
+        );
       }
     }
   });
@@ -199,7 +221,7 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     html.push(`<th style="cursor:pointer" class="sortHeader" data-column-index="${column.index}">`);
     html.push(this.titleForColumn(column, false));
 
-    if ((media === 'screen') && (column === this._sortColumn)) {
+    if ((media === 'screen') && (column.name === this._sortColumn)) {
       html.push('<span class="sortLabel">');
       if (this._reverseSort) {
         html.push(' &#x2191;');
@@ -417,18 +439,14 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
 
   def.method('loadColumns', function() {
     if (!this._persistColumnsStorage || !this._persistColumnsKey) { return; }
-    return this._persistColumnsStorage.fetch(this._persistColumnsKey, value => {
+    this._persistColumnsStorage.fetch(this._persistColumnsKey, value => {
       if (value) {
-        return (() => {
-          const result = [];
-          for (let name in value) {
-            const hidden = value[name];
-            if (this._columnsByName[name]) { result.push(this._columnsByName[name].hidden = hidden); } else {
-              result.push(undefined);
-            }
+        for (let name in value) {
+          const hidden = value[name];
+          if (this._columnsByName[name]) {
+            this._columnsByName[name].hidden = hidden;
           }
-          return result;
-        })();
+        }
       }
     });
   });
