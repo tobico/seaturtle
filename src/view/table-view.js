@@ -133,7 +133,8 @@ export const TableView = makeClass('TableView', BaseView, (def) => {
     if (oldSortColumn === sortColumn) {
       this._reverseSort = !this._reverseSort;
     } else {
-      this._reverseSort = !!(sortColumn && sortColumn.reverse);
+      const column = this._columnsByName[sortColumn];
+      this._reverseSort = !!(column && column.reverse);
     }
 
     this._sortColumn = sortColumn;
