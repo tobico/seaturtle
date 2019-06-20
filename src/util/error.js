@@ -1,5 +1,5 @@
 export const error = (message) => {
-  if (window.console) {
+  if (typeof console !== 'undefined') {
     return console.error(message);
   } else {
     return alert(message);

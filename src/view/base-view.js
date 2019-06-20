@@ -34,7 +34,7 @@ export const BaseView = makeClass('BaseView', Destructable, (def) => {
         let handled = false;
         def._keyboardFocusStack.each(function(view) {
           if (view.keyDown && view.keyDown(e.which)) {
-            if (window.console) {
+            if (typeof console !== 'undefined') {
               // Look up constant for key
               let key = e.which;
               for (let a in def) {

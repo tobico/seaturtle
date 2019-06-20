@@ -38,7 +38,7 @@
                     return [this.firstName(), this.lastName(), this.birthYear()];
                 })
             });
-            
+
             ST.Author.createWithData({
                 firstName:      'Charles',
                 lastName:       'Dickens',
@@ -54,7 +54,7 @@
                 lastName:       'Rowling',
                 dateOfBirth:    '1965-07-31'
             });
-            
+
             ST.class('Book', 'Model', function() {
                 this.string('title');
                 this.enum('format', 'paper', { hard: 'Hardcover', paper: 'Paperback', 'ebook': 'Electronic' });
@@ -63,10 +63,10 @@
             var formView = ST.FormView.createWithModelAttributes(ST.Book, ['title', 'author', 'format']);
             formView.load();
             $('#form').append(formView.element());
-            
+
             $('#save').click(function() {
                 var book = formView.save()
-                if (window.console) console.log(book);
+                if (typeof console !== 'undefined') console.log(book);
                 alert(book.serialize());
             });
         });

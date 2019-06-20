@@ -11,8 +11,8 @@ export const Model = {
   _changesCount: 0,
   _changeID: 1,
   _lastChange: null,
-  
-  recordChange(type, uuid, model, data) {    
+
+  recordChange(type, uuid, model, data) {
     // If the last change made was also an update to this model, and it hasn't
     // been submitted yet, amend the previous update with additional data
     // instead of making a new one
@@ -37,7 +37,7 @@ export const Model = {
     }
     return true;
   },
-  
+
   sync(url, async, additionalData=null) {
     if ((this._changesCount > 0) && !this._submitting) {
       this._submitting = true;
@@ -72,11 +72,11 @@ export const Model = {
       return false;
     }
   },
-  
+
   autoSync(url, delegate=null, syncBeforeUnload) {
     if (syncBeforeUnload == null) { syncBeforeUnload = false; }
     window.sync = async => Model.sync(url, async);
-    
+
     this.onSyncContinue(() => sync(true));
     this.onConnectionError(function(status) {
       setTimeout(() => sync(true)
@@ -95,9 +95,9 @@ export const Model = {
     this.onSyncError((errors) => {
       if (delegate.onSyncError) { delegate.onSyncError(errors); }
     });
-    
+
     this.onHasChanges(() => setTimeout((() => sync(true)), 100));
-    
+
     if (syncBeforeUnload) {
       window.onbeforeunload = function(e) {
         const ev = e || window.event;
@@ -111,20 +111,20 @@ export const Model = {
           return undefined;
         }
         })();
-        
+
         if (ev && msg) { ev.returnValue = msg; }
         return msg;
       };
-      
+
       window.forceReload = function() {
         window.onbeforeunload = () => null;
         return location.reload(true);
       };
     }
-    
+
     return sync;
   },
-  
+
   ackSync(data) {
     const errors = [];
 
@@ -175,7 +175,7 @@ export const Model = {
       return true;
     }
   },
-  
+
   // Event handler - called when changes are available to sync
   onHasChanges(fn) {
     return this._onHasChanges = fn;
@@ -200,7 +200,7 @@ export const Model = {
   onSyncError(fn) {
     return this._onSyncError = fn;
   },
-  
+
   // Event handler - called when a connection to the save URL could not be made
   onConnectionError(fn) {
     return this._onConnectionError = fn;
@@ -219,7 +219,7 @@ export const Model = {
     const self = this;
     if (newStorage != null) {
       this.Storage = storage;
-      
+
       if (newStorage) {
         // Save any existing models to new storage
         for (let object of Array.from(this._byUuid)) {

@@ -1,7 +1,7 @@
 import { makeSortFn } from './make-sort-fn'
 import { detectTouch } from './detect'
 
-const _logging = !detectTouch() && window.console && window.console.groupCollapsed;
+const _logging = !detectTouch() && typeof console !== 'undefined' && console.groupCollapsed
 
 let _command
 let _history = []
@@ -41,7 +41,7 @@ export const Command = {
     if (_logging) {
       console.groupCollapsed(`Command: ${name}`);
       console.time('execute');
-    } else if (window.console) {
+    } else if (typeof console !== 'undefined') {
       console.log(`Command: ${name}`);
     }
     return _command;
