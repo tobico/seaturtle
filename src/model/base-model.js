@@ -25,15 +25,17 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
   def.classMethod('fetch', function(uuid, callback) {
     const self = this;
 
-    if (Model._byUuid[uuid]) {
-      if (callback) { return callback(Model._byUuid[uuid]); }
+    const found = this._registry.getRecord(uuid);
+
+    if (found) {
+      if (callback) { return callback(found); }
     } else if (this.FETCH_URL) {
       return jQuery.ajax({
         url:      this.FETCH_URL.replace('?', uuid),
         type:     'get',
         data:     this.FETCH_DATA || {},
         success(data) {
-          const model = self.createWithData(data, {loaded: true});
+          const model = self.createWithData(data, { loaded: true });
           if (callback) { return callback(model); }
         }
       });
@@ -57,27 +59,30 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     return Scope.createWithModel(this);
   });
 
-  def.classMethod('find', uuid => Model._byUuid[uuid]);
+  def.classMethod('find', function(uuid) {
+    return this._registry.getRecord(uuid)
+  });
 
   def.classMethod('load', function(data) {
-    const self = this;
     if (data instanceof Array) {
       return Array.from(data).map((row) =>
         this.load(row));
     } else {
       if (!data || !data.uuid) { return; }
-      if (Model._byUuid[data.uuid]) { return; }
+      if (this._registry.getRecord(data.uuid)) { return; }
       return this.createWithData(data);
     }
   });
 
   def.classMethod('master', function() {
-    return this._master || (this._master = List.create());
+    if (!this._master) this._master = List.create();
+    return this._master;
   });
 
   def.classMethod('index', function(attribute) {
-    if (!this._indexes) { this._indexes = {}; }
-    return this._indexes[attribute] || (this._indexes[attribute] = Index.createWithModelAttribute(this, attribute));
+    if (!this._indexes) this._indexes = {};
+    if (!this._indexes[attribute]) this._indexes[attribute] = Index.createWithModelAttribute(this, attribute);
+    return this._indexes[attribute];
   });
 
   def.initializer(function(options) {
@@ -140,8 +145,9 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
   // Creates a new object from model data
   def.classMethod('createWithData', function(data, options={}) {
     // If object with uuid already exists, return existing object
-    if (data.uuid && Model._byUuid[data.uuid]) {
-      return Model._byUuid[data.uuid];
+    const found = data.uuid && this._registry.getRecord(data.uuid)
+    if (found) {
+      return found;
     // Otherwise, create a new object
     } else {
       const object = new (this);
@@ -157,7 +163,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
       newUuid = String(newUuid);
 
       // Insert object in global index
-      Model._byUuid[newUuid] = this;
+      this._class._registry.setRecord(newUuid, this);
 
       // Insert object in model-specific index
       if (!this._class._byUuid) { this._class._byUuid = {}; }
@@ -264,7 +270,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
     }
 
     // Remove from global index
-    delete Model._byUuid[this._uuid];
+    this._class._registry.unsetRecord(this._uuid);
 
     // Remove from model index
     delete this._class._byUuid[this._uuid];
@@ -452,7 +458,7 @@ export const BaseModel = makeClass('BaseModel', BaseObject, (def) => {
 
     this.method(`get${ucName}`, function() {
       const uuid = this[`${name}Uuid`]();
-      return Model._byUuid[uuid] || null;
+      return this._class._registry.getRecord(uuid) || null;
     });
 
     this.method(`set${ucName}`, function(value) {

@@ -8,7 +8,7 @@ export const Index = makeClass('Index', BaseObject, (def) => {
     this._model = model;
     this._attribute = attribute;
     this._values = {};
-    return this._cardinality = 0;
+    this._cardinality = 0;
   });
 
   def.property('cardinality', 'read');

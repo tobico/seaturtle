@@ -1,8 +1,5 @@
 import jQuery from 'jquery'
 
-import { Model } from './model'
-import { BaseModel } from './base-model'
-
 export const Searchable = (def) => {
   // Breaks a string down into trigrams, and returns an array. All spacing
   // is replaces with double space ‘  ’ characters, so the first and last
@@ -15,14 +12,14 @@ export const Searchable = (def) => {
     }
     return trigrams;
   };
-  
+
   // Enables trigram search for this class, indexed on the given properties
   def.classMethod('searchesOn', function(...properties) {
     this._searchProperties = properties;
     this._trigrams = {};
-    
+
     // Add change handler for each attribute to ensure trigram indexes are
-    // always correct and up to date 
+    // always correct and up to date
     return (() => {
       const result = [];
       for (let property of Array.from(properties)) {
@@ -38,7 +35,7 @@ export const Searchable = (def) => {
       return result;
     })();
   });
-  
+
   // Performs a search for given keyword(s), and returns the results as an
   // array.
   //
@@ -69,7 +66,7 @@ export const Searchable = (def) => {
       for (uuid in uuids) {
         const score = uuids[uuid];
         if (uuids.hasOwnProperty(uuid)) {
-          matches.push([Model._byUuid[uuid], score]);
+          matches.push([this._class._registry.getRecord(uuid), score]);
         }
       }
       matches.sort(function(a, b) {
@@ -111,7 +108,7 @@ export const Searchable = (def) => {
     return null;
   });
 
-  // Removes this object from class trigram search index for the given 
+  // Removes this object from class trigram search index for the given
   // keyword(s). This should exactly reverse the effect of calling
   // #indexForKeyword for the same keyword.
   def.method('deindexForKeyword', function(keyword) {
@@ -125,7 +122,7 @@ export const Searchable = (def) => {
     }
     return null;
   });
-  
+
   // Enables AJAX-based remote search using the given URL.
   // The URL is passed search keywords as a GET parameter named “query”.
   // It should return an array of serialized model definitions.
@@ -137,7 +134,7 @@ export const Searchable = (def) => {
   def.classMethod('searchesRemotelyAt', function(url, options={}) {
     this._remoteSearchOptions = Object.assign({ url }, options)
   });
-  
+
   // Performs a remote search for the given keyword, and calls the callback
   // function with an array of results when the search is complete.
   //
@@ -167,7 +164,7 @@ export const Searchable = (def) => {
 
     const self = this;
     const registry = self.registry();
-    
+
     jQuery.ajax({
       url,
       method,

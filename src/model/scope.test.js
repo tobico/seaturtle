@@ -2,21 +2,24 @@ import { Scope } from './scope'
 import { BaseModel } from './base-model'
 import { Model } from './model'
 import { makeClass } from '../core/make-class'
+import { ModelRegistry } from './model-registry';
 
 describe("Scope", function() {
-  let TestModel, scope
+  let registry, TestModel, scope
 
   beforeEach(function() {
     let uuid = 1
     Model._generateUUID = () => uuid++
-    
+
+    registry = ModelRegistry.create()
     TestModel = makeClass('TestModel', BaseModel, (def) => {
+        def.register(registry)
         def.string('foo', 'bacon')
         def.integer('cost', 1)
     })
     scope = TestModel.scoped()
   })
-    
+
   describe("#initWithModel", function() {
     beforeEach(function() {
       scope = new Scope()
@@ -26,49 +29,49 @@ describe("Scope", function() {
     it("should set @_model", function() {
       expect(scope._model).toBe(TestModel)
     })
-      
+
     it("should set defaults", function() {
       expect(scope._conditions).toEqual([])
       expect(scope._orders).toBe(null)
     })
   })
-  
+
   describe("#initWithScope", function() {
     let condition, copy
-    
+
     beforeEach(function() {
       condition = { attribute: 'foo', test: () => true }
       scope._conditions = [condition]
       scope._orders = ['foo']
       copy = Scope.createWithScope(scope)
     })
-  
+
     it("should copy scope model", function() {
       expect(copy._model).toBe(scope._model)
     })
-    
+
     it("should copy scope conditions", function() {
       expect(copy._conditions.length).toEqual(1)
       expect(copy._conditions[0]).toBe(condition)
     })
-      
+
     it("should copy scope order", function() {
       expect(copy._orders).toEqual(['foo'])
     })
   })
-  
+
   describe("#model", () =>
     it("should return model", function() {
       expect(scope.model()).toBe(TestModel)
     })
   )
-  
+
   describe("#fork", function() {
     it("should copy scope", function() {
       const copy = scope.fork()
       expect(copy._model).toBe(TestModel)
     })
-    
+
     it("should run block on new scope", function() {
       let copy, runBlock
       runBlock = false
@@ -76,14 +79,14 @@ describe("Scope", function() {
       expect(runBlock).toBe(true)
     })
   })
-  
+
   describe("#where", function() {
     it("should add conditions to fork of scope with no conditions", function() {
       const condition = {attribute: 'foo', test() { true } }
       const copy = scope.where(condition)
       expect(copy._conditions).toEqual([condition])
     })
-    
+
     it("should combine conditions on fork of scope with conditions", function() {
       const condition1 = {attribute: 'foo', test() { true } }
       const condition2 = {attribute: 'bar', test() { false } }
@@ -92,7 +95,7 @@ describe("Scope", function() {
       expect(copy._conditions).toEqual([condition1, condition2])
     })
   })
-  
+
   describe("#order", () =>
     it("should set order on fork of scope", function() {
       const copy = scope.order('foo')
@@ -101,7 +104,7 @@ describe("Scope", function() {
   )
 
   describe("#enableBindings", () => it("should bind scope to a relevant attribute index"))
-  
+
   describe("#each", function() {
     it("should iterate over items matched by scope", function() {
       const model = TestModel.createWithData({foo: 'bacon'})
@@ -112,7 +115,7 @@ describe("Scope", function() {
       })
       expect(found).toBe(true)
     })
-  
+
     it("should iterate over items in order", function() {
       const model1 = TestModel.createWithData({foo: 'bacon', cost: 3})
       const model2 = TestModel.createWithData({foo: 'waffles', cost: 2})

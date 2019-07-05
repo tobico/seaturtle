@@ -120,7 +120,7 @@ describe("BaseModel", function() {
     it("should add object to global index", function() {
       const model = new TestModel()
       model.uuid('test')
-      expect(Model._byUuid['test']).toBe(model)
+      expect(registry._byUuid['test']).toBe(model)
     })
 
     it("should add object to model index", function() {
@@ -133,7 +133,7 @@ describe("BaseModel", function() {
       const model = new TestModel()
       model._uuid = "test"
       model.uuid('test')
-      expect(Model._byUuid['test']).not.toBe(model)
+      expect(registry._byUuid['test']).not.toBe(model)
     })
   })
 
@@ -171,7 +171,7 @@ describe("BaseModel", function() {
     it("should remove object from global index", function() {
       const uuid = model.uuid()
       model.forget()
-      expect(Model._byUuid[uuid]).toBe(undefined)
+      expect(registry._byUuid[uuid]).toBe(undefined)
     })
 
     it("should remove object from model index", function() {
