@@ -45,6 +45,8 @@ export const Searchable = (def) => {
   // Set the “limit” option to specify the maximum number of results to
   // return. Default: 10
   def.classMethod('search', function(keywords, options) {
+    const registry = this.registry();
+
     if (options == null) { options = {}; }
     if (this._trigrams) {
       let uuid;
@@ -66,7 +68,7 @@ export const Searchable = (def) => {
       for (uuid in uuids) {
         const score = uuids[uuid];
         if (uuids.hasOwnProperty(uuid)) {
-          matches.push([this._class._registry.getRecord(uuid), score]);
+          matches.push([registry.getRecord(uuid), score]);
         }
       }
       matches.sort(function(a, b) {
