@@ -4,9 +4,9 @@ import { makeClass } from '../core/make-class'
 import { List } from '../core/list'
 import { BaseView } from './base-view'
 import { TextFieldView } from './text-field-view'
+import { MemoFieldView } from './memo-field-view'
 import { EnumFieldView } from './enum-field-view'
 import { BoolFieldView } from './bool-field-view'
-import { DateTimeFieldView } from './date-time-field-view'
 import { ModelFieldView } from './model-field-view'
 import { Command } from '../util/command'
 import { detectMac } from '../util/detect'
@@ -46,15 +46,15 @@ export const FormView = makeClass('FormView', BaseView, (def) => {
       text(attribute, options={}) {
         this._add(TextFieldView.create(), attribute, options);
       },
+      memo(attribute, options={}) {
+        this._add(MemoFieldView.create(), attribute, options);
+      },
       enum(attribute, options={}) {
         jQuery.extend(options, self.detailsFor(attribute));
         this._add(EnumFieldView.createWithValues(options.values, options), attribute, options);
       },
       bool(attribute, options={}) {
         this._add(BoolFieldView.create(), attribute, options);
-      },
-      datetime(attribute, options={}) {
-        this._add(DateTimeFieldView.create(), attribute, options);
       },
       model(attribute, options={}) {
         const details = self.detailsFor(attribute);

@@ -21,16 +21,7 @@
             ST.class('Author', 'Model', function() {
                 this.string('firstName');
                 this.string('lastName');
-                this.datetime('dateOfBirth');
                 this.searchesOn('firstName', 'lastName');
-                this['method']('birthYear', function() {
-                    var dob = this.dateOfBirth();
-                    if (dob) {
-                        return dob.getFullYear()
-                    } else {
-                        return null;
-                    }
-                });
                 this['method']('toFieldText', function() {
                     return this.firstName() + ' ' + this.lastName() + ' [' + this.birthYear() + ']';
                 });
@@ -42,17 +33,14 @@
             ST.Author.createWithData({
                 firstName:      'Charles',
                 lastName:       'Dickens',
-                dateOfBirth:    '1870-06-09'
             });
             ST.Author.createWithData({
                 firstName:      'Orson',
                 lastName:       'Scott Card',
-                dateOfBirth:    '1951-08-24'
             });
             ST.Author.createWithData({
                 firstName:      'Joanne',
                 lastName:       'Rowling',
-                dateOfBirth:    '1965-07-31'
             });
 
             ST.class('Book', 'Model', function() {
